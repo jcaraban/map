@@ -1,10 +1,6 @@
-/.buildpath
-/build/
+#
+
 */archive/
-
-__MACOSX
-.DS_Store
-
 .project
 .settings
 .classpath
@@ -12,6 +8,9 @@ __MACOSX
 
 # OS generated files #
 ######################
+
+__MACOSX
+.DS_Store
 
 */.DS_Store
 .DS_Store
@@ -58,7 +57,15 @@ water
 olive
 file_translate
 gen_data
-libmap.o
+libmap.so
+
+# Build #
+#########
+
+*.o
+/tmp/
+/build/
+/.buildpath
 
 # Text #
 ########
