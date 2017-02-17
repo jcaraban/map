@@ -1,0 +1,48 @@
+Id,Label,Group,Order
+
+30, Read ,0,1
+31, ZonalReduc ,0,1
+32, Binary ,2,1
+33, ZonalReduc ,0,2
+34, Binary ,1,2
+35, Binary ,2,1
+36, Constant ,2,2
+37, Binary ,2,1
+38, Index ,2,1
+39, Constant ,2,2
+40, Binary ,2,2
+41, Index ,2,3
+42, Constant ,2,4
+43, Binary ,2,3
+44, Binary ,2,3
+45, Binary ,2,4
+46, Binary ,2,3
+47, Constant ,2,4
+48, Binary ,2,3
+49, Unary ,2,2
+50, Binary ,2,1
+51, RadialScan ,2,1
+52, Binary ,2,1
+53, Binary ,2,1
+54, Binary ,2,1
+55, Convolution ,3,1
+56, Constant ,3,2
+57, Binary ,3,1
+58, Constant ,3,2
+59, Conditional ,3,1
+59, Write ,3,2
+
+d0,,,0
+d1,,,0
+d2,,,0
+d3,,,0
+d4,,,0
+d5,,,0
+d6,,,0
+d7,,,0
+d8,,,0
+d9,,,0
+d10,,,0
+d11,,,0
+d12,,,0
+d13,,,0

@@ -1,0 +1,537 @@
+----
+0	Read	 5
+1	ZonalReduc	 2
+2	Binary	 1
+3	ZonalReduc	 1
+4	Binary	 1
+5	Binary	 3
+6	Constant	 2
+7	Binary	 1
+8	Index	 1
+9	Constant	 1
+10	Binary	 2
+11	Index	 1
+12	Constant	 1
+13	Binary	 2
+14	Binary	 1
+15	Binary	 1
+16	Binary	 1
+17	Constant	 1
+18	Binary	 1
+19	Unary	 2
+20	Binary	 1
+21	RadialScan	 1
+22	Binary	 1
+23	Binary	 1
+24	Binary	 2
+25	Convolution	 2
+26	Constant	 1
+27	Binary	 1
+28	Constant	 1
+29	Conditional	 2
+29	Write	 1
+----
+----
+0	Read	 5
+1	ZonalReduc	 2
+2	Binary	 1
+3	ZonalReduc	 1
+4	Binary	 1
+5	Binary	 3
+6	Constant	 2
+7	Binary	 1
+8	Index	 1
+9	Constant	 1
+10	Binary	 2
+11	Index	 1
+12	Constant	 1
+13	Binary	 2
+14	Binary	 1
+15	Binary	 1
+16	Binary	 1
+17	Constant	 1
+18	Binary	 1
+19	Unary	 2
+20	Binary	 1
+21	RadialScan	 1
+22	Binary	 1
+23	Binary	 1
+24	Binary	 2
+25	Convolution	 2
+26	Constant	 1
+27	Binary	 1
+28	Constant	 1
+29	Conditional	 2
+29	Write	 1
+----
+----
+0	Read	 5
+1	ZonalReduc	 2
+2	Binary	 1
+3	ZonalReduc	 1
+4	Binary	 1
+5	Binary	 3
+6	Constant	 2
+7	Binary	 1
+8	Index	 1
+9	Constant	 1
+10	Binary	 2
+11	Index	 1
+12	Constant	 1
+13	Binary	 2
+14	Binary	 1
+15	Binary	 1
+16	Binary	 1
+17	Constant	 1
+18	Binary	 1
+19	Unary	 2
+20	Binary	 1
+21	RadialScan	 1
+22	Binary	 1
+23	Binary	 1
+24	Binary	 2
+25	Convolution	 2
+26	Constant	 1
+27	Binary	 1
+28	Constant	 1
+29	Conditional	 2
+29	Write	 1
+----
+Zonal  0x26907d0  
+    Read : 30
+    --
+    ZonalReduc : 31
+    ZonalReduc : 33
+    --
+    ZonalReduc : 31
+    ZonalReduc : 33
+  prev:
+  next:
+    0x2690b70 Radiating
+    0x2690fd0 Local
+
+Local  0x2690fd0  
+    ZonalReduc : 31
+    ZonalReduc : 33
+    --
+    Binary : 34
+    --
+    Binary : 34
+  prev:
+    0x26907d0 Zonal
+  next:
+    0x2690b70 Radiating
+
+Radiating  0x2690b70  
+    Read : 30
+    ZonalReduc : 31
+    Binary : 34
+    Constant : 36
+    Constant : 39
+    Constant : 42
+    Constant : 47
+    --
+    Binary : 32
+    Binary : 35
+    Binary : 37
+    Index : 38
+    Binary : 40
+    Index : 41
+    Binary : 43
+    Binary : 44
+    Binary : 45
+    Binary : 46
+    Binary : 48
+    Unary : 49
+    Binary : 50
+    RadialScan : 51
+    Binary : 52
+    Binary : 53
+    Binary : 54
+    --
+    RadialScan : 51
+    Binary : 54
+  prev:
+    0x26907d0 Zonal
+    0x2690fd0 Local
+  next:
+    0x2692200 Focal
+
+Focal  0x2692200  
+    Read : 30
+    Binary : 54
+    Constant : 56
+    --
+    Convolution : 55
+    Binary : 57
+    Constant : 58
+    Conditional : 59
+    --
+    Write : 59
+  prev:
+    0x2690b70 Radiating
+  next:
+
+--------------------
+***
+
+#define VAR(x) x, x ## v, x ## f
+#define TYPE_VAR(t,x) global t * x , t x ## v , uchar x ## f
+
+#define LOAD_L_F32(x) load_L_F32(VAR(x),bc0,bc1,BS0,BS1)
+float load_L_F32(TYPE_VAR(float,IN), int bc0, int bc1, int BS0, int BS1) { return (INf) ?  INv : IN[(bc1)*BS0+bc0]; }
+
+void atomicMIN(global float *ptr, float val) { union {float f; int i; } old, new; do { old.i = *(global int*)ptr; new.f = min(old.f,val); } while (atomic_cmpxchg ( (volatile global int*)ptr, old.i, new.i) != old.i); }
+void atomicMAX(global float *ptr, float val) { union {float f; int i; } old, new; do { old.i = *(global int*)ptr; new.f = max(old.f,val); } while (atomic_cmpxchg ( (volatile global int*)ptr, old.i, new.i) != old.i); }
+
+kernel void krn7036094171202662972
+(
+	global float *IN_30, float IN_30v, uchar IN_30f,
+	global float *OUT_31, int idx_31,
+	global float *OUT_33, int idx_33,
+	const int BS0,
+	const int BS1,
+	const int BC0,
+	const int BC1,
+	const int _GS0, // @
+	const int _GS1, // @
+	const int GN0,
+	const int GN1
+)
+{
+	float F32_30, F32_31, F32_33;
+	local float F32S_31[256];
+	local float F32S_33[256];
+	
+	int gc0 = get_local_id(0);
+	int gc1 = get_local_id(1);
+	int GC0 = get_group_id(0);
+	int GC1 = get_group_id(1);
+	int bc0 = get_global_id(0);
+	int bc1 = get_global_id(1);
+	int GS0 = 16; // @
+	int GS1 = 16; // @
+	
+	// Previous to ZONAL core
+
+	if (bc0 < BS0 && bc1 < BS1)
+	{
+		F32_30 = LOAD_L_F32(IN_30);
+		F32S_31[(gc1)*GS0+gc0] = F32_30;
+		F32S_33[(gc1)*GS0+gc0] = F32_30;
+	}
+	else
+	{
+		F32S_31[(gc1)*GS0+gc0] = INFINITY;
+		F32S_33[(gc1)*GS0+gc0] = -INFINITY;
+	}
+	
+	// Zonal core
+
+	for (int i=GS0*GS1/2; i>0; i/=2) {
+		barrier(CLK_LOCAL_MEM_FENCE);
+		if ((gc1)*GS0+gc0 < i)
+		{
+			F32S_31[(gc1)*GS0+gc0] = min(F32S_31[(gc1)*GS0+gc0], F32S_31[(gc1)*GS0+gc0 + i]);
+			F32S_33[(gc1)*GS0+gc0] = max(F32S_33[(gc1)*GS0+gc0], F32S_33[(gc1)*GS0+gc0 + i]);
+		}
+	}
+	
+	if (gc0 == 0 && gc1 == 0)
+	{
+		atomicMIN( (global char*)OUT_31+idx_31 , F32S_31[(gc1)*GS0+gc0]);
+		atomicMAX( (global char*)OUT_33+idx_33 , F32S_33[(gc1)*GS0+gc0]);
+	}
+	
+	// Posterior to ZONAL core
+
+	if (bc0 < BS0 && bc1 < BS1)
+	{
+	}
+}
+***
+***
+
+#define VAR(x) x, x ## v, x ## f
+#define TYPE_VAR(t,x) global t * x , t x ## v , uchar x ## f
+
+#define VARn(x,n) x ## _ ## n, x ## v ## _ ## n, x ## f ## _ ## n
+#define TYPE_VARn(t,x,n) global t * x ## _ ## n , t x ## v ## _ ## n , uchar x ## f ## _ ## n
+#define VAR_LIST(x) VARn(x,10), VARn(x,01), VARn(x,00), x
+#define TYPE_VAR_LIST(t,x) TYPE_VARn(t,x,10), TYPE_VARn(t,x,01), TYPE_VARn(t,x,00), global t * x
+
+int iceil(int n, int d) { return (n + d - 1) / d; }
+int modulo(int i, int d) { return (i<0) ? i+d : (i>=d) ? i-d : i; }
+
+#define LOAD_L_F32(x) load_L_F32(VAR(x),bc0,bc1,BS0,BS1)
+float load_L_F32(TYPE_VAR(float,IN), int bc0, int bc1, int BS0, int BS1) { return (INf) ?  INv : IN[(bc1)*BS0+bc0]; }
+
+#define LOAD_L_S32(x) load_L_S32(VAR(x),bc0,bc1,BS0,BS1)
+int load_L_S32(TYPE_VAR(int,IN), int bc0, int bc1, int BS0, int BS1) { return (INf) ?  INv : IN[(bc1)*BS0+bc0]; }
+
+#define LOAD_R_F32(x) load_R_F32(VAR_LIST(x),bc0,bc1,BS0,BS1)
+#define LIT_F32(a,b) linear_interpolation_F32(a,b,dif0,dif1)
+
+float load_R_F32(TYPE_VAR_LIST(float,IN), int bc0, int bc1, int BS0, int BS1) { global const float *p = IN; float v; uchar f = false; int i0 = (bc0<0) ? 0 : (bc0>=BS0) ? 0 : 1; int i1 = (bc1<0) ? 0 : (bc1>=BS1) ? 0 : 1; if (i0 != 1 || i1 != 1) { /**/ if (i0 == 0 && i1 == 1) { p = IN_10; v = INv_10; f = INf_10; } else if (i0 == 1 && i1 == 0) { p = IN_01; v = INv_01; f = INf_01; } else if (i0 == 0 && i1 == 0) { p = IN_00; v = INv_00; f = INf_00; } if (f) return v; if (!p) return NAN; bc0 = modulo(bc0,BS0), bc1 = modulo(bc1,BS1); } return p[(bc1)*BS0+bc0]; }
+float linear_interpolation_F32(float a, float b, int dif0, int dif1) { if (dif1 == 0) return a; if (dif0 == dif1) return b; float w = dif1 / (float) dif0 * (dif0 - 1.0f) - (dif1 - 1.0f); return a * w + b * (1.0f-w); }
+
+kernel void krn5657729330126323737
+(
+	global float *IN_30, float IN_30v, uchar IN_30f,
+	float IN_31v,
+	float IN_34v,
+	float IN_36v,
+	int IN_39v,
+	int IN_42v,
+	float IN_47v,
+	TYPE_VAR_LIST(float,OUT_51),
+	global float *OUT_54,
+	const int BS0,
+	const int BS1,
+	const int BC0,
+	const int BC1,
+	const int GS,
+	const int sc0,
+	const int sc1
+)
+{
+	float F32_30, F32_31, F32_34, F32_36, F32_47, F32_32, F32_35, F32_37, F32_48, F32_49, F32_50, F32_51, F32_52, F32_53, F32_54;
+	int S32_39, S32_42;
+	long S64_38, S64_40, S64_41, S64_43, S64_44, S64_45, S64_46;
+	local float F32S_51[257];
+	const bool fst_north = true;
+	const bool snd_north = false;
+	const bool fst_east = false;
+	const bool snd_east = true;
+	const bool fst_south = false;
+	const bool snd_south = false;
+	const bool fst_west = false;
+	const bool snd_west = false;
+
+	const int fst_dim0  = fst_east  || fst_west;
+	const int fst_dim1  = fst_south || fst_north;
+	const int snd_dim0  = snd_east  || snd_west;
+	const int snd_dim1  = snd_south || snd_north;
+	const int fst_unit0 = fst_east  -  fst_west;
+	const int fst_unit1 = fst_south -  fst_north;
+	const int snd_unit0 = snd_east  -  snd_west;
+	const int snd_unit1 = snd_south -  snd_north;
+	const int limit0 = BS0 * fst_dim0 + BS1 * fst_dim1;
+	const int limit1 = iceil(BS0,GS) * snd_dim0 + iceil(BS1,GS) * snd_dim1;
+
+	for (int i1=0; i1<limit1; i1++) { // 2nd dim FOR
+		for (int i0=0; i0<limit0; i0++) // 1st dim FOR
+		{
+			const int gc = get_local_id(0);
+
+			const int bc0 = (gc+GS*i1) * snd_east + (BS0-1-gc-GS*i1) * snd_west +
+							(i0) * fst_east + (BS0-1-i0) * fst_west;
+			const int bc1 = (gc+GS*i1) * snd_south + (BS1-1-gc-GS*i1) * snd_north +
+							(i0) * fst_south + (BS1-1-i0) * fst_north;
+
+			const int dc0 = BC0*BS0 + bc0;
+			const int dc1 = BC1*BS1 + bc1;
+
+			const int dif0 = (dc0 - sc0) * fst_unit0 + (dc1 - sc1) * fst_unit1;
+			const int dif1 = (dc1 - sc1) * snd_unit1 + (dc0 - sc0) * snd_unit0;
+
+			const bool cond = bc0 >= 0 && bc0 < BS0 && bc1 >= 0 && bc1 < BS1 && dif0 >= dif1 && dif1 >= 0 && dif0 >= 0;
+			
+			// Previous to RADIAL core
+
+			if (cond)
+			{
+				F32_30 = LOAD_L_F32(IN_30);
+				F32_31 = IN_31v;
+				F32_34 = IN_34v;
+				F32_36 = IN_36v;
+				S32_39 = IN_39v;
+				S32_42 = IN_42v;
+				F32_47 = IN_47v;
+				F32_32 = F32_30 - F32_31;
+				F32_35 = F32_32 / F32_34;
+				F32_37 = F32_35 - F32_36;
+				S64_38 = BC0*BS0+bc0;
+				S64_40 = S32_39 - S64_38;
+				S64_41 = BC1*BS1+bc1;
+				S64_43 = S32_42 - S64_41;
+				S64_44 = S64_40 * S64_40;
+				S64_45 = S64_43 * S64_43;
+				S64_46 = S64_44 + S64_45;
+				F32_48 = S64_46 + F32_47;
+				F32_49 = sqrt(F32_48);
+				F32_50 = F32_37 / F32_49;
+			}
+			
+			// RADIAL core
+
+			if (dif0 == 0 && dif1 == 0)
+			{
+				F32S_51[gc+1] = -INFINITY;
+				F32S_51[gc] = -INFINITY;
+			}
+			else if (cond)
+			{
+				if (i0 == 0) {
+					int c0 = bc0 - fst_unit0;
+					int c1 = bc1 - fst_unit1;
+					F32S_51[gc+1] = load_R_F32(VAR_LIST(OUT_51),c0,c1,BS0,BS1);
+				}
+				if (gc == 0) {
+					int c0 = bc0 - fst_unit0 - snd_unit0;
+					int c1 = bc1 - fst_unit1 - snd_unit1;
+					F32S_51[gc] = load_R_F32(VAR_LIST(OUT_51),c0,c1,BS0,BS1);
+				}
+			}
+			barrier(CLK_LOCAL_MEM_FENCE);
+			
+			if (cond)
+			{
+				F32_51 = LIT_F32(F32S_51[gc+1],F32S_51[gc]);
+				if (isfinite(F32_50))
+					F32_51 = max(F32_51, F32_50);
+				F32S_51[gc+1] = F32_51;
+			}
+			
+			if (cond)
+			{
+				OUT_51[(bc1)*BS0+bc0] = F32_51;
+			}
+			
+			// Posterior to RADIAL core
+
+			if (cond)
+			{
+				F32_52 = F32_51 * F32_49;
+				F32_53 = F32_52 + F32_36;
+				F32_54 = F32_53 - F32_35;
+				OUT_54[(bc1)*BS0+bc0] = F32_54;
+			}
+		} // end 1st dim FOR
+	} // end 2st dim FOR
+}
+***
+***
+
+#define VAR(x) x, x ## v, x ## f
+#define TYPE_VAR(t,x) global t * x , t x ## v , uchar x ## f
+
+#define VARn(x,n) x ## _ ## n, x ## v ## _ ## n, x ## f ## _ ## n
+#define TYPE_VARn(t,x,n) global t * x ## _ ## n , t x ## v ## _ ## n , uchar x ## f ## _ ## n
+#define VAR_LIST(x) VARn(x,00), VARn(x,01), VARn(x,02), VARn(x,10), VAR(x), VARn(x,12), VARn(x,20), VARn(x,21), VARn(x,22)
+#define TYPE_VAR_LIST(t,x) TYPE_VARn(t,x,00), TYPE_VARn(t,x,01), TYPE_VARn(t,x,02), TYPE_VARn(t,x,10), TYPE_VAR(t,x), TYPE_VARn(t,x,12), TYPE_VARn(t,x,20), TYPE_VARn(t,x,21), TYPE_VARn(t,x,22)
+
+int modulo(int i, int d) { return (i<0) ? i+d : (i>=d) ? i-d : i; }
+int invert(int i, int d) { return (i<0) ? -i-1 : (i>=d) ? d-(i-d+1) : i; }
+
+#define LOAD_L_F32(x) load_L_F32(VAR(x),bc0,bc1,BS0,BS1)
+float load_L_F32(TYPE_VAR(float,IN), int bc0, int bc1, int BS0, int BS1) { return (INf) ?  INv : IN[(bc1)*BS0+bc0]; }
+
+#define LOAD_F_F32(x) load_F_F32(VAR_LIST(x),bc0,bc1,BS0,BS1)
+float load_F_F32(TYPE_VAR_LIST(float,IN), int bc0, int bc1, int BS0, int BS1) { global const float *p = IN; float v = INv; uchar f = INf; int i0 = (bc0<0) ? 0 : (bc0>=BS0) ? 2 : 1; int i1 = (bc1<0) ? 0 : (bc1>=BS1) ? 2 : 1; if (i0 != 1 || i1 != 1) { if (i1 == 0) { /**/ if (i0 == 0) { p = IN_00; v = INv_00; f = INf_00; } else if (i0 == 1) { p = IN_01; v = INv_01; f = INf_01; } else if (i0 == 2) { p = IN_02; v = INv_02; f = INf_02; } } else if (i1 == 1) { /**/ if (i0 == 0) { p = IN_10; v = INv_10; f = INf_10; } else if (i0 == 2) { p = IN_12; v = INv_12; f = INf_12; } } else if (i1 == 2) { /**/ if (i0 == 0) { p = IN_20; v = INv_20; f = INf_20; } else if (i0 == 1) { p = IN_21; v = INv_21; f = INf_21; } else if (i0 == 2) { p = IN_22; v = INv_22; f = INf_22; } } if (!f && !p) { p = IN; v = INv; f = INf; bc0 = invert(bc0,BS0); bc1 = invert(bc1,BS1); } else if (!f) { bc0 = modulo(bc0,BS0); bc1 = modulo(bc1,BS1); } } return (f) ?  v : p[(bc1)*BS0+bc0]; }
+
+kernel void krn4103284088352538412
+(
+	global float *IN_30, float IN_30v, uchar IN_30f,
+	TYPE_VAR_LIST(float,IN_54),
+	float IN_56v,
+	global float *OUT_59,
+	const int BS0,
+	const int BS1,
+	const int BC0,
+	const int BC1,
+	const int _GS0, // @
+	const int _GS1 // @
+)
+{
+	float F32_30, F32_54, F32_56, F32_55, F32_58, F32_59;
+	uchar U8_57;
+	local float F32S_54[324];
+	
+	int gc0 = get_local_id(0);
+	int gc1 = get_local_id(1);
+	int bc0 = get_global_id(0);
+	int bc1 = get_global_id(1);
+	int H0 = 1;
+	int H1 = 1;
+	int GS0 = 16; // @
+	int GS1 = 16; // @
+	
+	float F32L_55[3][3] = {{0.062500,0.125000,0.062500},{0.125000,0.250000,0.125000},{0.062500,0.125000,0.062500}};
+	
+	// Previous to FOCAL core
+
+	if (bc0 < BS0 && bc1 < BS1) {
+		for (int i=0; i<((GS1+2*H1)*(GS0+2*H0)-1)/(GS0*GS1)+1; i++)
+		{
+			int proj = (gc1)*GS0+gc0 + i*(GS0*GS1);
+			if (proj >= (GS1+2*H1)*(GS0+2*H0)) continue;
+			int gc0 = proj % ((GS0+2*H0)) / 1;
+			int gc1 = proj % ((GS1+2*H1)*(GS0+2*H0)) / (GS0+2*H0);
+			int bc0 = get_group_id(0)*GS0 + gc0 - H0;
+			int bc1 = get_group_id(1)*GS1 + gc1 - H1;
+			
+			F32_54 = LOAD_F_F32(IN_54);
+			F32S_54[(gc1)*(GS0+H0*2)+gc0] = F32_54;
+		}
+	}
+	barrier(CLK_LOCAL_MEM_FENCE);
+	
+	// FOCAL core
+
+	if (bc0 < BS0 && bc1 < BS1)
+	{
+		F32_55 = 0;
+		for (int i1=-1; i1<=1; i1++) {
+			for (int i0=-1; i0<=1; i0++) {
+				F32_55 += F32S_54[(gc1+H1+i1)*(GS0+H0*2)+gc0+H0+i0] * F32L_55[i1+H1][i0+H0];
+			}
+		}
+	}
+	
+	// Posterior to FOCAL core
+
+	if (bc0 < BS0 && bc1 < BS1) {
+		F32_30 = LOAD_L_F32(IN_30);
+		F32_54 = LOAD_L_F32(IN_54);
+		F32_56 = IN_56v;
+		U8_57 = F32_55 < F32_56;
+		F32_58 = 0.000000;
+		F32_59 = (U8_57) ? F32_30 : F32_58;
+		OUT_59[(bc1)*BS0+bc0] = F32_59;
+	}
+}
+***
+--- Tasks --- 4
+Zonal  0
+  NumDim: D2, DataSize: {2048,1024}, BlockSize: {128,128}, NumBlock: {16,8}
+InList: 1, OutList: 2
+  prev:
+  next:
+    0x2692f30
+    0x2692b40
+
+Local  1
+  NumDim: D0, DataSize: {}, BlockSize: {}, NumBlock: {}
+InList: 2, OutList: 1
+  prev:
+    0x2690de0
+  next:
+    0x2692b40
+
+Radiating  2
+  NumDim: D2, DataSize: {2048,1024}, BlockSize: {128,128}, NumBlock: {16,8}
+InList: 7, OutList: 2
+  prev:
+    0x2690de0
+    0x2692f30
+  next:
+    0x2694ff0
+
+Focal  3
+  NumDim: D2, DataSize: {2048,1024}, BlockSize: {128,128}, NumBlock: {16,8}
+InList: 3, OutList: 1
+  prev:
+    0x2692b40
+  next:
+

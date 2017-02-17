@@ -1,0 +1,464 @@
+Zonal  0x16b1170
+    Read : 34
+    Constant : 44
+    Constant : 48
+    Constant : 53
+    --
+    ZonalReduc : 35
+    ZonalReduc : 36
+    ZonalReduc : 38
+    ZonalReduc : 41
+    Binary : 45
+    ZonalReduc : 46
+    Binary : 49
+    ZonalReduc : 50
+    Binary : 54
+    ZonalReduc : 55
+    --
+    ZonalReduc : 35
+    ZonalReduc : 36
+    ZonalReduc : 38
+    ZonalReduc : 41
+    ZonalReduc : 46
+    ZonalReduc : 50
+    ZonalReduc : 55
+  prev:
+  next:
+    0x16b1760 Zonal
+    0x16b19c0 Local
+
+Local  0x16b19c0
+    ZonalReduc : 41
+    Constant : 42
+    --
+    Binary : 43
+    --
+  prev:
+    0x16b1170 Zonal
+  next:
+
+Zonal  0x16b1760
+    Read : 34
+    ZonalReduc : 35
+    ZonalReduc : 36
+    ZonalReduc : 38
+    Constant : 39
+    ZonalReduc : 46
+    Constant : 48
+    ZonalReduc : 50
+    ZonalReduc : 55
+    --
+    Binary : 37
+    Binary : 40
+    Binary : 47
+    Binary : 51
+    Unary : 52
+    Binary : 56
+    Unary : 57
+    Binary : 58
+    Binary : 59
+    ZonalReduc : 60
+    Binary : 63
+    Binary : 64
+    ZonalReduc : 65
+    --
+    ZonalReduc : 60
+    ZonalReduc : 65
+  prev:
+    0x16b1170 Zonal
+  next:
+    0x16b3380 Local
+
+Local  0x16b3380
+    Constant : 39
+    ZonalReduc : 60
+    ZonalReduc : 65
+    --
+    Binary : 61
+    Unary : 62
+    Binary : 66
+    Unary : 67
+    --
+  prev:
+    0x16b1760 Zonal
+  next:
+
+--------------------
+***
+
+#define VAR(x) x, x ## v, x ## f
+#define TYPE_VAR(t,x) global t * x , t x ## v , uchar x ## f
+
+#define LOAD_L_U8(x) load_L_U8(VAR(x),bc0,bc1,BS0,BS1)
+uchar load_L_U8(TYPE_VAR(uchar,IN), int bc0, int bc1, int BS0, int BS1) { return (INf) ?  INv : IN[(bc1)*BS0+bc0]; }
+
+#define LOAD_L_F32(x) load_L_F32(VAR(x),bc0,bc1,BS0,BS1)
+float load_L_F32(TYPE_VAR(float,IN), int bc0, int bc1, int BS0, int BS1) { return (INf) ?  INv : IN[(bc1)*BS0+bc0]; }
+
+#define LOAD_L_S32(x) load_L_S32(VAR(x),bc0,bc1,BS0,BS1)
+int load_L_S32(TYPE_VAR(int,IN), int bc0, int bc1, int BS0, int BS1) { return (INf) ?  INv : IN[(bc1)*BS0+bc0]; }
+
+void atomicMAX(global uchar *ptr, uchar val) { union {uchar f; int i; } old, new; do { old.i = *(global int*)ptr; new.f = max(old.f,val); } while (atomic_cmpxchg ( (volatile global int*)ptr, old.i, new.i) != old.i); }
+void atomicMIN(global uchar *ptr, uchar val) { union {uchar f; int i; } old, new; do { old.i = *(global int*)ptr; new.f = min(old.f,val); } while (atomic_cmpxchg ( (volatile global int*)ptr, old.i, new.i) != old.i); }
+void atomicSUM(global uchar *ptr, uchar val) { union {uchar f; int i; } old, new; do { old.i = *(global int*)ptr; new.f = old.f + val; } while (atomic_cmpxchg ( (volatile global int*)ptr, old.i, new.i) != old.i); }
+void atomicPROD(global uchar *ptr, uchar val) { union {uchar f; int i; } old, new; do { old.i = *(global int*)ptr; new.f = old.f * val; } while (atomic_cmpxchg ( (volatile global int*)ptr, old.i, new.i) != old.i); }
+
+kernel void krn1156476075183857947
+(
+	global uchar *IN_34, uchar IN_34v, uchar IN_34f,
+	float IN_44v,
+	int IN_48v,
+	int IN_53v,
+	global uchar *OUT_35, int idx_35,
+	global uchar *OUT_36, int idx_36,
+	global uchar *OUT_38, int idx_38,
+	global uchar *OUT_41, int idx_41,
+	global float *OUT_46, int idx_46,
+	global int *OUT_50, int idx_50,
+	global int *OUT_55, int idx_55,
+	const int BS0,
+	const int BS1,
+	const int BC0,
+	const int BC1,
+	const int _GS0, // @
+	const int _GS1, // @
+	const int GN0,
+	const int GN1
+)
+{
+	float F32_44, F32_45, F32_46;
+	uchar U8_34, U8_35, U8_36, U8_38, U8_41;
+	int S32_48, S32_53, S32_49, S32_50, S32_54, S32_55;
+	local uchar U8S_35[256];
+	local uchar U8S_36[256];
+	local uchar U8S_38[256];
+	local uchar U8S_41[256];
+	local float F32S_46[256];
+	local int S32S_50[256];
+	local int S32S_55[256];
+	
+	int gc0 = get_local_id(0);
+	int gc1 = get_local_id(1);
+	int GC0 = get_group_id(0);
+	int GC1 = get_group_id(1);
+	int bc0 = get_global_id(0);
+	int bc1 = get_global_id(1);
+	int GS0 = 16; // @
+	int GS1 = 16; // @
+	
+	// Previous to ZONAL core
+
+	if (bc0 < BS0 && bc1 < BS1)
+	{
+		U8_34 = LOAD_L_U8(IN_34);
+		F32_44 = IN_44v;
+		S32_48 = IN_48v;
+		S32_53 = IN_53v;
+			F32_45 = F32_44 / U8_34;
+			S32_49 = pow(U8_34,S32_48);
+			S32_54 = pow(U8_34,S32_53);
+		U8S_35[(gc1)*GS0+gc0] = U8_34;
+		U8S_36[(gc1)*GS0+gc0] = U8_34;
+		U8S_38[(gc1)*GS0+gc0] = U8_34;
+		U8S_41[(gc1)*GS0+gc0] = U8_34;
+		F32S_46[(gc1)*GS0+gc0] = F32_45;
+		S32S_50[(gc1)*GS0+gc0] = S32_49;
+		S32S_55[(gc1)*GS0+gc0] = S32_54;
+	}
+	else
+	{
+		U8S_35[(gc1)*GS0+gc0] = 0;
+		U8S_36[(gc1)*GS0+gc0] = UCHAR_MAX;
+		U8S_38[(gc1)*GS0+gc0] = 0;
+		U8S_41[(gc1)*GS0+gc0] = 1;
+		F32S_46[(gc1)*GS0+gc0] = 0;
+		S32S_50[(gc1)*GS0+gc0] = 0;
+		S32S_55[(gc1)*GS0+gc0] = 0;
+	}
+	
+	// Zonal core
+
+	for (int i=GS0*GS1/2; i>0; i/=2) {
+		barrier(CLK_LOCAL_MEM_FENCE);
+		if ((gc1)*GS0+gc0 < i)
+		{
+			U8S_35[(gc1)*GS0+gc0] = max(U8S_35[(gc1)*GS0+gc0], U8S_35[(gc1)*GS0+gc0 + i]);
+			U8S_36[(gc1)*GS0+gc0] = min(U8S_36[(gc1)*GS0+gc0], U8S_36[(gc1)*GS0+gc0 + i]);
+			U8S_38[(gc1)*GS0+gc0] = U8S_38[(gc1)*GS0+gc0] + U8S_38[(gc1)*GS0+gc0 + i];
+			U8S_41[(gc1)*GS0+gc0] = U8S_41[(gc1)*GS0+gc0] * U8S_41[(gc1)*GS0+gc0 + i];
+			F32S_46[(gc1)*GS0+gc0] = F32S_46[(gc1)*GS0+gc0] + F32S_46[(gc1)*GS0+gc0 + i];
+			S32S_50[(gc1)*GS0+gc0] = S32S_50[(gc1)*GS0+gc0] + S32S_50[(gc1)*GS0+gc0 + i];
+			S32S_55[(gc1)*GS0+gc0] = S32S_55[(gc1)*GS0+gc0] + S32S_55[(gc1)*GS0+gc0 + i];
+		}
+	}
+	
+	if (gc0 == 0 && gc1 == 0)
+	{
+		atomicMAX( (global char*)OUT_35+idx_35 , U8S_35[(gc1)*GS0+gc0]);
+		atomicMIN( (global char*)OUT_36+idx_36 , U8S_36[(gc1)*GS0+gc0]);
+		atomicSUM( (global char*)OUT_38+idx_38 , U8S_38[(gc1)*GS0+gc0]);
+		atomicPROD( (global char*)OUT_41+idx_41 , U8S_41[(gc1)*GS0+gc0]);
+		atomicSUM( (global char*)OUT_46+idx_46 , F32S_46[(gc1)*GS0+gc0]);
+		atomicSUM( (global char*)OUT_50+idx_50 , S32S_50[(gc1)*GS0+gc0]);
+		atomicSUM( (global char*)OUT_55+idx_55 , S32S_55[(gc1)*GS0+gc0]);
+	}
+	
+	// Posterior to ZONAL core
+
+	if (bc0 < BS0 && bc1 < BS1)
+	{
+	}
+}
+***
+***
+
+#define VAR(x) x, x ## v, x ## f
+#define TYPE_VAR(t,x) global t * x , t x ## v , uchar x ## f
+
+#define LOAD_L_U8(x) load_L_U8(VAR(x),bc0,bc1,BS0,BS1)
+uchar load_L_U8(TYPE_VAR(uchar,IN), int bc0, int bc1, int BS0, int BS1) { return (INf) ?  INv : IN[(bc1)*BS0+bc0]; }
+
+#define LOAD_L_S32(x) load_L_S32(VAR(x),bc0,bc1,BS0,BS1)
+int load_L_S32(TYPE_VAR(int,IN), int bc0, int bc1, int BS0, int BS1) { return (INf) ?  INv : IN[(bc1)*BS0+bc0]; }
+
+#define LOAD_L_F32(x) load_L_F32(VAR(x),bc0,bc1,BS0,BS1)
+float load_L_F32(TYPE_VAR(float,IN), int bc0, int bc1, int BS0, int BS1) { return (INf) ?  INv : IN[(bc1)*BS0+bc0]; }
+
+void atomicSUM(global int *ptr, int val) { union {int f; int i; } old, new; do { old.i = *(global int*)ptr; new.f = old.f + val; } while (atomic_cmpxchg ( (volatile global int*)ptr, old.i, new.i) != old.i); }
+
+kernel void krn14546258303695887199
+(
+	global uchar *IN_34, uchar IN_34v, uchar IN_34f,
+	uchar IN_35v,
+	uchar IN_36v,
+	uchar IN_38v,
+	int IN_39v,
+	float IN_46v,
+	int IN_48v,
+	int IN_50v,
+	int IN_55v,
+	global int *OUT_60, int idx_60,
+	global int *OUT_65, int idx_65,
+	const int BS0,
+	const int BS1,
+	const int BC0,
+	const int BC1,
+	const int _GS0, // @
+	const int _GS1, // @
+	const int GN0,
+	const int GN1
+)
+{
+	float F32_46, F32_47;
+	uchar U8_34, U8_35, U8_36, U8_38, U8_37;
+	int S32_39, S32_48, S32_50, S32_55, S32_40, S32_51, S32_52, S32_56, S32_57, S32_58, S32_59, S32_60, S32_63, S32_64, S32_65;
+	local int S32S_60[256];
+	local int S32S_65[256];
+	
+	int gc0 = get_local_id(0);
+	int gc1 = get_local_id(1);
+	int GC0 = get_group_id(0);
+	int GC1 = get_group_id(1);
+	int bc0 = get_global_id(0);
+	int bc1 = get_global_id(1);
+	int GS0 = 16; // @
+	int GS1 = 16; // @
+	
+	// Previous to ZONAL core
+
+	if (bc0 < BS0 && bc1 < BS1)
+	{
+		U8_34 = LOAD_L_U8(IN_34);
+		U8_35 = IN_35v;
+		U8_36 = IN_36v;
+		U8_38 = IN_38v;
+		S32_39 = IN_39v;
+		S32_48 = IN_48v;
+			U8_37 = U8_35 - U8_36;
+			S32_40 = U8_38 / S32_39;
+			S32_58 = U8_34 - S32_40;
+			S32_59 = pow(S32_58,S32_48);
+			S32_63 = S32_59 - U8_36;
+			S32_64 = S32_63 / U8_37;
+		S32S_60[(gc1)*GS0+gc0] = S32_59;
+		S32S_65[(gc1)*GS0+gc0] = S32_64;
+	}
+	else
+	{
+		S32S_60[(gc1)*GS0+gc0] = 0;
+		S32S_65[(gc1)*GS0+gc0] = 0;
+	}
+	
+	// Zonal core
+
+	for (int i=GS0*GS1/2; i>0; i/=2) {
+		barrier(CLK_LOCAL_MEM_FENCE);
+		if ((gc1)*GS0+gc0 < i)
+		{
+			S32S_60[(gc1)*GS0+gc0] = S32S_60[(gc1)*GS0+gc0] + S32S_60[(gc1)*GS0+gc0 + i];
+			S32S_65[(gc1)*GS0+gc0] = S32S_65[(gc1)*GS0+gc0] + S32S_65[(gc1)*GS0+gc0 + i];
+		}
+	}
+	
+	if (gc0 == 0 && gc1 == 0)
+	{
+		atomicSUM( (global char*)OUT_60+idx_60 , S32S_60[(gc1)*GS0+gc0]);
+		atomicSUM( (global char*)OUT_65+idx_65 , S32S_65[(gc1)*GS0+gc0]);
+	}
+	
+	// Posterior to ZONAL core
+
+	if (bc0 < BS0 && bc1 < BS1)
+	{
+		F32_46 = IN_46v;
+		S32_50 = IN_50v;
+		S32_55 = IN_55v;
+			F32_47 = S32_39 / F32_46;
+			S32_51 = S32_50 / S32_39;
+			S32_52 = sqrt(S32_51);
+			S32_56 = S32_55 / S32_39;
+			S32_57 = cbrt(S32_56);
+	}
+}
+***
+--- Tasks --- 4
+Zonal  0
+  NumDim: D2, DataSize: {4096,4096}, BlockSize: {256,256}, NumBlock: {16,16}
+InList: 4, OutList: 7
+  prev:
+  next:
+    0x16b2cf0
+    0x16b36c0
+
+Local  1
+  NumDim: D0, DataSize: {}, BlockSize: {}, NumBlock: {}
+InList: 2, OutList: 0
+  prev:
+    0x16b2ab0
+  next:
+
+Zonal  2
+  NumDim: D2, DataSize: {4096,4096}, BlockSize: {256,256}, NumBlock: {16,16}
+InList: 9, OutList: 2
+  prev:
+    0x16b2ab0
+  next:
+    0x16b4480
+
+Local  3
+  NumDim: D0, DataSize: {}, BlockSize: {}, NumBlock: {}
+InList: 3, OutList: 0
+  prev:
+    0x16b36c0
+  next:
+
+-2:4575
+"/tmp/OCL22079T0.cl", line 71: error: more than one instance of overloaded
+          function "pow" matches the argument list:
+            function "pow(float, float) C++"
+            function "pow(float2, float2) C++"
+            function "pow(float3, float3) C++"
+            function "pow(float4, float4) C++"
+            function "pow(float8, float8) C++"
+            function "pow(float16, float16) C++"
+            function "pow(double, double) C++"
+            function "pow(double2, double2) C++"
+            function "pow(double3, double3) C++"
+            function "pow(double4, double4) C++"
+            function "pow(double8, double8) C++"
+            function "pow(double16, double16) C++"
+            argument types are: (uchar, int)
+  			S32_49 = pow(U8_34,S32_48);
+  			         ^
+
+"/tmp/OCL22079T0.cl", line 72: error: more than one instance of overloaded
+          function "pow" matches the argument list:
+            function "pow(float, float) C++"
+            function "pow(float2, float2) C++"
+            function "pow(float3, float3) C++"
+            function "pow(float4, float4) C++"
+            function "pow(float8, float8) C++"
+            function "pow(float16, float16) C++"
+            function "pow(double, double) C++"
+            function "pow(double2, double2) C++"
+            function "pow(double3, double3) C++"
+            function "pow(double4, double4) C++"
+            function "pow(double8, double8) C++"
+            function "pow(double16, double16) C++"
+            argument types are: (uchar, int)
+  			S32_54 = pow(U8_34,S32_53);
+  			         ^
+
+"/tmp/OCL22079T0.cl", line 110: warning: argument of type "__global char *" is
+          incompatible with parameter of type "__global uchar *"
+  		atomicMAX( (global char*)OUT_35+idx_35 , U8S_35[(gc1)*GS0+gc0]);
+  		           ^
+
+"/tmp/OCL22079T0.cl", line 111: warning: argument of type "__global char *" is
+          incompatible with parameter of type "__global uchar *"
+  		atomicMIN( (global char*)OUT_36+idx_36 , U8S_36[(gc1)*GS0+gc0]);
+  		           ^
+
+"/tmp/OCL22079T0.cl", line 112: warning: argument of type "__global char *" is
+          incompatible with parameter of type "__global uchar *"
+  		atomicSUM( (global char*)OUT_38+idx_38 , U8S_38[(gc1)*GS0+gc0]);
+  		           ^
+
+"/tmp/OCL22079T0.cl", line 113: warning: argument of type "__global char *" is
+          incompatible with parameter of type "__global uchar *"
+  		atomicPROD( (global char*)OUT_41+idx_41 , U8S_41[(gc1)*GS0+gc0]);
+  		            ^
+
+"/tmp/OCL22079T0.cl", line 114: warning: argument of type "__global char *" is
+          incompatible with parameter of type "__global uchar *"
+  		atomicSUM( (global char*)OUT_46+idx_46 , F32S_46[(gc1)*GS0+gc0]);
+  		           ^
+
+"/tmp/OCL22079T0.cl", line 115: warning: argument of type "__global char *" is
+          incompatible with parameter of type "__global uchar *"
+  		atomicSUM( (global char*)OUT_50+idx_50 , S32S_50[(gc1)*GS0+gc0]);
+  		           ^
+
+"/tmp/OCL22079T0.cl", line 116: warning: argument of type "__global char *" is
+          incompatible with parameter of type "__global uchar *"
+  		atomicSUM( (global char*)OUT_55+idx_55 , S32S_55[(gc1)*GS0+gc0]);
+  		           ^
+
+"/tmp/OCL22079T0.cl", line 42: warning: variable "F32_46" was declared but
+          never referenced
+  	float F32_44, F32_45, F32_46;
+  	                      ^
+
+"/tmp/OCL22079T0.cl", line 43: warning: variable "U8_35" was declared but
+          never referenced
+  	uchar U8_34, U8_35, U8_36, U8_38, U8_41;
+  	             ^
+
+"/tmp/OCL22079T0.cl", line 43: warning: variable "U8_36" was declared but
+          never referenced
+  	uchar U8_34, U8_35, U8_36, U8_38, U8_41;
+  	                    ^
+
+"/tmp/OCL22079T0.cl", line 43: warning: variable "U8_38" was declared but
+          never referenced
+  	uchar U8_34, U8_35, U8_36, U8_38, U8_41;
+  	                           ^
+
+"/tmp/OCL22079T0.cl", line 43: warning: variable "U8_41" was declared but
+          never referenced
+  	uchar U8_34, U8_35, U8_36, U8_38, U8_41;
+  	                                  ^
+
+"/tmp/OCL22079T0.cl", line 44: warning: variable "S32_50" was declared but
+          never referenced
+  	int S32_48, S32_53, S32_49, S32_50, S32_54, S32_55;
+  	                            ^
+
+"/tmp/OCL22079T0.cl", line 44: warning: variable "S32_55" was declared but
+          never referenced
+  	int S32_48, S32_53, S32_49, S32_50, S32_54, S32_55;
+  	                                            ^
+
+2 errors detected in the compilation of "/tmp/OCL22079T0.cl".
+Frontend phase failed compilation.
+
