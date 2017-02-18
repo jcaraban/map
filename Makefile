@@ -1,7 +1,7 @@
 # Compiler
 CC = g++
 # -O3 -march=native -mtune=native
-CFLAGS = -std=c++11 -m64 -fpic -O0 -g
+CFLAGS = -std=c++11 -m64 -fpic -O2
 IDIR = -I/opt/AMDAPP/include/ -I/usr/local/cuda/include/
 LDIR = 
 LIBS = -ltiff -pthread
@@ -51,58 +51,7 @@ DEP = $(O_ALL)
 .cpp.o: $(O_ALL)
 	$(CC) $(CFLAGS) $(IDIR) -c $< -o $@
 
-# TODO: try static pattern rule to eliminate the code-bloat below
-
-main: $(DEP) bin/main.cpp
-	$(CC) $(CFLAGS) $(IDIR) $(DEP) bin/main.cpp $(LDFLAGS) -o $@
-
-wsum: $(DEP) bin/wsum.cpp
-	$(CC) $(CFLAGS) $(IDIR) $(DEP) bin/wsum.cpp $(LDFLAGS) -o $@
-
-diver: $(DEP) bin/diver.cpp
-	$(CC) $(CFLAGS) $(IDIR) $(DEP) bin/diver.cpp $(LDFLAGS) -o $@
-
-stats: $(DEP) bin/stats.cpp
-	$(CC) $(CFLAGS) $(IDIR) $(DEP) bin/stats.cpp $(LDFLAGS) -o $@
-
-hill: $(DEP) bin/hill.cpp
-	$(CC) $(CFLAGS) $(IDIR) $(DEP) bin/hill.cpp $(LDFLAGS) -o $@
-
-focal: $(DEP) bin/focal.cpp
-	$(CC) $(CFLAGS) $(IDIR) $(DEP) bin/focal.cpp $(LDFLAGS) -o $@
-
-life: $(DEP) bin/life.cpp
-	$(CC) $(CFLAGS) $(IDIR) $(DEP) bin/life.cpp $(LDFLAGS) -o $@
-
-seism: $(DEP) bin/seism.cpp
-	$(CC) $(CFLAGS) $(IDIR) $(DEP) bin/seism.cpp $(LDFLAGS) -o $@
-
-view: $(DEP) bin/view.cpp
-	$(CC) $(CFLAGS) $(IDIR) $(DEP) bin/view.cpp $(LDFLAGS) -o $@
-
-flow: $(DEP) bin/flow.cpp
-	$(CC) $(CFLAGS) $(IDIR) $(DEP) bin/flow.cpp $(LDFLAGS) -o $@
-
-urban: $(DEP) bin/urban.cpp
-	$(CC) $(CFLAGS) $(IDIR) $(DEP) bin/urban.cpp $(LDFLAGS) -o $@
-
-urban_mc: $(DEP) bin/urban_mc.cpp
-	$(CC) $(CFLAGS) $(IDIR) $(DEP) bin/urban_mc.cpp $(LDFLAGS) -o $@
-
-urban_ga: $(DEP) bin/urban_ga.cpp
-	$(CC) $(CFLAGS) $(IDIR) $(DEP) bin/urban_ga.cpp $(LDFLAGS) -o $@
-
-water: $(DEP) bin/water.cpp
-	$(CC) $(CFLAGS) $(IDIR) $(DEP) bin/water.cpp $(LDFLAGS) -o $@
-
-olive: $(DEP) bin/olive.cpp
-	$(CC) $(CFLAGS) $(IDIR) $(DEP) bin/olive.cpp $(LDFLAGS) -o $@
-
-file_translate: $(DEP) bin/file_translate.cpp
-	$(CC) $(CFLAGS) $(IDIR) $(DEP) bin/file_translate.cpp $(LDFLAGS) -o $@
-
-gen_data: $(DEP) bin/gen_data.cpp
-	$(CC) $(CFLAGS) $(IDIR) $(DEP) bin/gen_data.cpp $(LDFLAGS) -o $@
+# libmap.so
 
 library: $(DEP)
 	$(CC) $(CFLAGS) $(IDIR) $(DEP) -shared $(LDFLAGS) -o libmap.so
