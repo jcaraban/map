@@ -1,0 +1,16 @@
+# Ignore everything
+
+*
+
+# But not these files...
+
+!.gitignore
+!wsum.py
+!stats.py
+!hill.py
+!life.py
+!view.py
+
+# ...even if they are in subdirectories
+
+!*/
