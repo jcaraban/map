@@ -6,6 +6,7 @@
  *
  * TODO: fusioner should not touch 'Runtime::group_list' but return a Structure from fuse()
  *       the struct should contain the 'group_list' and a 'group_list_of'
+ *
  */
 
 #ifndef MAP_RUNTIME_VISITOR_FUSIONER_HPP_
