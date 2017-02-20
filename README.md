@@ -10,22 +10,9 @@ The Python script below depicts the classic hillshade algorithm according to Hor
 The input raster dataset is Digital Elevation Model representing the elevation of the earth surface as a matrix of floating point values.
 The script computes the derivatives of the elevation (through convolutions) and matches them to the azimuth and altitude angles of the sun in order to draw a self-shadowing effect that creates a sense of topographic relief.
 
-<style>
-  .col2 { /* http://stackoverflow.com/questions/31753897/2-column-section-in-r-markdown */
-    columns: 2 200px;         /* number of columns and width in pixels*/
-    -webkit-columns: 2 200px; /* chrome, safari */
-    -moz-columns: 2 200px;    /* firefox */
-  }
-</style>
-
-<div class="col2">
-```
-head(mtcars)
-tail(mtcars)
-```
-</div>
-
-<div class="col2">
+<table>
+<tr>
+<td>
 ~~~~~~~~~~~~~~~{.py}
 	from map import * ## Parallel Map Algebra
 	PI = 3.141593
@@ -73,7 +60,12 @@ tail(mtcars)
 	write(out,'out_file_path')
 
 ~~~~~~~~~~~~~~~
-</div>
+</td>
+<td>
+
+</td>
+</tr>
+</table>
 
 ## Wiki
 If you wish to know more about the , other sample scripts and extended information can be found in the wiki:
