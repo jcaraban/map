@@ -1,14 +1,17 @@
 # Compiler + Parallel + Map Algebra
-Map Algebra is a mathematical formalism for the processing and analysis of raster geographical data ("Geographic Information Systems and Cartographic Modelling," Tomlin 1990). Relevant operations cover from convolutions, reductions and element-wise functions to complex iterative algorithms like hydrological and least cost analysis. Map Algebra becomes a powerful spatial modeling framework when embedded into a scripting language and augmented with branching, looping and callable functions.
+Map Algebra is a mathematical formalism for the processing and analysis of raster geographical data ("Geographic Information Systems and Cartographic Modelling," Tomlin 1990). Map Algebra becomes a powerful spatial modeling framework when embedded into a scripting language and augmented with branching, looping and callable functions.
 
-For my PhD I design a Parallel Map Algebra implementation that runs efficiently on OpenCL devices. Users write sequential single-source Python scripts and the framework generates and executes parallel code automatically. Compiler techniques are at the core of system, from dependency analysis to loop fusion. They key challenge is minimizing data movements throughout the memory hierarchy, since they pose the major bottleneck to performance.
+Operations in Map Algebra take and return full rasters. They belong to one of several classes:
+* **Local**: access single raster cells (*element-wise/ map* pattern)
+* **Focal**: access bounded neighborhoods (*stencil/ convolution* pattern)
+* **Zonal**: access any cell with associative order (*reduction* pattern)
+* **Global**: access any cell following some particular topological order
+⋅⋅············e.g. viewshed, hydrological modeling, least cost analysis...
 
-Jesús Carabaño Bravo <jcaraban@abo.fi>
+For my PhD I design a Parallel Map Algebra implementation that runs efficiently on OpenCL devices. Users write sequential single-source Python scripts and the framework generates and executes parallel code automatically. Compiler techniques are at the core of system, from dependency analysis to loop fusion. They key challenge is minimizing memory movements, since they pose the major bottleneck to performance.
 
-## Sample Script
-The Python script below depicts the classic hillshade algorithm according to Horn 1982. A extended explanion can be found in the wiki.
-The input raster dataset is Digital Elevation Model representing the elevation of the earth surface as a matrix of floating point values.
-The script computes the derivatives of the elevation (through convolutions) and matches them to the azimuth and altitude angles of the sun in order to draw a self-shadowing effect that creates a sense of topographic relief.
+## Sample script: *Hillshade*
+The following Python script depicts a hillshade algorithm (Horn 1981). A extended explanion can be found in the [wiki](https://github.com/jcaraban/map/wiki/Hillshade). Hillshade computes the derivatives of a DEM and matches them to the azimuth and altitude angles of the sun in order to draw a self-shadowing effect that creates a sense of topographic relief.
 
 ```{.py}
 	from map import * ## Parallel Map Algebra
@@ -81,6 +84,7 @@ make library && cd python
 python hill.py input-raster.tif output-raster.tif > log.txt
 ```
 ## Contact
-Questions? Contact me through mail, GitHub, or linkedin!
-*Jesús Carabaño Bravo <jcaraban@abo.fi>*
-PhD Student at Åbo Akademi University, Finland
+Questions? Contact me through [mail](jcaraban@abo.fi)!
+
+*Jesús Carabaño Bravo <jcaraban@abo.fi>*, 
+PhD Student at Åbo Akademi University, Finland  
