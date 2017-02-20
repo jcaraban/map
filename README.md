@@ -1,7 +1,7 @@
-# Compiler approach to Parallel Map Algebra
+# Compiler + Parallel + Map Algebra
 Map Algebra is a mathematical formalism for the processing and analysis of raster geographical data ("Geographic Information Systems and Cartographic Modelling," Tomlin 1990). Relevant operations cover from convolutions, reductions and element-wise functions to complex iterative algorithms like hydrological and least cost analysis. Map Algebra becomes a powerful spatial modeling framework when embedded into a scripting language and augmented with branching, looping and callable functions.
 
-For my PhD I design a Parallel Map Algebra implementation that runs efficiently on OpenCL devices. Users write sequential single-source Python scripts and the framework generates and executes parallel code automatically. Compiler techniques are at the core of system, from dependency analysis to loop fusion. They key challenge is minimizing data movements at multiple levels of the memory hierarchy, since they pose the major bottleneck to performance.
+For my PhD I design a Parallel Map Algebra implementation that runs efficiently on OpenCL devices. Users write sequential single-source Python scripts and the framework generates and executes parallel code automatically. Compiler techniques are at the core of system, from dependency analysis to loop fusion. They key challenge is minimizing data movements throughout the memory hierarchy, since they pose the major bottleneck to performance.
 
 Jesús Carabaño Bravo <jcaraban@abo.fi>
 
@@ -10,7 +10,16 @@ The Python script below depicts the classic hillshade algorithm according to Hor
 The input raster dataset is Digital Elevation Model representing the elevation of the earth surface as a matrix of floating point values.
 The script computes the derivatives of the elevation (through convolutions) and matches them to the azimuth and altitude angles of the sun in order to draw a self-shadowing effect that creates a sense of topographic relief.
 
-~~~~~~~~~~~~~~~{.py}
+<style>
+  .col2 { /* http://stackoverflow.com/questions/31753897/2-column-section-in-r-markdown */
+    columns: 2 200px;         /* number of columns and width in pixels*/
+    -webkit-columns: 2 200px; /* chrome, safari */
+    -moz-columns: 2 200px;    /* firefox */
+  }
+</style>
+
+<div class="col2">
+```{.py}
 	from map import * ## Parallel Map Algebra
 	PI = 3.141593
 
@@ -56,7 +65,8 @@ The script computes the derivatives of the elevation (through convolutions) and 
 	out = hillshade(dem,45,315)
 	write(out,'out_file_path')
 
-~~~~~~~~~~~~~~~
+```
+</div>
 
 ## Wiki
 If you wish to know more about the , other sample scripts and extended information can be found in the wiki:
@@ -68,9 +78,11 @@ If you wish to know more about the , other sample scripts and extended informati
 
 ## Requirements
 This project has been developed and tested with:
+
 * Python 2.7, CPython implementation
 * OpenCL 1.2, Intel and AMD implementations
 * GCC C++ compiler, any version with c++11 support
+
 Other compilers / OpenCl drivers are probably compatible, but have not been tested.
 
 ## Build
