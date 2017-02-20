@@ -6,13 +6,12 @@ Operations in Map Algebra only take and return *rasters*. They belong to one of 
 * **Focal**: access bounded neighborhoods (*stencil/ convolution* pattern)
 * **Zonal**: access any cell with associative order (*reduction* pattern)
 * **Global**: access any cell following some particular topological order
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-e.g. viewshed, hydrological modeling, least cost analysis...
+            * e.g. viewshed, hydrological modeling, least cost analysis...
 
 For my PhD I design a Parallel Map Algebra implementation that runs efficiently on OpenCL devices. Users write sequential single-source Python scripts and the framework generates and executes parallel code automatically. Compiler techniques are at the core of system, from dependency analysis to loop fusion. They key challenge is minimizing memory movements, since they pose the major bottleneck to performance.
 
 ## Sample script: *Hillshade*
-The following Python script depicts a hillshade algorithm (Horn 1981). A extended explanion can be found in the [wiki](https://github.com/jcaraban/map/wiki/Hillshade). Hillshade computes the derivatives of a DEM and matches them to the azimuth and altitude angles of the sun in order to draw a self-shadowing effect that creates a sense of topographic relief.
+The following script depicts a hillshade algorithm (Horn 1981). Hillshade computes the derivatives of a DEM and matches them to the azimuth and altitude of the sun to draw a self-shadowing effect that creates a sense of topographic relief.
 
 ```{.py}
 	from map import * ## Parallel Map Algebra
@@ -60,12 +59,14 @@ The following Python script depicts a hillshade algorithm (Horn 1981). A extende
 	out = hillshade(dem,45,315)
 	write(out,'out_file_path')
 ```
+Next the Map Algebra framework transforms this script into a dependency graph, fuses the operations and generates OpenCL code.
+Then the rasters are decomposed into blocks and the script is executed as a batch of jobs presenting task- and data-based parallelism.
+More detailed explanion can be found in the [wiki](https://github.com/jcaraban/map/wiki).
 
 ## Wiki
-If you wish to know more about the , other sample scripts and extended information can be found in the wiki:
+If you wish to know more about the approach, see the rest of scripts and the explanations in the wiki:
 * Compiler approach to Parallel Map Algebra (<-- link)
-* [Hillshade](github.com/jcaraban/map/wiki/Hillshade), [Statistics](github.com/jcaraban/map/wiki/Statistics), [Viewshed](github.com/jcaraban/map/wiki/Viewshed)
-* Conway's Game of [Life](github.com/jcaraban/map/wiki/Life)
+* [Hillshade](github.com/jcaraban/map/wiki/Hillshade) extended, [Statistics](github.com/jcaraban/map/wiki/Statistics) i.e. mean/max/std, [Viewshed](github.com/jcaraban/map/wiki/Viewshed) analysis, Game of [Life](github.com/jcaraban/map/wiki/Life)
 * Cellular Automata for [Urban Growth](github.com/jcaraban/map/wiki/Urban)
 * ...
 
@@ -85,6 +86,6 @@ make library && cd python
 python hill.py input-raster.tif output-raster.tif > log.txt
 ```
 ## Contact
-Questions? Contact me through [mail](jcaraban@abo.fi)!
+Questions? Contact me through [mail](mailto:jcaraban@abo.fi)!
 
 **Jesús Carabaño Bravo** <jcaraban@abo.fi> | PhD Student at Åbo Akademi, Finland  
