@@ -11,15 +11,20 @@ The input raster dataset is Digital Elevation Model representing the elevation o
 The script computes the derivatives of the elevation (through convolutions) and matches them to the azimuth and altitude angles of the sun in order to draw a self-shadowing effect that creates a sense of topographic relief.
 
 <style>
-  .col2 { /* http://stackoverflow.com/questions/31753897/2-column-section-in-r-markdown */
+  .col2 {
     columns: 2 200px;         /* number of columns and width in pixels*/
     -webkit-columns: 2 200px; /* chrome, safari */
     -moz-columns: 2 200px;    /* firefox */
   }
+  .col3 {
+    columns: 3 100px;
+    -webkit-columns: 3 100px;
+    -moz-columns: 3 100px;
+  }
 </style>
 
 <div class="col2">
-```{.py}
+~~~~~~~~~~~~~~~{.py}
 	from map import * ## Parallel Map Algebra
 	PI = 3.141593
 
@@ -65,7 +70,7 @@ The script computes the derivatives of the elevation (through convolutions) and 
 	out = hillshade(dem,45,315)
 	write(out,'out_file_path')
 
-```
+~~~~~~~~~~~~~~~
 </div>
 
 ## Wiki
