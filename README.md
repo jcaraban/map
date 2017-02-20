@@ -10,10 +10,11 @@ The Python script below depicts the classic hillshade algorithm according to Hor
 The input raster dataset is Digital Elevation Model representing the elevation of the earth surface as a matrix of floating point values.
 The script computes the derivatives of the elevation (through convolutions) and matches them to the azimuth and altitude angles of the sun in order to draw a self-shadowing effect that creates a sense of topographic relief.
 
-```{.py}
 <table>
 <tr>
 <td>
+<div makrdown="1">
+```{.py}
 	from map import * ## Parallel Map Algebra
 	PI = 3.141593
 
@@ -58,13 +59,15 @@ The script computes the derivatives of the elevation (through convolutions) and 
 	dem = read('in_file_path')
 	out = hillshade(dem,45,315)
 	write(out,'out_file_path')
+
+```
+</div>
 </td>
 <td>
 
 </td>
 </tr>
 </table>
-```
 
 ## Wiki
 If you wish to know more about the , other sample scripts and extended information can be found in the wiki:
