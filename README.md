@@ -13,7 +13,7 @@ The script computes the derivatives of the elevation (through convolutions) and 
 <table>
 <tr>
 <td>
-~~~~~~~~~~~~~~~{.py}
+```{.py}
 	from map import * ## Parallel Map Algebra
 	PI = 3.141593
 
@@ -59,7 +59,7 @@ The script computes the derivatives of the elevation (through convolutions) and 
 	out = hillshade(dem,45,315)
 	write(out,'out_file_path')
 
-~~~~~~~~~~~~~~~
+```
 </td>
 <td>
 
