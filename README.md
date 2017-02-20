@@ -1,12 +1,13 @@
 # Compiler + Parallel + Map Algebra
-Map Algebra is a mathematical formalism for the processing and analysis of raster geographical data ("Geographic Information Systems and Cartographic Modelling," Tomlin 1990). Map Algebra becomes a powerful spatial modeling framework when embedded into a scripting language and augmented with branching, looping and callable functions.
+Map Algebra is a mathematical formalism for the processing and analysis of raster geographical data ("Geographic Information Systems and Cartographic Modelling," Tomlin 1990). Map Algebra becomes a powerful spatial modeling framework when embedded into a scripting language with branching, looping and functions.
 
-Operations in Map Algebra take and return full rasters. They belong to one of several classes:
+Operations in Map Algebra only take and return *rasters*. They belong to one of several *classes*:
 * **Local**: access single raster cells (*element-wise/ map* pattern)
 * **Focal**: access bounded neighborhoods (*stencil/ convolution* pattern)
 * **Zonal**: access any cell with associative order (*reduction* pattern)
 * **Global**: access any cell following some particular topological order
-⋅⋅············e.g. viewshed, hydrological modeling, least cost analysis...
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+e.g. viewshed, hydrological modeling, least cost analysis...
 
 For my PhD I design a Parallel Map Algebra implementation that runs efficiently on OpenCL devices. Users write sequential single-source Python scripts and the framework generates and executes parallel code automatically. Compiler techniques are at the core of system, from dependency analysis to loop fusion. They key challenge is minimizing memory movements, since they pose the major bottleneck to performance.
 
@@ -63,9 +64,9 @@ The following Python script depicts a hillshade algorithm (Horn 1981). A extende
 ## Wiki
 If you wish to know more about the , other sample scripts and extended information can be found in the wiki:
 * Compiler approach to Parallel Map Algebra (<-- link)
-* Hillshade, Statistics, Viewshed
-* Conway's Game of Life
-* Cellular Automata for Urban Development
+* [Hillshade](github.com/jcaraban/map/wiki/Hillshade), [Statistics](github.com/jcaraban/map/wiki/Statistics), [Viewshed](github.com/jcaraban/map/wiki/Viewshed)
+* Conway's Game of [Life](github.com/jcaraban/map/wiki/Life)
+* Cellular Automata for [Urban Growth](github.com/jcaraban/map/wiki/Urban)
 * ...
 
 ## Requirements
@@ -86,5 +87,4 @@ python hill.py input-raster.tif output-raster.tif > log.txt
 ## Contact
 Questions? Contact me through [mail](jcaraban@abo.fi)!
 
-*Jesús Carabaño Bravo <jcaraban@abo.fi>*, 
-PhD Student at Åbo Akademi University, Finland  
+**Jesús Carabaño Bravo** <jcaraban@abo.fi> | PhD Student at Åbo Akademi, Finland  
