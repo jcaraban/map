@@ -26,9 +26,9 @@ The following script depicts a hillshade algorithm (Horn 1981). It computes and 
 	def vert(dem, dist):							# Raster copies like in 'd = dem' are optimized away
 		d = dem
 		v = 1*d(-1,-1) +2*d(0,-1) +1*d(1,-1)		# An alternative way of applying Focal Ops is through the
-		   +0*d(-1,0)  +0*d(0,0)  +0*d(1,0)			# __call__ operator and the relative neighbor coordinate
-		   -1*d(-1,1)  -2*d(0,1)  -1*d(1,1)			# This code is virtually similar to the one above,
-		return v / 8 / dist 						# it just uses a different set of weights
+		   +0*d(-1,0)  +0*d(0,0)  +0*d(1,0)			# __call__ operator and the relative neighbor coordinates
+		   -1*d(-1,1)  -2*d(0,1)  -1*d(1,1)			# This code is virtually similar to the convolution above,
+		return v / 8 / dist 						# but it uses different weights (i.e. vertical derivative)
 
 	def slope(dem, dist=1):							
 		x = hori(dem,dist)							# Since functions are 'inlined', the framework can apply
@@ -40,9 +40,9 @@ The following script depicts a hillshade algorithm (Horn 1981). It computes and 
 		x = hori(dem,dist)							# interprocedural optimizations also happen in nested scopes
 		y = vert(dem,dist)							# e.g. when both 'slope' and 'aspect' call 'hori' and 'vert'
 		z1 = (x!=0) * atan2(y,-x)
-		z1 = z1 + (z1<0) * (PI*2)					# Currently we levarage a pure dataflow model, with no
+		z1 = z1 + (z1<0) * (PI*2)					# Currently we employ a pure data flow model with no
 		z0 = (x==0) * ((y>0)*(PI/2)					# control flow graph, thus 'branching' is not possible.
-		   + (y<0)*(PI*2-PI/2))						# the alternative is to use the con(bool,if,else) function
+		   + (y<0)*(PI*2-PI/2))						# The alternative is to use the con(bool,if,else) function
 		return z1 + z0								# or the boolean technique employed in the code to the left
 
 	def hillshade(dem, zenith, azimuth):			# The framework applies ordinary compilers techniques:
@@ -60,6 +60,7 @@ The following script depicts a hillshade algorithm (Horn 1981). It computes and 
 	write(out,'out_file_path')						# And finally we write the output results, the hillshade!
 ```
 When the framework executes the script, operations are not issued right away. Instead we compose a dependency graph to later fuse the operations and generate efficient OpenCL code. Then the rasters are decomposed into blocks and the parallel code is executed as a batch of tasks.
+![](https://raw.githubusercontent.com/wiki/jcaraban/map/hill.png)
 
 ## [Wiki](https://github.com/jcaraban/map/wiki)
 If you wish to know more about the approach, see the rest of scripts and the explanations in the wiki:
