@@ -1,14 +1,14 @@
 # Compiler + Parallel + Map Algebra
-**Map Algebra** is a mathematical formalism for the processing and analysis of raster geographical data ("Geographic Information Systems and Cartographic Modelling," Tomlin 1990). Map Algebra becomes a powerful spatial modeling framework when embedded into a scripting language with branching, looping and functions.
+**Map Algebra** is a mathematical formalism for the processing and analysis of raster geographical data (see "*Geographic Information Systems and Cartographic Modelling*," Tomlin 1990). Map Algebra becomes a powerful spatial modeling framework when embedded into a scripting language with branching, looping and functions.
 
-Operations in Map Algebra only take and return **rasters**. They belong to one of several **classes**:
+Operations in Map Algebra only take and return **rasters**. They belong to one of several classes:
 * **Local**: access single raster cells (**element-wise/ map** *pattern*)
 * **Focal**: access bounded neighborhoods (**stencil/ convolution** *pattern*)
 * **Zonal**: access any cell with associative order (**reduction** *pattern*)
 * **Global**: access any cell following some particular topological order
- * e.g. **viewshed**, **hydrological modeling**, **least cost analysis**...
+ * e.g. **viewshed** analysis, **least cost** analysis, **hydrological** modeling...
 
-For my PhD I design a Parallel Map Algebra implementation that runs efficiently on OpenCL devices. Users write sequential single-source Python scripts and the framework generates and executes parallel code automatically. Compiler techniques are at the core of system, from dependency analysis to loop fusion. They key challenge is minimizing memory movements, since they pose the major bottleneck to performance.
+For my **PhD** I design a Parallel Map Algebra implementation that runs efficiently on **OpenCL** devices. Users write sequential single-source **Python** scripts and the framework generates and executes kernel code automatically. **Compiler** techniques are at the core of system, from dependency analysis to **loop fusion**. They key challenge is maximizing **data locality**, since the memory movements pose the major bottleneck to performance.
 
 ## Sample script: *Hillshade*
 The following script depicts a hillshade algorithm (Horn 1981). It computes and matches the derivatives of a DEM to the azimuth and altitude of the sun to achieve an effect of topographic relief.
@@ -50,8 +50,8 @@ The following script depicts a hillshade algorithm (Horn 1981). It computes and 
 		ar = 360 - float(azimuth) + 90				# copy propagation, common subexpression elimination and
 		ar = ar - 360 if (ar > 360) else ar			# dead code elimination. e.g. all this constants are folded.
 		ar = ar / 180 * PI 							
-		hs = cos(zr) * cos(slope(dem)) +			# Note how simply is the code, yet it generates parallel
-			 sin(zr) * sin(slope(dem)) *			# OpenCL code that executes in powerful GPU devices.
+		hs = cos(zr) * cos(slope(dem)) +			# Note how simply is the script, yet it generates parallel
+			 sin(zr) * sin(slope(dem)) *			# OpenCL kernel code that executes in powerful GPU devices.
 			 cos(ar - aspect(dem))
 		return hs									# Oh, and memory is not a limitation, rasters larger than
 													# GPU memory can be processed seamlessly. For example,
@@ -61,7 +61,7 @@ The following script depicts a hillshade algorithm (Horn 1981). It computes and 
 ```
 When the framework executes the script, operations are not issued right away. Instead we compose a dependency graph to later fuse the operations and generate efficient OpenCL code. Then the rasters are decomposed into blocks and the parallel code is executed as a batch of tasks.
 
-![](https://raw.githubusercontent.com/wiki/jcaraban/map/hill.png)
+![](https://raw.githubusercontent.com/wiki/jcaraban/map/hill-image.png)
 
 ## [Wiki](https://github.com/jcaraban/map/wiki)
 If you wish to know more about the approach, go have a look to the scripts and explanations in the wiki:
@@ -86,6 +86,6 @@ make library && cd python
 python hill.py input-raster.tif output-raster.tif > log.txt
 ```
 ## Contact
-Questions? Contact me through [mail](mailto:jcaraban@abo.fi)!
+Questions? Contact me through [email](mailto:jcaraban@abo.fi)!
 
 **Jesús Carabaño Bravo** <jcaraban@abo.fi> | PhD Student at Åbo Akademi, Finland  
