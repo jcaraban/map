@@ -62,7 +62,7 @@ The following script depicts a hillshade algorithm (Horn 1981). It computes and 
 When the Python script is executes the operations are not carried out right away. Instead the framework composes a dependency graph, applies optimizations like fusion and generates OpenCL code. Then the rasters are decomposed into blocks and the parallel code is executed as a batch of tasks.
 See these steps [here](https://github.com/jcaraban/map/wiki/Hillshade).
 
-<img src="https://raw.githubusercontent.com/wiki/jcaraban/map/hill-image.png" width="512">
+<img src="https://raw.githubusercontent.com/wiki/jcaraban/map/hill-image.png" width="768" align="middle">
 
 ## [Wiki](https://github.com/jcaraban/map/wiki)
 If you wish to know more about the approach, go have a look to the scripts and explanations in the wiki:
