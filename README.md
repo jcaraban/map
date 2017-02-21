@@ -8,7 +8,7 @@ Operations in Map Algebra only take and return **rasters**. They belong to one o
 * **Global**: access any cell following some particular topological order
  * e.g. **viewshed** analysis, **least cost** analysis, **hydrological** modeling...
 
-For my **PhD** I design a Parallel Map Algebra implementation that runs efficiently on **OpenCL** devices. Users write sequential single-source **Python** scripts and the framework generates and executes kernel code automatically. **Compiler** techniques are at the core of system, from dependency analysis to **loop fusion**. They key challenge is maximizing **data locality**, since the memory movements pose the major bottleneck to performance.
+For my **PhD** I design a Parallel Map Algebra framework that runs efficiently on **OpenCL** devices. Users write sequential single-source **Python** scripts and the framework generates and executes kernel code automatically. **Compiler** techniques are at the core of system, from dependency analysis to **loop fusion**. They key challenge is maximizing **data locality**, since memory movements pose the major bottleneck to performance.
 
 ## Sample script: *Hillshade*
 The following script depicts a hillshade algorithm (Horn 1981). It computes and matches the derivatives of a DEM to the azimuth and altitude of the sun to achieve an effect of topographic relief.
@@ -59,7 +59,8 @@ The following script depicts a hillshade algorithm (Horn 1981). It computes and 
 	out = hillshade(dem,45,315)
 	write(out,'out_file_path')						# And finally we write the output results, the hillshade!
 ```
-When the framework executes the script, operations are not issued right away. Instead we compose a dependency graph to later fuse the operations and generate efficient OpenCL code. Then the rasters are decomposed into blocks and the parallel code is executed as a batch of tasks.
+When the Python script is executes the operations are not carried out right away. Instead the framework composes a dependency graph, applies optimizations like fusion and generates OpenCL code. Then the rasters are decomposed into blocks and the parallel code is executed as a batch of tasks.
+See these steps [here](github.com/jcaraban/map/wiki/Hillshade).
 
 ![](https://raw.githubusercontent.com/wiki/jcaraban/map/hill-image.png)
 
@@ -68,6 +69,7 @@ If you wish to know more about the approach, go have a look to the scripts and e
 * [Compiler approach to Parallel Map Algebra](github.com/jcaraban/map/wiki/Compiler)
 * [Hillshade](github.com/jcaraban/map/wiki/Hillshade) extended, [Statistics](github.com/jcaraban/map/wiki/Statistics) i.e. mean/max/std, [Viewshed](github.com/jcaraban/map/wiki/Viewshed) analysis, Conway's [Game of Life](github.com/jcaraban/map/wiki/Life)
 * Cellular Automata for [Urban Growth](github.com/jcaraban/map/wiki/Urban)
+* Cellular Automata for [Water Flow](github.com/jcaraban/map/wiki/WaterFlow)
 * ...
 
 ## Requirements
@@ -80,7 +82,7 @@ This project has been developed and tested with:
 Other compilers / OpenCl drivers are probably compatible, but have not been tested.
 
 ## Build
-**Note:** this is a research project and the code is only a MVP for testing our research hypothesis. If you still wish to continue: download the source, install the requirements and type:
+**Note:** this is a research project and the code is only a MVP for testing our research hypothesis. If you still wish to continue: download the source, install the requirements and build with make:
 ```
 make library && cd python
 python hill.py input-raster.tif output-raster.tif > log.txt
