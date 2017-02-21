@@ -60,12 +60,13 @@ The following script depicts a hillshade algorithm (Horn 1981). It computes and 
 	write(out,'out_file_path')						# And finally we write the output results, the hillshade!
 ```
 When the framework executes the script, operations are not issued right away. Instead we compose a dependency graph to later fuse the operations and generate efficient OpenCL code. Then the rasters are decomposed into blocks and the parallel code is executed as a batch of tasks.
+
 ![](https://raw.githubusercontent.com/wiki/jcaraban/map/hill.png)
 
 ## [Wiki](https://github.com/jcaraban/map/wiki)
-If you wish to know more about the approach, see the rest of scripts and the explanations in the wiki:
-* Compiler approach to Parallel Map Algebra (<-- link)
-* [Hillshade](github.com/jcaraban/map/wiki/Hillshade) extended, [Statistics](github.com/jcaraban/map/wiki/Statistics) i.e. mean/max/std, [Viewshed](github.com/jcaraban/map/wiki/Viewshed) analysis, Game of [Life](github.com/jcaraban/map/wiki/Life)
+If you wish to know more about the approach, go have a look to the scripts and explanations in the wiki:
+* [Compiler approach to Parallel Map Algebra](github.com/jcaraban/map/wiki/Compiler)
+* [Hillshade](github.com/jcaraban/map/wiki/Hillshade) extended, [Statistics](github.com/jcaraban/map/wiki/Statistics) i.e. mean/max/std, [Viewshed](github.com/jcaraban/map/wiki/Viewshed) analysis, Conway's [Game of Life](github.com/jcaraban/map/wiki/Life)
 * Cellular Automata for [Urban Growth](github.com/jcaraban/map/wiki/Urban)
 * ...
 
