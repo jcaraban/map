@@ -82,10 +82,10 @@ The workflow of the framework is summarized in the following points:
 
 ## [Wiki](https://github.com/jcaraban/map/wiki)
 If you wish to know more about the approach, go have a look to the scripts and explanations in the wiki:
-* [Compiler approach to Parallel Map Algebra](github.com/jcaraban/map/wiki/Compiler)
-* [Hillshade](github.com/jcaraban/map/wiki/Hillshade) extended, [Statistics](github.com/jcaraban/map/wiki/Statistics) i.e. mean/max/std, [Viewshed](github.com/jcaraban/map/wiki/Viewshed) analysis, Conway's [Game of Life](github.com/jcaraban/map/wiki/Life)
-* Cellular Automata for [Urban Growth](github.com/jcaraban/map/wiki/Urban)
-* Cellular Automata for [Water Flow](github.com/jcaraban/map/wiki/WaterFlow)
+* [Compiler approach to Parallel Map Algebra](https://github.com/jcaraban/map/wiki/Compiler)
+* [Hillshade](https://github.com/jcaraban/map/wiki/Hillshade) extended, [Statistics](https://github.com/jcaraban/map/wiki/Statistics) i.e. mean/max/std, [Viewshed](https://github.com/jcaraban/map/wiki/Viewshed) analysis, Conway's [Game of Life](https://github.com/jcaraban/map/wiki/Life)
+* Cellular Automata for [Urban Growth](https://github.com/jcaraban/map/wiki/Urban)
+* Cellular Automata for [Water Flow](https://github.com/jcaraban/map/wiki/WaterFlow)
 * ...
 
 ## Requirements
