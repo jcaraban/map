@@ -34,7 +34,7 @@ The following script depicts a hillshade algorithm (Horn 1981). It computes and 
 		x = hori(dem,dist)							# Since functions are 'inlined', the framework can apply
 		y = vert(dem,dist)							# interprocedural optimizations between 'hori' and 'vert'
 		z = atan(sqrt(x*x + y*y))
-		return z									# 'returns' are also optimized; there is no copy of data
+		return z									# 'returns' are optimized away; there is no copy of data
 
 	def aspect(dem, dist=1):						# We use Global Value Numbering (Click 95) and therefore
 		x = hori(dem,dist)							# interprocedural optimizations also happen in nested scopes
@@ -63,6 +63,21 @@ When the Python script is executes the operations are not carried out right away
 See these steps [here](https://github.com/jcaraban/map/wiki/Hillshade).
 
 <img src="https://raw.githubusercontent.com/wiki/jcaraban/map/hill-image.png" width="768" align="middle">
+
+## Workflow
+The workflow of the framework is summarized in the following points:
+
+1. A user writes a sequential python script composed of map algebra operations.
+2. A symbolic representation in the form of dependency graph is derived from the script.
+3. Simplification routines optimize the graph. Then fusion groups consecutive operations.
+4. The graph is translated to OpenCL kernel code using algorithmic skeletons.
+5. The kernel code is compiled to device code, which is used to compose tasks.
+6. Spatial decomposition is applied to the raster data, resulting in blocks of cells.
+7. The pair {task, block} forms a job, the unit of execution and scheduling.
+8. Jobs are put into a work queue and a scheduler reorders them to maximize locality.
+9. An in-memory cache keeps the blocks at the higher levels of the memory hierarchy.
+10. Executing active jobs produces new blocks, which enables following jobs for execution.
+11. Concurrent worker threads handle the scheduler, cache, I/O and jobs until all work is done.
 
 ## [Wiki](https://github.com/jcaraban/map/wiki)
 If you wish to know more about the approach, go have a look to the scripts and explanations in the wiki:
