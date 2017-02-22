@@ -88,22 +88,8 @@ If you wish to know more about the approach, go have a look to the scripts and e
 * Cellular Automata for [Water Flow](https://github.com/jcaraban/map/wiki/WaterFlow)
 * ...
 
-## Requirements
-This project has been developed and tested with:
-
-* Python 2.7, CPython implementation
-* OpenCL 1.2, Intel and AMD implementations
-* GCC C++ compiler, any version with c++11 support
-
-Other compilers / OpenCl drivers are probably compatible, but have not been tested.
-
-## Build
-**Note:** this is a research project and the code is only a MVP for testing our research hypothesis. If you still wish to continue: download the source, install the requirements and build with make:
-```
-make library && cd python
-python hill.py input-raster.tif output-raster.tif > log.txt
-```
-## Contact
-Questions? Contact me through [email](mailto:jcaraban@abo.fi)!
+## Final words
+**Note:** this is a research project and the code is only a prototype for testing our research hypothesis.
+If you got questions, contact me through [email](mailto:jcaraban@abo.fi)!
 
 **Jesús Carabaño Bravo** <jcaraban@abo.fi> | PhD Student at Åbo Akademi, Finland  
