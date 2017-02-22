@@ -6,6 +6,7 @@
 
 !.gitignore
 !map.py
+map.pyc
 
 !wsum.py
 !stats.py
