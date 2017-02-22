@@ -11,7 +11,7 @@ Operations in Map Algebra only take and return **rasters**. They belong to one o
 For my **PhD** I design a Parallel Map Algebra framework that runs efficiently on **OpenCL** devices. Users write sequential single-source **Python** scripts and the framework generates and executes kernel code automatically. **Compiler** techniques are at the core of system, from dependency analysis to **loop fusion**. They key challenge is maximizing **data locality**, since memory movements pose the major bottleneck to performance.
 
 ## Sample script: *Hillshade*
-The following script depicts a hillshade algorithm (Horn 1981). It computes and matches the derivatives of a DEM to the azimuth and altitude of the sun to achieve an effect of topographic relief.
+The following script depicts a hillshade algorithm. It computes and matches the derivatives of a DEM to the azimuth and altitude of the sun to achieve an effect of topographic relief.
 
 ```{.py}
 	from map import * ## Parallel Map Algebra		# This is it, a Python import. Now the python script
@@ -59,8 +59,9 @@ The following script depicts a hillshade algorithm (Horn 1981). It computes and 
 	out = hillshade(dem,45,315)
 	write(out,'out_file_path')						# And finally we write the output results, the hillshade!
 ```
-When the Python script is executes the operations are not carried out right away. Instead the framework composes a dependency graph, applies optimizations like fusion and generates OpenCL code. Then the rasters are decomposed into blocks and the parallel code is executed as a batch of tasks.
-See these steps [here](https://github.com/jcaraban/map/wiki/Hillshade).
+When the Python script is executes the operations are not carried out right away. Instead the framework composes a dependency graph, applies optimizations like fusion and generates OpenCL code.
+(See these steps [here](https://github.com/jcaraban/map/wiki/Hillshade)).
+Then the rasters are decomposed into blocks and the parallel code is executed as a batch of tasks.
 
 <img src="https://raw.githubusercontent.com/wiki/jcaraban/map/hill-image.png" width="768" align="middle">
 
