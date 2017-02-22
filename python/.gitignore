@@ -5,6 +5,8 @@
 # But not these files...
 
 !.gitignore
+!map.py
+
 !wsum.py
 !stats.py
 !hill.py
