@@ -1,4 +1,4 @@
-# source github.com/cdeterman/intel_opencl
+# source: github.com/cdeterman/intel_opencl
 
 language: c++
 compiler: g++
@@ -12,7 +12,6 @@ before_install:
   - sudo apt-get install -qq g++-4.8
   - export CXX="g++-4.8"
   - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 90
-  #- sudo apt-get install clinfo
   
 install:
 
@@ -31,9 +30,8 @@ install:
   - cd ../..
   
 script:
- - ./clinfo
- #- make library
- #- cd python
+ - make library
+ - cd python
  #- python test.py
 
 notifications:
