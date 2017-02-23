@@ -12,6 +12,7 @@ before_install:
   - sudo apt-get install -qq g++-4.8
   - export CXX="g++-4.8"
   - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 90
+  - sudo apt-get clinfo
   
 install:
 
@@ -30,9 +31,10 @@ install:
   - cd ../..
   
 script:
- - make library
- - cd python
- - python test.py
+ - ./clinfo
+ #- make library
+ #- cd python
+ #- python test.py
 
 notifications:
   email:
