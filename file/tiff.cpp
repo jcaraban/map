@@ -37,7 +37,7 @@ static TIFFExtendProc parent_extender = NULL;
 
 static void registerCustomTIFFTags(TIFF *tif)
 {
-    int error = TIFFMergeFieldInfo(tif, xtiffFieldInfo, N_TAGS);
+    TIFFMergeFieldInfo(tif, xtiffFieldInfo, N_TAGS);
     if (parent_extender) (*parent_extender)(tif);
 }
 
