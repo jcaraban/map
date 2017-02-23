@@ -30,6 +30,7 @@ install:
   - cd ../..
   
 script:
+ - sudo updatedb
  - locate CL/cl.h | xargs cat
  #- make library
  #- cd python
