@@ -31,10 +31,8 @@ install:
   - cd ../..
   
 script:
- - sudo updatedb
- - locate CL/cl.h | xargs cat
- #- make library
- #- cd python
+ - make library
+ - cd python
  #- python test.py
 
 notifications:
