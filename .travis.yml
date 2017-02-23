@@ -31,7 +31,7 @@ install:
   - cd ../..
   
 script:
- - ldd --version
+ - make library -j8
  - cd python
  #- python test.py
 

@@ -389,6 +389,9 @@ Ferr binary::writeBlock(const Block &block) {
 	return ferr;
 }
 
+#define FALLOC_FL_KEEP_SIZE    0x01
+#define FALLOC_FL_PUNCH_HOLE   0x02
+
 Ferr binary::discard(const Block &block) {
 	Ferr ferr = 0;
 	size_t offset = proj(block.key.coord,meta.num_block) * total_block_size;
