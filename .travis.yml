@@ -31,6 +31,7 @@ install:
   
 script:
  - sudo updatedb
+ - locate CL/cl.h
  - locate CL/cl.h | xargs cat
  #- make library
  #- cd python
