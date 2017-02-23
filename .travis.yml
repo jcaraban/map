@@ -14,17 +14,18 @@ before_install:
   #- sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 90
   
 install:
-  - wget http://registrationcenter.intel.com/irc_nas/4181/opencl_runtime_14.2_x64_4.5.0.8.tgz
-  - tar -xvf opencl_runtime_14.2_x64_4.5.0.8.tgz
-  - cd pset_opencl_runtime_14.1_x64_4.5.0.8/rpm
-  - git clone https://gist.github.com/6a5d453137e5fc992b2a.git
-  - mv 6a5d453137e5fc992b2a/rpm_to_deb.sh .
+
+  - wget http://registrationcenter-download.intel.com/akdlm/irc_nas/9019/opencl_runtime_16.1.1_x64_ubuntu_6.4.0.25.tgz
+  - tar -xvf opencl_runtime_16.1.1_x64_ubuntu_6.4.0.25.tgz
+  - cd opencl_runtime_16.1.1_x64_ubuntu_6.4.0.25/rpm
+  - git clone https://gist.github.com/jcaraban/54bc3d13c43fd8a9070801b09fe51830
+  - mv 54bc3d13c43fd8a9070801b09fe51830/rpm_to_deb.sh .
   - sh rpm_to_deb.sh
   - sudo mkdir /etc/OpenCL
   - sudo mkdir /etc/OpenCL/vendors
-  - sudo ln -s /opt/intel/opencl-1.2-4.5.0.8/etc/intel64.icd /etc/OpenCL/vendors/intel64.icd
-  - sudo ln -s /opt/intel/opencl-1.2-4.5.0.8/lib64/libOpenCL.so /usr/lib/libOpenCL.so
-  - sudo ln -s /opt/intel/opencl-1.2-4.5.0.8/lib64/libOpenCL.so.1 /usr/lib/libOpenCL.so.1
+  - sudo ln -s /opt/intel/opencl-1.2-6.4.0.25/etc/intel64.icd /etc/OpenCL/vendors/intel64.icd
+  - sudo ln -s /opt/intel/opencl-1.2-6.4.0.25/lib64/libOpenCL.so /usr/lib/libOpenCL.so
+  - sudo ln -s /opt/intel/opencl-1.2-6.4.0.25/lib64/libOpenCL.so.1 /usr/lib/libOpenCL.so.1
   - sudo ldconfig
   - cd ../..
   
@@ -32,3 +33,8 @@ script:
  - make library
  - cd python
  - python test.py
+
+notifications:
+  email:
+    on_success: never
+    on_failure: never
