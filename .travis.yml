@@ -20,9 +20,8 @@ install:
   - git clone https://gist.github.com/jcaraban/54bc3d13c43fd8a9070801b09fe51830 # rpm_to_dev
   - mv 54bc3d13c43fd8a9070801b09fe51830/rpm_to_deb.sh .
   - sh rpm_to_deb.sh
-  - git clone https://gist.github.com/jcaraban/0ec41cde0d9a58081d10331fe231f951 # cl.h
-  - sudo mv 0ec41cde0d9a58081d10331fe231f951/cl21.h /usr/include/CL/cl.h
-  - sudo mv 0ec41cde0d9a58081d10331fe231f951/cl_platform.h /usr/include/CL/cl_platform.h
+  - git clone https://gist.github.com/jcaraban/0ec41cde0d9a58081d10331fe231f951 # cl headers
+  - sudo mv 0ec41cde0d9a58081d10331fe231f951/* /usr/include/CL/
   - sudo mkdir /etc/OpenCL
   - sudo mkdir /etc/OpenCL/vendors
   - sudo ln -s /opt/intel/opencl-1.2-6.4.0.25/etc/intel64.icd /etc/OpenCL/vendors/intel64.icd

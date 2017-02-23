@@ -329,7 +329,8 @@ void Task::computeVersion(Coord coord, const BlockList &in_blk, const BlockList 
 
 	//// Configures kernel
 
-	const int dim = numdim().toInt();
+	assert(numdim().toInt() == 2);
+	const int dim = 2;
 	auto group_size = ver->groupsize();
 	auto block_size = blocksize();
 
