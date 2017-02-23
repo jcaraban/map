@@ -40,6 +40,7 @@ struct Skeleton : public Visitor
 	std::string indent();
 	void add_line(std::string line);
 	void add_section(std::string section);
+	void add_include(std::string file);
 
   // visit
 	DECLARE_VISIT(Constant)

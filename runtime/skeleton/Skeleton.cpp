@@ -172,6 +172,15 @@ void Skeleton::add_section(string section) {
 	code[node_pos] += section;
 }
 
+void Skeleton::add_include(string file) {
+	// Because the OpenCL kernels are composed at runtime and the user's program could execute anywhere,
+	// the includes need to be accessible from any possible path. Copying the header files around with the
+	// executables sounds stupid. Defining an absolute path like /usr/include/CL/cl.h seems professiona.
+	// The easiest way now is to 1) paste the include into the kernel, 2) cp it to a tmp in the curr dir.
+
+	// TODO
+}
+
 /*********
    Visit
  *********/
