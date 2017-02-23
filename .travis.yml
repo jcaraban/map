@@ -30,8 +30,9 @@ install:
   - cd ../..
   
 script:
- - make library
- - cd python
+ - locate CL/cl.h | xargs cat
+ #- make library
+ #- cd python
  #- python test.py
 
 notifications:
