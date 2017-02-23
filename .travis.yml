@@ -1,0 +1,34 @@
+# source github.com/cdeterman/intel_opencl
+
+language: c++
+compiler: g++
+
+sudo: required
+
+before_install:
+  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+  - sudo apt-get update -qq -y
+  - sudo apt-get install -qq mesa-common-dev alien libnuma1 opencl-headers git
+  #- sudo apt-get install -qq g++-4.8
+  #- export CXX="g++-4.8"
+  #- sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 90
+  
+install:
+  - wget http://registrationcenter.intel.com/irc_nas/4181/opencl_runtime_14.2_x64_4.5.0.8.tgz
+  - tar -xvf opencl_runtime_14.2_x64_4.5.0.8.tgz
+  - cd pset_opencl_runtime_14.1_x64_4.5.0.8/rpm
+  - git clone https://gist.github.com/6a5d453137e5fc992b2a.git
+  - mv 6a5d453137e5fc992b2a/rpm_to_deb.sh .
+  - sh rpm_to_deb.sh
+  - sudo mkdir /etc/OpenCL
+  - sudo mkdir /etc/OpenCL/vendors
+  - sudo ln -s /opt/intel/opencl-1.2-4.5.0.8/etc/intel64.icd /etc/OpenCL/vendors/intel64.icd
+  - sudo ln -s /opt/intel/opencl-1.2-4.5.0.8/lib64/libOpenCL.so /usr/lib/libOpenCL.so
+  - sudo ln -s /opt/intel/opencl-1.2-4.5.0.8/lib64/libOpenCL.so.1 /usr/lib/libOpenCL.so.1
+  - sudo ldconfig
+  - cd ../..
+  
+script:
+ - make library
+ - cd python
+ - python test.py
