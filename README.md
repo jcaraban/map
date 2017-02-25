@@ -11,7 +11,7 @@ Operations in Map Algebra only take and return **rasters**. They belong to one o
 For my **PhD** I design a Parallel Map Algebra framework that runs efficiently on **OpenCL** devices. Users write sequential single-source **Python** scripts and the framework generates and executes kernel code automatically. **Compiler** techniques are at the core of system, from dependency analysis to **loop fusion**. They key challenge is maximizing **data locality**, since memory movements pose the major bottleneck to performance.
 
 ## Sample script: *Hillshade*
-The following script depicts a hillshade algorithm (Horn 1981). It computes and matches the derivatives of a DEM to the azimuth and altitude of the sun to achieve an effect of topographic relief.
+The following script depicts a hillshade algorithm. It computes and matches the derivatives of a DEM to the azimuth and altitude of the sun to achieve an effect of topographic relief.
 
 ```{.py}
 	from map import * ## Parallel Map Algebra		# This is it, a Python import. Now the python script
@@ -34,7 +34,7 @@ The following script depicts a hillshade algorithm (Horn 1981). It computes and 
 		x = hori(dem,dist)							# Since functions are 'inlined', the framework can apply
 		y = vert(dem,dist)							# interprocedural optimizations between 'hori' and 'vert'
 		z = atan(sqrt(x*x + y*y))
-		return z									# 'returns' are also optimized; there is no copy of data
+		return z									# 'returns' are optimized away; there is no copy of data
 
 	def aspect(dem, dist=1):						# We use Global Value Numbering (Click 95) and therefore
 		x = hori(dem,dist)							# interprocedural optimizations also happen in nested scopes
@@ -59,35 +59,37 @@ The following script depicts a hillshade algorithm (Horn 1981). It computes and 
 	out = hillshade(dem,45,315)
 	write(out,'out_file_path')						# And finally we write the output results, the hillshade!
 ```
-When the Python script is executes the operations are not carried out right away. Instead the framework composes a dependency graph, applies optimizations like fusion and generates OpenCL code. Then the rasters are decomposed into blocks and the parallel code is executed as a batch of tasks.
-See these steps [here](https://github.com/jcaraban/map/wiki/Hillshade).
+When the Python script is executes the operations are not carried out right away. Instead the framework composes a dependency graph, applies optimizations like fusion and generates OpenCL code.
+(See these steps [here](https://github.com/jcaraban/map/wiki/Hillshade)).
+Then the rasters are decomposed into blocks and the parallel code is executed as a batch of tasks.
 
 <img src="https://raw.githubusercontent.com/wiki/jcaraban/map/hill-image.png" width="768" align="middle">
 
+## Workflow
+The workflow of the framework is summarized in the following points:
+
+1. A user writes a sequential python script composed of map algebra operations.
+2. A symbolic representation in the form of dependency graph is derived from the script.
+3. Simplification routines optimize the graph. Then fusion groups consecutive operations.
+4. The graph is translated to OpenCL kernel code using algorithmic skeletons.
+5. The kernel code is compiled to device code, which is used to compose tasks.
+6. Spatial decomposition is applied to the raster data, resulting in blocks of cells.
+7. The pair {task, block} forms a job, the unit of execution and scheduling.
+8. Jobs are put into a work queue and a scheduler reorders them to maximize locality.
+9. An in-memory cache keeps the blocks at the higher levels of the memory hierarchy.
+10. Executing active jobs produces new blocks, which enables following jobs for execution.
+11. Concurrent worker threads handle the scheduler, cache, I/O and jobs until all work is done.
+
 ## [Wiki](https://github.com/jcaraban/map/wiki)
 If you wish to know more about the approach, go have a look to the scripts and explanations in the wiki:
-* [Compiler approach to Parallel Map Algebra](github.com/jcaraban/map/wiki/Compiler)
-* [Hillshade](github.com/jcaraban/map/wiki/Hillshade) extended, [Statistics](github.com/jcaraban/map/wiki/Statistics) i.e. mean/max/std, [Viewshed](github.com/jcaraban/map/wiki/Viewshed) analysis, Conway's [Game of Life](github.com/jcaraban/map/wiki/Life)
-* Cellular Automata for [Urban Growth](github.com/jcaraban/map/wiki/Urban)
-* Cellular Automata for [Water Flow](github.com/jcaraban/map/wiki/WaterFlow)
+* [Compiler approach to Parallel Map Algebra](https://github.com/jcaraban/map/wiki/Compiler)
+* [Hillshade](https://github.com/jcaraban/map/wiki/Hillshade) extended, [Statistics](https://github.com/jcaraban/map/wiki/Statistics) i.e. mean/max/std, [Viewshed](https://github.com/jcaraban/map/wiki/Viewshed) analysis, Conway's [Game of Life](https://github.com/jcaraban/map/wiki/Life)
+* Cellular Automata for [Urban Growth](https://github.com/jcaraban/map/wiki/Urban)
+* Cellular Automata for [Water Flow](https://github.com/jcaraban/map/wiki/WaterFlow)
 * ...
 
-## Requirements
-This project has been developed and tested with:
-
-* Python 2.7, CPython implementation
-* OpenCL 1.2, Intel and AMD implementations
-* GCC C++ compiler, any version with c++11 support
-
-Other compilers / OpenCl drivers are probably compatible, but have not been tested.
-
-## Build
-**Note:** this is a research project and the code is only a MVP for testing our research hypothesis. If you still wish to continue: download the source, install the requirements and build with make:
-```
-make library && cd python
-python hill.py input-raster.tif output-raster.tif > log.txt
-```
-## Contact
-Questions? Contact me through [email](mailto:jcaraban@abo.fi)!
+## Final words
+**Note:** this is a research project and the code is only a prototype for testing our research hypothesis.
+If you got questions, contact me through [email](mailto:jcaraban@abo.fi)!
 
 **Jesús Carabaño Bravo** <jcaraban@abo.fi> | PhD Student at Åbo Akademi, Finland  
