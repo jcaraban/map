@@ -64,7 +64,7 @@ void FocalZonalTask::nextJobs(Key done_block, std::vector<Job> &job_vec) {
 	}
 	else // Case when prev=D2, self=D2
 	{
-		int pos = list_position(done_block.node,inputList());
+		int pos = value_position(done_block.node,inputList());
 		const int N = (done_block.node->numdim() == D0) ? 0 : is_input_of[pos].is(FOCAL) ? 1 : 0;
 
 		for (int y=-N; y<=N; y++) {
@@ -79,7 +79,7 @@ void FocalZonalTask::nextJobs(Key done_block, std::vector<Job> &job_vec) {
 }
 
 int FocalZonalTask::selfInterDepends(Node *node, Coord coord) const {
-	int pos = list_position(node,inputList());
+	int pos = value_position(node,inputList());
 	if (!is_input_of[pos].is(FOCAL) || node->numdim() == D0)
 		return node->pattern() == FREE ? 0 : 1;
 	

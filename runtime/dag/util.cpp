@@ -64,7 +64,7 @@ void remove_value(const Group *group, GroupList &list) {
 	list.erase(std::remove(list.begin(),list.end(),group),list.end());
 }
 
-int list_position(const Node *node, const NodeList &list) {
+int value_position(const Node *node, const NodeList &list) {
 	auto it = std::find(list.begin(),list.end(),node);
 	assert(it != list.end());
 	return std::distance(list.begin(),it);

@@ -34,7 +34,7 @@ NodeList left_join(const NodeList &lhs, const NodeList &rhs);
 void remove_value(const Node *node, NodeList &list);
 void remove_value(const Group *group, GroupList &list);
 
-int list_position(const Node *node, const NodeList &list);
+int value_position(const Node *node, const NodeList &list);
 
 Pattern isInputOf(const Node *node, const Group *group);
 

@@ -284,7 +284,7 @@ int Task::selfDependencies(Coord coord) const {
 }
 
 int Task::nextDependencies(Node *node, Coord coord) const {
-	int pos = list_position(node,outputList());
+	int pos = value_position(node,outputList());
 	int dep = 0;
 	for (auto next_task : next_of_out[pos])
 		dep += next_task->nextInterDepends(node,coord);

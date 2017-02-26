@@ -168,7 +168,7 @@ void SpreadingTask::nextJobs(Key done_block, std::vector<Job> &job_vec) {
 	}
 	else // Case when prev=D2, self=D2
 	{
-		int pos = list_position(done_block.node,inputList());
+		int pos = value_position(done_block.node,inputList());
 		const int N = is_input_of[pos].is(SPREAD) ? 1 : 0;
 
 		for (int y=-N; y<=N; y++) {
@@ -186,7 +186,7 @@ int SpreadingTask::selfInterDepends(Node *node, Coord coord) const {
 	if (first_time.find(coord) != first_time.end())
 		return 0; // There are no inter-dependencies after the first initial job
 
-	int pos = list_position(node,inputList());
+	int pos = value_position(node,inputList());
 	if (!is_input_of[pos].is(SPREAD))
 		return node->pattern() == FREE ? 0 : 1;
 	
