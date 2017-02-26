@@ -31,8 +31,7 @@
 
 namespace map { namespace detail {
 
-enum TypeMem {PRIVATE, SHARED, LITERAL};
-enum TypeVar {SCALAR, ARRAY, POINTER};
+// something here?
 
 } } // namespace map::detail
 

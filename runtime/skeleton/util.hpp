@@ -18,6 +18,11 @@ namespace map { namespace detail {
 
 struct Node; // forward delcaration
 
+// Kernel type of memory
+enum TypeMem {PRIVATE, SHARED, LITERAL};
+// Kernel type of variable
+enum TypeVar {SCALAR, ARRAY, POINTER};
+
 /*********
    Utils
  *********/
