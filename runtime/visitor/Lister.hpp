@@ -1,14 +1,17 @@
 /**
- * @file	ListerBU.hpp 
+ * @file	Lister.hpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  * Visitor of the DAG in ascending bottom-up order that return an ordered list of the visited nodes
+ * Note: consequently all non-visited nodes are ignore, as if "dead nodes elimination" was applied
  */
 
-#ifndef MAP_RUNTIME_VISITOR_LISTERBU_HPP_
-#define MAP_RUNTIME_VISITOR_LISTERBU_HPP_
+#ifndef MAP_RUNTIME_VISITOR_LISTER_HPP_
+#define MAP_RUNTIME_VISITOR_LISTER_HPP_
 
 #include "Visitor.hpp"
+#include <unordered_set>
+#include <unordered_map>
 
 
 namespace map { namespace detail {
@@ -16,17 +19,20 @@ namespace map { namespace detail {
 #define DECLARE_VISIT(class) virtual void visit(class *node);
 
 /*
- * Return an ordered list (top-down) of the visited nodes
+ * Return a list only with the visited nodes
  */
-struct ListerBU : public Visitor
+struct Lister : public Visitor
 {
   // constructor and main function
-	ListerBU();
+	Lister();
 	NodeList list(Node *node);
 	NodeList list(NodeList few_nodes);
 
   // methods
 	void clear();
+	bool wasMarked(Node *node);
+	void setMarked(Node *node);
+	void unMarked(Node *node);
 
   // helper
 	template <typename T> void helper(T *node);
@@ -37,6 +43,9 @@ struct ListerBU : public Visitor
 
   // vars
 	NodeList node_list;
+	std::unordered_set<Node*> marked; //!< Mark nodes in the middle of a visit, for loop detection
+	std::unordered_map<Node*,NodeList> isonext; //!< List of isolated 'nexts' due to this node
+	std::unordered_map<Node*,NodeList> isoprev; //!< List of 'prevs' holding this node isolated
 };
 
 #undef DECLARE_VISIT
@@ -53,7 +62,7 @@ struct ListerBU : public Visitor
 namespace map { namespace detail {
 
 template <typename T>
-void ListerBU::helper(T *node) {
+void Lister::helper(T *node) {
 	if (wasVisited(node)) return;
 	setVisited(node);
 	

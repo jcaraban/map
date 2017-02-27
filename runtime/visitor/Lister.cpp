@@ -1,42 +1,84 @@
 /**
- * @file	ListerBU.cpp 
+ * @file	Lister.cpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
+ * Note: there might be some more performant alternatives to isoprev/next,
+ *       but this is the easiest way of handling the cycles caused by Feedback
  */
 
-#include "ListerBU.hpp"
+#include "Lister.hpp"
 #include <algorithm>
 
 
 namespace map { namespace detail {
 
-ListerBU::ListerBU()
+Lister::Lister()
 	: node_list()
 { }
 
-void ListerBU::clear() {
+void Lister::clear() {
 	visited.clear();
+	marked.clear();
+	isoprev.clear();
+	isonext.clear();
 	node_list.clear();
 }
 
-void ListerBU::static_visit(Node *node) {
-	if (wasVisited(node))
-		return;
-	setVisited(node);
-
-	for (auto &prev : node->prevList())
-		static_visit(prev);
-
-	node_list.push_back(node);
+bool Lister::wasMarked(Node *node) {
+	return marked.find(node) != marked.end();
 }
 
-NodeList ListerBU::list(Node *node) {
+void Lister::setMarked(Node *node) {
+	marked.insert(node);
+}
+
+void Lister::unMarked(Node *node) {
+	marked.erase(node);
+}
+
+void Lister::static_visit(Node *node) {
+	//
+	if (wasVisited(node) || wasMarked(node))
+		return;
+	setMarked(node);
+
+	bool all_visited = true;
+	for (auto prev : node->prevList()) {
+		static_visit(prev); // goes up recursively...
+		all_visited &= wasVisited(prev) || prev->id > node->id;
+	}
+
+	if (all_visited)
+	{
+		node_list.push_back(node);
+		setVisited(node);
+
+		for (auto iso : isonext[node]) {
+			remove_value(node,isoprev[iso]);
+			if (isoprev[iso].empty())
+				static_visit(iso);
+		}
+	}
+	else
+	{
+		for (auto prev : node->prevList()) {
+			if (not wasVisited(prev)) {
+				isonext[prev].push_back(node);
+				isoprev[node].push_back(prev);
+			}
+		}
+	}
+
+	unMarked(node);
+}
+
+NodeList Lister::list(Node *node) {
 	clear();
 	static_visit(node);
 	return node_list;
 }
 
-NodeList ListerBU::list(NodeList few_nodes) {
+NodeList Lister::list(NodeList few_nodes) {
 	clear();
 	for (auto node : few_nodes)
 		static_visit(node);
@@ -44,7 +86,7 @@ NodeList ListerBU::list(NodeList few_nodes) {
 }
 
 #define DEFINE_VISIT(class) \
-	void ListerBU::visit(class *node) { \
+	void Lister::visit(class *node) { \
 		helper<class>(node); \
 	}
 	
