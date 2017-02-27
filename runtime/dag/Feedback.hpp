@@ -26,12 +26,16 @@ struct Feedback : public Node
 	char classSignature() const;
 	Loop* loop() const;
 	Node* prev() const;
+	bool feedIn() const;
+	bool feedOut() const;
 	Pattern pattern() const { return SPREAD; }
 
 	//const NodeList& prevList() const;
 	//const NodeList& nextList() const;
 
 	// Variables
+	Loop *owner_loop;
+	bool in_or_out; //!< true / false --> FeedIn / FeedOut type
 	Feedback *twin; // linked feedback (i.e. feed_in <--> feed_out)
 	//NodeList prev_both, next_both;
 };

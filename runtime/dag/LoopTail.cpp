@@ -20,9 +20,10 @@ LoopTail::LoopTail(Loop *loop, Node *prev)
 	id = prev->id;
 	meta = prev->metadata();
 
+	owner_loop = loop;
 	prev_list.resize(2);
-	prev_list[0] = loop;
-	prev_list[1] = prev;
+	prev_list[0] = prev;
+	prev_list[1] = loop;
 	
 	// 'prev' should not point to anybody 'next' at this point
 	//assert( prev->nextList().empty() );
@@ -32,8 +33,7 @@ LoopTail::LoopTail(Loop *loop, Node *prev)
 }
 
 void LoopTail::accept(Visitor *visitor) {
-	//visitor->visit(this);
-	assert(0);
+	visitor->visit(this);
 }
 
 std::string LoopTail::getName() const {
@@ -46,7 +46,7 @@ std::string LoopTail::signature() const {
 }
 
 Loop* LoopTail::loop() const {
-	return dynamic_cast<Loop*>(prev_list[0]);
+	return owner_loop;
 }
 
 Node* LoopTail::prev() const {

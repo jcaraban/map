@@ -19,12 +19,14 @@ Feedback::Feedback(Loop *loop, LoopHead *prev)
 	id = prev->id;
 	meta = prev->metadata();
 
+	owner_loop = loop;
+	in_or_out = true;
 	prev_list.resize(1);
 	prev_list[0] = prev;
 	
 	/* Feed In constructor */
 
-	// 'next' of 'prev' inside the loop 'cond'+'body' now link to 'head'
+	// 'next' of 'prev' inside the loop 'cond'+'body' now link to 'prev' (= head)
 	for (auto next : prev->nextList()) {
 		assert( is_included(next,loop->bodyList()) || next==loop->condition() );
 		this->addNext(next);
@@ -51,12 +53,16 @@ Feedback::Feedback(Loop *loop, Feedback *feed_in, Node *prev)
 	id = prev->id;
 	meta = prev->metadata();
 	//stats = prev->datastats();
+
+	owner_loop = loop;
+	in_or_out = false;
 	prev_list.resize(1);
 	prev_list[0] = prev;
 	
 	/* Feed Out constructor */
 	
 	// 'prev' does not looses any 'next', it continues as it was
+
 	// 'loop' owns 'feedback', so no need for it to point here
 	prev->addNext(this); // 'prev' is a 'body' node that points to 'feed'
 
@@ -74,8 +80,7 @@ Feedback::Feedback(Loop *loop, Feedback *feed_in, Node *prev)
 }
 
 void Feedback::accept(Visitor *visitor) {
-	//visitor->visit(this);
-	assert(0);
+	visitor->visit(this);
 }
 
 std::string Feedback::getName() const {
@@ -91,13 +96,21 @@ std::string Feedback::signature() const {
 }
 
 Loop* Feedback::loop() const {
-	assert(0);
-	//return dynamic_cast<Loop*>(prev_list[0]);
+	return owner_loop;
 }
 
 Node* Feedback::prev() const {
-	return prev_list[1];
+	return prev_list[0];
 }
+
+bool Feedback::feedIn() const {
+	return in_or_out;
+}
+
+bool Feedback::feedOut() const {
+	return ! in_or_out;
+}
+
 /*
 const NodeList& Feedback::prevList() const {
 	return prev_both;

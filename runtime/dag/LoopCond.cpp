@@ -21,6 +21,7 @@ LoopCond::LoopCond(Loop *loop, Node *prev)
 	meta = prev->metadata();
 	meta.data_type = U8; // @ because OpenCL
 
+	owner_loop = loop;
 	prev_list.resize(1);
 	prev_list[0] = prev;
 	
@@ -42,8 +43,7 @@ std::string LoopCond::signature() const {
 }
 
 Loop* LoopCond::loop() const {
-	assert(0);
-	//return dynamic_cast<Loop*>(prev_list[0]);
+	return owner_loop;
 }
 
 Node* LoopCond::prev() const {

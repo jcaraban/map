@@ -45,6 +45,11 @@ struct Visitor
 	DECLARE_VISIT(ZonalReduc)
 	DECLARE_VISIT(RadialScan)
 	DECLARE_VISIT(SpreadScan)
+	DECLARE_VISIT(Loop)
+	DECLARE_VISIT(LoopCond)
+	DECLARE_VISIT(LoopHead)
+	DECLARE_VISIT(LoopTail)
+	DECLARE_VISIT(Feedback)
 	DECLARE_VISIT(Access)
 	DECLARE_VISIT(LhsAccess)
 	DECLARE_VISIT(Read)
@@ -54,8 +59,6 @@ struct Visitor
 	DECLARE_VISIT(Checkpoint)
 	DECLARE_VISIT(Stats)
 	DECLARE_VISIT(Barrier)
-	DECLARE_VISIT(Loop)
-	DECLARE_VISIT(LoopCond)
 };
 
 #undef DECLARE_VISIT

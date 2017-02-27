@@ -20,6 +20,7 @@ LoopHead::LoopHead(Loop *loop, Node *prev)
 	id = prev->id;
 	meta = prev->metadata();
 
+	owner_loop = loop;
 	prev_list.resize(1);
 	prev_list[0] = prev;
 	
@@ -46,8 +47,7 @@ LoopHead::LoopHead(Loop *loop, Node *prev)
 }
 
 void LoopHead::accept(Visitor *visitor) {
-	//visitor->visit(this);
-	assert(0);
+	visitor->visit(this);
 }
 
 std::string LoopHead::getName() const {
@@ -60,12 +60,11 @@ std::string LoopHead::signature() const {
 }
 
 Loop* LoopHead::loop() const {
-	assert(0);
-	//return dynamic_cast<Loop*>(prev_list[0]);
+	return owner_loop;
 }
 
 Node* LoopHead::prev() const {
-	return prev_list[1];
+	return prev_list[0];
 }
 
 } } // namespace map::detail

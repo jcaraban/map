@@ -74,7 +74,7 @@ void Node::updatePrev(Node *old_node, Node *new_node) {
 	Runtime::getInstance().removeNode(this); // @
 	*it = new_node;
 	Runtime::getInstance().updateNode(this); // @
-	// ... continue ... rethink remove/update
+	// @@ ... continue ... rethink remove/update
 }
 
 void Node::updateNext(Node *old_node, Node *new_node) {

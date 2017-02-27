@@ -2,14 +2,15 @@
  * @file	Runtime.cpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * TODO: a nested simplifier necessary for the loop?
- * TODO: is_included can be avoided by tagging the loop nodes upon insertion
+ * TODO: is a nested simplifier necessary for the loop?
+ * TODO: in loopAssemble, is_included can be avoided by tagging the loop nodes upon insertion
  */
 
 #include "Runtime.hpp"
 #include "dag/util.hpp"
 #include "dag/Loop.hpp"
-#include "visitor/ListerBU.hpp"
+#include "visitor/Lister.hpp"
+#include "visitor/Sorter.hpp"
 #include "visitor/Partitioner.hpp"
 #include "visitor/Fusioner.hpp"
 #include "visitor/Exporter.hpp"
@@ -232,7 +233,7 @@ Node* Runtime::loopAssemble() {
 
 	assert(loop.cond.size() == 2);
 	Node *cond_node = loop.cond[0]; // 'cond' node that activated the Python while loop
-	loop.prev.push_back(loop.cond[0]); // 'cond' is the first 'prev' and thus 'feed_in'
+	loop.prev.push_back(loop.cond[0]); // 'cond' is the first 'prev' and thus first 'feed_in'
 	loop.feed_out.push_back(loop.cond[1]); // 'again-cond' is the first 'feed_out'
 
 	// 'prev' of 'loop' are all those 'prev' to 'body', but outside 'body'
@@ -248,6 +249,24 @@ Node* Runtime::loopAssemble() {
 			if (!is_included(prev,loop.body) && !is_included(prev,loop.again))
 				const_set.insert(prev);
 	NodeList const_list = NodeList(const_set.begin(),const_set.end());
+
+	// All 'body' nodes that only depend on the 'cons_list' are invariant nodes
+	int i = 0;
+	while (i < loop.body.size()) {
+		Node *node = loop.body[i++];
+		bool invar = true;
+		for (auto prev : node->prevList())
+			if (invar && !is_included(prev,const_list))
+				invar = false;
+		// Detected an invariant, moves it out of 'body'
+		if (invar) {
+			remove_value(node,loop.body);
+			loop.prev.push_back(node);
+			const_list.push_back(node);
+			i--;
+		}
+		// @@ test this code better
+	}
 
 	// 'feed_in' nodes are those 'prevs' not found on the constant list
 	loop.feed_in = left_join(loop.prev,const_list);
@@ -274,8 +293,6 @@ Node* Runtime::loopAssemble() {
 		// with loopAgainTail() Python finally swaps the loop variables to 'tail' nodes
 		Node::id_count--; // @ I'd be fired for this
 	}
-
-	// TODO: detect loop invariant code and move it out
 
 	// 'loop' node creation, insertion, simplification
 	Node *node = Loop::Factory(loop.prev,cond_node,loop.body,loop.feed_in,loop.feed_out);
@@ -401,24 +418,12 @@ void Runtime::evaluate(NodeList list_to_eval) {
 	clock.prepare();
 	clock.start(EVAL);
 
-	// @ Prints nodes
-	std::cout << "----" << std::endl;
-	for (auto &node : node_list)
-		std::cout << node->id << "\t" << node->getName() << "\t " << node->ref << std::endl;
-	std::cout << "----" << std::endl;
-
 	// Unlinks all unaccessible (i.e. isolated) nodes & removes them from simplifier 
 	unlinkIsolated(node_list,true);
 
 	// Cleaning of old unaccessible nodes
 	auto pred = [](std::unique_ptr<Node> &node){ return node->ref==0; };
 	node_list.erase(std::remove_if(node_list.begin(),node_list.end(),pred),node_list.end());
-
-	// @ Prints nodes
-	std::cout << "----" << std::endl;
-	for (auto &node : node_list)
-		std::cout << node->id << "\t" << node->getName() << "\t " << node->ref << std::endl;
-	std::cout << "----" << std::endl;
 
 	NodeList full_list;
 	if (list_to_eval.size() == 0) // eval all nodes
@@ -429,29 +434,35 @@ void Runtime::evaluate(NodeList list_to_eval) {
 	}
 	else if (list_to_eval.size() == 1) // eval one node
 	{
-		full_list = ListerBU().list(list_to_eval.front());
+		full_list = Lister().list(list_to_eval.front());
 	}
 	else if (list_to_eval.size() >= 2) // eval few nodes
 	{
-		full_list = ListerBU().list(list_to_eval);
+		full_list = Lister().list(list_to_eval);
 	}
 
-	// Sorts the list by id, since listing only orders by dependencies
-	std::sort(full_list.begin(),full_list.end(),node_id_less());
+	// Sorts the list by 'dependencies' 1st, and 'id' 2nd
+	auto sort_list = Sorter().sort(full_list);
 
-	// @ Prints nodes
-	std::cout << "----" << std::endl;
-	for (auto node : full_list)
-		std::cout << node->id << "\t" << node->getName() << "\t " << node->ref << std::endl;
-	std::cout << "----" << std::endl;
+// @ Prints nodes 4rd
+std::cout << "----" << std::endl;
+for (auto node : sort_list)
+	std::cout << node->id << "\t" << node->getName() << "\t " << node->ref << std::endl;
+std::cout << "----" << std::endl;
+
+	//assert(0);
 
 	// Clones the list of sorted nodes into new list of new nodes
 	OwnerNodeList priv_list; //!< Owned by this particular evaluation
 	auto cloner = Cloner(priv_list);
-	auto graph = cloner.clone(full_list);
+	auto graph = cloner.clone(sort_list);
 	auto map_new_old = cloner.new_hash;
 
-	// TODO: cloner needs to put together a new Loop, but only with the used variables
+// @ Prints nodes 5rd
+std::cout << "----" << std::endl;
+for (auto &node : priv_list)
+	std::cout << node->id << "\t" << node->getName() << "\t " << node->ref << std::endl;
+std::cout << "----" << std::endl;
 
 	/**/
 	workflow(graph);

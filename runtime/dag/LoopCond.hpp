@@ -29,6 +29,7 @@ struct LoopCond : public Node
 	Pattern pattern() const { return SPREAD; }
 
 	// Variables
+	Loop *owner_loop;
 };
 
 } } // namespace map::detail

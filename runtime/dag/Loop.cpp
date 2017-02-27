@@ -85,7 +85,7 @@ Loop::Loop(const MetaData &meta, NodeList prev_list, Node *cond_node, NodeList b
 	assert(cond_node != nullptr);
 	assert(feed_in_list.size() == feed_out_list.size());
 
-	// 'body' is owned by Runtime::node_list, might change in the future
+	// 'body' is owned by Runtime::node_list, might change in the future?
 	this->body_list = body_list;
 	
 	// Creates a 'head' node per 'prev' node outside 'loop'
@@ -93,7 +93,7 @@ Loop::Loop(const MetaData &meta, NodeList prev_list, Node *cond_node, NodeList b
 		auto head = new LoopHead(this,prev);
 		this->head_list.push_back(head);
 
-		// Creates a 'feedback' node per 'head' in the 'feed_in' group
+		// Creates a 'feedback-in' node per 'head' in the 'feed_in' group
 		if (is_included(prev,feed_in_list)) {
 			auto feed = new Feedback(this,head);
 			this->feed_in_list.push_back(feed);
@@ -109,11 +109,11 @@ Loop::Loop(const MetaData &meta, NodeList prev_list, Node *cond_node, NodeList b
 	this->prev_list[0] = this->cond_node;
 	this->cond_node->addNext(this);
 
-	// 'feed'
+	// Creates a 'feedback-out' node per link back into the loop, and connect it to a 'feedback-in'
 	for (int i=0; i<feed_out_list.size(); i++)
 		this->feed_out_list.push_back( new Feedback(this,this->feed_in_list[i],feed_out_list[i]) );
 
-	// 'tail'
+	// Creates a 'tail' per node inside the loop 'body', nodes with 'feedback' are a special case
 	for (auto node : body_list) {
 		Node *prev = node;
 		for (auto next : node->nextList())

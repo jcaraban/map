@@ -198,14 +198,100 @@ void Cloner::visit(RadialScan *old) {
 }
 
 void Cloner::visit(SpreadScan *old) {
-	assert(0); // might be substituted by Loop
+	assert(0); // will be substituted by Loop
 }
 
 void Cloner::visit(Loop *old) {
-	NodeList prev_list, cond_list, body_list, feed_list;
-	//for (auto prev : old->prevList()) 
-	//	prev_list.push_back( old_hash.find(prev)->second );
-	assert(0);
+	NodeList prev_list, body_list, feed_in_list, feed_out_list;
+	Node *cond;
+
+	// Filling loop.prev_list
+	for (auto head : old->headList()) {
+		Node *prev = head->prev(); // we want the 'prev'
+		Node *newp = old_hash.find(prev)->second;
+		prev_list.push_back(newp); // push the 'new_prev'
+	}
+
+	// Filling loop.cond
+	cond = old_hash.find(old->condition()->prev())->second;
+
+	// Filling loop.body_list
+	for (auto body : old->bodyList()) {
+		Node *newb = old_hash.find(body)->second;
+		body_list.push_back(newb);  // push the 'new_body'
+	}
+
+	// Filling loop.feed_in_list
+	for (auto fin : old->feed_in_list) {
+		auto *head = dynamic_cast<LoopHead*>(fin->prev());
+		Node *prev = head->prev(); // jump the 'head'
+		Node *newp = old_hash.find(prev)->second;
+		feed_in_list.push_back(newp);
+	}
+	
+	// Filling loop.feed_out_list
+	for (auto fout : old->feed_out_list) {
+		Node *prev = fout->prev(); // we want the 'prev'
+		Node *newp = old_hash.find(prev)->second;
+		feed_out_list.push_back(newp);
+	}
+
+	Node *node = Loop::Factory(prev_list,cond,body_list,feed_in_list,feed_out_list);
+
+	new_list.push_back( std::unique_ptr<Node>(node) );
+	old_hash.insert( {old, node} );
+	new_hash.insert( {node, old} );
+
+	// Redirects 'next' nodes to the new 'tail' nodes
+	Loop *loop = dynamic_cast<Loop*>(node);
+	assert(old->tailList().size() == loop->tailList().size());
+
+	for (int i=0; i<loop->tailList().size(); i++) {
+		old_hash.insert( {old->tailList()[i], loop->tailList()[i]} );
+		new_hash.insert( {loop->tailList()[i], old->tailList()[i]} );
+	}
+
+}
+
+void Cloner::visit(LoopCond *old) {
+	// something ?
+}
+
+void Cloner::visit(LoopHead *old) {
+	// Redirects 'body' / 'feedin' nodes to the 'prev' non-loop node
+	Node *node = old_hash.find(old->prev())->second;
+
+	old_hash.insert( {old, node} );
+}
+
+void Cloner::visit(LoopTail *old) {
+	// something ?
+	/*
+	// Redirects 'next' nodes to the new 'loop's 'tail' nodes
+	Loop *oldl = old->loop();
+	Node *newl = old_hash.find(oldl)->second;
+	Loop *loop = dynamic_cast<Loop*>(newl);
+	
+	// Gets old 'tail' pos, find new 'tail' in pos 'i'
+	auto list = oldl->tailList();
+	int i = std::distance(list.begin(),std::find(list.begin(),list.end(),old));
+	Node *node = loop->tailList()[i];
+
+	old_hash.insert( {old, node} );
+	*/
+}
+
+void Cloner::visit(Feedback *old) {
+	if (old->feedOut())
+		return; // nothing to do for feedOut case
+
+	// Redirects 'body' nodes to the 'prev' non-loop node
+	Node *node = old_hash.find(old->prev())->second;
+	//auto *head = dynamic_cast<LoopHead*>(old->prev());
+	//Node *prev = head->prev(); // jump the 'head'
+	//Node *node = old_hash.find(prev)->second;
+	
+	old_hash.insert( {old, node} );
 }
 
 void Cloner::visit(Access *old) {

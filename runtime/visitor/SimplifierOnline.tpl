@@ -41,9 +41,7 @@ void SimplifierOnline::helper(T *node, std::unordered_map<typename T::Key,T*,typ
 template <typename T>
 void SimplifierOnline::drop_helper(T *node, std::unordered_map<typename T::Key,T*,typename T::Hash> &map) {
 	typename T::Key key(node);
-	auto i = map.find(key);
-	assert(i != map.end());
-	map.erase(i);
+	map.erase(key); // @ reconsider the whole 'drop' idea
 }
 
 } } // namespace map::detail
