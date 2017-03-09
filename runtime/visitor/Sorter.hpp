@@ -11,6 +11,7 @@
 #include "Visitor.hpp"
 #include <unordered_map>
 #include <unordered_set>
+#include <queue>
 
 
 namespace map { namespace detail {
@@ -38,7 +39,8 @@ struct Sorter : public Visitor
 
   // vars
 	NodeList node_list;
-	std::unordered_map<Node*,std::unordered_set<Node*>> prev_hash; //!< LookUp for prev of prev
+	std::priority_queue<Node*,std::vector<Node*>,node_id_greater> queue;
+	std::unordered_map<Node*,int> prev_count; //!< Keeps the count of remaining prevs
 };
 
 #undef DECLARE_VISIT

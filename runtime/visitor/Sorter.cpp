@@ -18,49 +18,57 @@ Sorter::Sorter()
 void Sorter::clear() {
 	//visited.clear();
 	node_list.clear();
-	prev_hash.clear();
+	prev_count.clear();
+	queue = decltype(queue)();
 }
 
 void Sorter::static_visit(Node *node) {
 	//
-	std::unordered_set<Node*> uset;
-	for (auto prev : node->prevList()) {
-		if (prev->id > node->id && dynamic_cast<Feedback*>(prev))
-			continue; // skip cyclic edges
-		assert(prev_hash.find(prev) != prev_hash.end());
-		uset.insert(prev_hash[prev].begin(),prev_hash[prev].end());
-		uset.insert(prev);
-	}
-	prev_hash.insert( {node,uset} );
 }
 
 NodeList Sorter::sort(NodeList list) {
 	clear();
+	assert(not list.empty());
 
-	// Creates 'hashes of previous' to speed up the sorting
-	for (auto node : list)
-		static_visit(node);
+	// Walks all nodes first to registers them in the data structures
+	for (auto node : list) {
+		int count = node->prevList().size();
+		// Feedback nodes are a exception...
+		auto feed = dynamic_cast<Feedback*>(node);
+		if (feed && feed->feedIn())
+			count--;
 
-	// lambda predicate givent to std::sort
-	auto pred_dep_id = [&](Node *lhs, Node *rhs) {
-		auto &ruset = prev_hash.find(rhs)->second;
-		bool l_prev_r = (ruset.find (lhs) != ruset.end());
+		if (count == 0) { // ready nodes go into the queue
+			queue.push(node);
+		} else { // nodes with '> 0' prevs keep the count
+			prev_count[node] = count;
+		}
+	}
 
-		auto &luset = prev_hash.find(lhs)->second;
-		bool r_prev_l = (luset.find (rhs) != luset.end());
+	// (1) 'queue' for the bfs topo-sort, (2) 'priority' for the id-sort
+	while (not queue.empty()) {
+		Node *node = queue.top();
+		queue.pop();
 
-		if (l_prev_r) // left is previous to right
-			return true;
-		else if (r_prev_l) // right is previous to left
-			return false; 
-		else // no data dependencie, id decides order
-			return lhs->id < rhs->id;
-	};
+		node_list.push_back(node);
 
-	// Sorts by dependency 1st, by id 2nd
-	node_list = list;
-	std::sort(node_list.begin(),node_list.end(),pred_dep_id);
+		for (auto next : node->nextList()) {
+			// Feedback nodes are a exception...
+			auto feedout = dynamic_cast<Feedback*>(node);
+			auto feedin = dynamic_cast<Feedback*>(next);
+			if (feedin && feedout)
+				continue;
+			//assert(prev_count.find(next) != prev_count.end());
 
+			prev_count[next]--;
+			if (prev_count[next] == 0) {
+				prev_count.erase(next);
+				queue.push(next);
+			}
+		}	
+	}
+
+	//assert(prev_count.empty());
 	return node_list;
 }
 
