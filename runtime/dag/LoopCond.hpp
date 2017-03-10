@@ -18,6 +18,17 @@ struct Loop; //!< Forward declaration
 
 struct LoopCond : public Node
 {
+	// Internal declarations
+	struct Key {
+		Key(LoopCond *node);
+		bool operator==(const Key& k) const;
+		Node *prev;
+		Loop *loop;
+	};
+	struct Hash {
+		std::size_t operator()(const Key& k) const;
+	};
+
 	// Constructors & methods
 	LoopCond(Loop *loop, Node *prev);
 	void accept(Visitor *visitor);

@@ -12,6 +12,21 @@
 
 namespace map { namespace detail {
 
+// Internal declarations
+
+LoopHead::Key::Key(LoopHead *node) {
+	prev = node->prev();
+	loop = node->loop();
+}
+
+bool LoopHead::Key::operator==(const Key& k) const {
+	return (prev==k.prev && loop==k.loop);
+}
+
+std::size_t LoopHead::Hash::operator()(const Key& k) const {
+	return std::hash<Node*>()(k.prev) ^ std::hash<Loop*>()(k.loop);
+}
+
 // Constructors & methods
 
 LoopHead::LoopHead(Loop *loop, Node *prev)

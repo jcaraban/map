@@ -127,6 +127,7 @@ Loop::Loop(const MetaData &meta, NodeList prev_list, Node *cond_node, NodeList b
 
 Loop::~Loop() {
 	// ... continue ... nodes to unlink, delete?
+	/*
 	delete cond_node;
 	for (auto head : head_list)
 		delete head;
@@ -136,6 +137,7 @@ Loop::~Loop() {
 		delete feed;
 	for (auto tail : tail_list)
 		delete tail;
+	*/
 }
 
 void Loop::accept(Visitor *visitor) {

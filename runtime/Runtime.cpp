@@ -250,7 +250,7 @@ Node* Runtime::loopAssemble() {
 				const_set.insert(prev);
 	NodeList const_list = NodeList(const_set.begin(),const_set.end());
 
-	// All 'body' nodes that only depend on the 'cons_list' are invariant nodes
+	// All 'body' nodes that only depend on the 'cons_list' are loop invariant nodes
 	int i = 0;
 	while (i < loop.body.size()) {
 		Node *node = loop.body[i++];
@@ -258,7 +258,7 @@ Node* Runtime::loopAssemble() {
 		for (auto prev : node->prevList())
 			if (invar && !is_included(prev,const_list))
 				invar = false;
-		// Detected an invariant, moves it out of 'body'
+		// Detected a loop invariant, moves it out of 'body'
 		if (invar) {
 			remove_value(node,loop.body);
 			loop.prev.push_back(node);
@@ -277,7 +277,7 @@ Node* Runtime::loopAssemble() {
 			if (is_included(prev,loop.body) && !is_included(prev,loop.feed_out))
 				loop.feed_out.push_back(prev);
 
-	// Note: 'feed_in' and 'feed_out' must keep same size and --> order <--
+	// Note: 'feed_in' and 'feed_out' must maintain same size and --> order <--
 	assert(loop.feed_in.size() == loop.feed_out.size());
 
 	// Unlinks 'again' nodes, now that we have figured out the feedbacks
@@ -289,23 +289,35 @@ Node* Runtime::loopAssemble() {
 		for (auto &prev : node->prevList())
 			prev->removeNext(node);
 		node->prev_list.clear();
-		// The 'again' nodes are note deleted just yet, Python still points to them
-		// with loopAgainTail() Python finally swaps the loop variables to 'tail' nodes
+		// The 'again' nodes are not deleted just yet, Python still points to them.
+		// With loopAgainTail() Python updates the loop variables to 'tail' nodes
+		// which lets the garbage collector delete the 'again' nodes, sometime later
 		Node::id_count--; // @ I'd be fired for this
 	}
 
 	// 'loop' node creation, insertion, simplification
 	Node *node = Loop::Factory(loop.prev,cond_node,loop.body,loop.feed_in,loop.feed_out);
 	node_list.push_back( std::unique_ptr<Node>(node) );
-	Node *orig = simplifier.simplify(node);
+
+	// TODO: how to simplify a loop?
+	Node *orig = node; // = simplifier.simplify(node);
 
 	// Ask 'loop' for its newly created 'head' and 'tail' nodes
 	loop.loop = orig;
 	Loop *loop_node = dynamic_cast<Loop*>(orig);
 
-	// TODO: integrate 'head', 'feed', 'cond', 'feed', 'tail' into node_list ?
+	// Inserts the 'cond' / 'head' / 'feed' in/out / 'tail' nodes into the node_list
+	node_list.push_back( std::unique_ptr<Node>(loop_node->cond_node) );
+	for (auto node : loop_node->head_list)
+		node_list.push_back( std::unique_ptr<Node>(node) );
+	for (auto node : loop_node->feed_in_list)
+		node_list.push_back( std::unique_ptr<Node>(node) );
+	for (auto node : loop_node->feed_out_list)
+		node_list.push_back( std::unique_ptr<Node>(node) );
+	for (auto node : loop_node->tail_list)
+		node_list.push_back( std::unique_ptr<Node>(node) );
 
-	// 'head' nodes are not really used
+	// 'head' nodes are not used at the moment, maybe in the future?
 	loop.head.reserve(loop_node->headList().size());
 	for (auto head : loop_node->headList())
 		loop.head.push_back(head);
@@ -450,7 +462,7 @@ for (auto node : sort_list)
 	std::cout << node->id << "\t" << node->getName() << "\t " << node->ref << std::endl;
 std::cout << "----" << std::endl;
 
-	//assert(0);
+	// ... continue ... make clone keep the ids
 
 	// Clones the list of sorted nodes into new list of new nodes
 	OwnerNodeList priv_list; //!< Owned by this particular evaluation

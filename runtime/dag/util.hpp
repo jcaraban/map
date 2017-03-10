@@ -23,6 +23,9 @@ struct node_id_less {
 struct node_id_equal {
 	bool operator()(const Node *lhs, const Node *rhs);
 };
+struct node_id_greater {
+	bool operator()(const Node *lhs, const Node *rhs);
+};
 
 bool is_included(const Node *node, const NodeList &list);
 bool is_included(const Group *group, const GroupList &list);

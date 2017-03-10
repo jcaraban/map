@@ -11,6 +11,21 @@
 
 namespace map { namespace detail {
 
+// Internal declarations
+
+Feedback::Key::Key(Feedback *node) {
+	prev = node->prev();
+	loop = node->loop();
+}
+
+bool Feedback::Key::operator==(const Key& k) const {
+	return (prev==k.prev && loop==k.loop);
+}
+
+std::size_t Feedback::Hash::operator()(const Key& k) const {
+	return std::hash<Node*>()(k.prev) ^ std::hash<Loop*>()(k.loop);
+}
+
 // Constructors & methods
 
 Feedback::Feedback(Loop *loop, LoopHead *prev)
@@ -70,7 +85,7 @@ Feedback::Feedback(Loop *loop, Feedback *feed_in, Node *prev)
 	feed_in->twin = this; // feed_in --> feed_out
 	this->twin = feed_in; // feed_out --> feed_in
 	feed_in->prev_list.push_back(this);
-	this->next_list.push_back(feed_in);
+	this->addNext(feed_in);
 	/*
 	feed_in->prev_both = full_join(feed_in->prev_list,this->prev_list);
 	this->prev_both = feed_in->prev_both;

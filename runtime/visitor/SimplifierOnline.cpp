@@ -37,6 +37,11 @@ void SimplifierOnline::clear() {
 	ZonalReducMap.clear();
 	RadialScanMap.clear();
 	SpreadScanMap.clear();
+	LoopMap.clear();
+	LoopCondMap.clear();
+	LoopHeadMap.clear();
+	LoopTailMap.clear();
+	FeedbackMap.clear();
 	AccessMap.clear();
 	LhsAccessMap.clear();
 	ReadMap.clear();
@@ -85,6 +90,10 @@ void SimplifierOnline::drop(Node *node) {
 	DEFINE_VISIT(RadialScan)
 	DEFINE_VISIT(SpreadScan)
 	DEFINE_VISIT(Loop)
+	DEFINE_VISIT(LoopCond)
+	DEFINE_VISIT(LoopHead)
+	DEFINE_VISIT(LoopTail)
+	DEFINE_VISIT(Feedback)
 	DEFINE_VISIT(Access)
 	DEFINE_VISIT(LhsAccess)
 	DEFINE_VISIT(Read)

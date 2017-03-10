@@ -284,10 +284,42 @@
 	"build_varint": "",
 	"command_palette":
 	{
-		"height": 47.0,
-		"last_filter": "reindent",
+		"height": 107.0,
+		"last_filter": "export",
 		"selected_items":
 		[
+			[
+				"export",
+				"Export to HTML: Show Export Menu"
+			],
+			[
+				"expor",
+				"Export to HTML: Show Export Menu"
+			],
+			[
+				"expo",
+				"Export to HTML: Show Export Menu"
+			],
+			[
+				"html",
+				"Export to HTML: Show Export Menu"
+			],
+			[
+				"pri",
+				"Print to HTML: print as HTML to new buffer"
+			],
+			[
+				"syntax c+",
+				"Set Syntax: C++"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"paclage ",
+				"Package Control: Install Package"
+			],
 			[
 				"reindent",
 				"Indentation: Reindent Lines"
@@ -297,20 +329,12 @@
 				"Indentation: Reindent Lines"
 			],
 			[
-				"expo",
-				"Export to HTML: Show Export Menu"
-			],
-			[
 				"print",
 				"Print to HTML: print as HTML to new buffer"
 			],
 			[
 				"synt c",
 				"Preferences: Settings – Syntax Specific"
-			],
-			[
-				"install",
-				"Package Control: Install Package"
 			],
 			[
 				"syntax c",
@@ -330,14 +354,6 @@
 			],
 			[
 				"exp",
-				"Export to HTML: Show Export Menu"
-			],
-			[
-				"expor",
-				"Export to HTML: Show Export Menu"
-			],
-			[
-				"export",
 				"Export to HTML: Show Export Menu"
 			],
 			[
@@ -365,7 +381,7 @@
 				"Package Control: Remove Package"
 			]
 		],
-		"width": 449.0
+		"width": 485.0
 	},
 	"console":
 	{
@@ -390,51 +406,120 @@
 	},
 	"file_history":
 	[
+		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Stats.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/Cloner.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/Fusioner.cpp",
 		"/Users/jesus/jesus/Proyectos/map/runtime/Runtime.cpp",
 		"/Users/jesus/jesus/Proyectos/map/python/map.py",
 		"/Users/jesus/jesus/Proyectos/map/python/loop.py",
 		"/Users/jesus/jesus/Proyectos/map/tmp.txt",
+		"/Users/jesus/jesus/Proyectos/map/asm.txt",
+		"/Users/jesus/jesus/Proyectos/map/bin/olive.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/Lister.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/dag/BoundedNbh.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/dag/LoopTail.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/Visitor.hpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/Cloner.hpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Loop.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Loop.hpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/SimplifierOnline.hpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/SimplifierOnline.tpl",
+		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/Sorter.hpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/Sorter.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/Lister.hpp",
+		"/Users/jesus/jesus/Proyectos/map/Makefile",
+		"/Users/jesus/jesus/Proyectos/map/runtime/Worker.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/Scheduler.hpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/Scheduler.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/Partitioner.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Feedback.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/dag/util.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/Runtime.hpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Node.hpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/Visitor.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Feedback.hpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/Exporter.hpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/Exporter.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/task/Task.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Group.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/task/Task.hpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Group.hpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/ListerBU.hpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/ListerBU.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/dag/LoopHead.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/dag/FocalFunc.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/dag/util.hpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/SimplifierOnline.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Node.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Write.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/task/FocalTask.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/task/FocalZonalTask.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/task/SpreadingTask.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/dag/LoopCond.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/Fusioner.hpp",
+		"/Users/jesus/jesus/Proyectos/map/util/util.hpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/dag/LoopCond.hpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/dag/LoopHead.hpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/Clock.hpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/dag/LoopTail.hpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/dag/dag.hpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/skeleton/util.hpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/skeleton/util.cpp",
+		"/Users/jesus/jesus/Proyectos/map/bin/loop.cpp",
+		"/Users/jesus/jesus/Proyectos/map/file/binary.hpp",
+		"/Users/jesus/jesus/Proyectos/map/file/binary.cpp",
+		"/Users/jesus/jesus/Proyectos/map/README.md",
+		"/Users/jesus/jesus/Proyectos/map/file/tiff.cpp",
+		"/Users/jesus/jesus/Proyectos/map/.travis.yml",
+		"/Users/jesus/jesus/Proyectos/map/cle/cle.hpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/skeleton/Skeleton.hpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/skeleton/Skeleton.cpp",
+		"/Users/jesus/jesus/Proyectos/map.wiki/Statistics.md",
+		"/Users/jesus/jesus/Proyectos/map/python/stats.py",
+		"/Users/jesus/jesus/Proyectos/map/spir.txt",
+		"/Users/jesus/jesus/Proyectos/map/llvm.txt",
+		"/Users/jesus/jesus/Proyectos/map/runtime/skeleton/FocalSkeleton.cpp",
+		"/Users/jesus/jesus/Proyectos/map/cle/OclEnv.hpp",
+		"/Users/jesus/jesus/Proyectos/map/python/.gitignore",
+		"/Users/jesus/jesus/Proyectos/map.wiki/Hillshade.md",
+		"/Users/jesus/jesus/Proyectos/map/.gitignore",
+		"/Users/jesus/jesus/Proyectos/map/python/hill.py",
+		"/Users/jesus/jesus/Proyectos/visioncpp.wiki/Example:-Bayer-Filter-Demosaic.md",
+		"/Users/jesus/jesus/Proyectos/map/bin/.gitignore",
+		"/Users/jesus/jesus/Proyectos/map/README",
+		"/Users/jesus/jesus/Proyectos/map/runtime/Cache.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/Block.hpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/Block.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/task/ZonalTask.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/task/RadiatingTask.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/Job.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/skeleton/SpreadingSkeleton.cpp",
+		"/Users/jesus/jesus/Proyectos/map/runtime/checkpoint.txt",
+		"/Users/jesus/jesus/Proyectos/map/runtime/interpreter.txt",
 		"/Users/jesus/jesus/Proyectos/map/front/bindings.hpp",
 		"/Users/jesus/jesus/Proyectos/map/front/bindings.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/BoundedNbh.cpp",
 		"/Users/jesus/jesus/Proyectos/map/runtime/dag/BoundedNbh.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/SimplifierOnline.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/SimplifierOnline.cpp",
 		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Binary.hpp",
-		"/Users/jesus/jesus/Proyectos/map/Makefile",
 		"/Users/jesus/jesus/Proyectos/map/runtime/dag/dag.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/dag.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Node.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/Visitor.hpp",
 		"/Users/jesus/jesus/Proyectos/map/util/DataType.hpp",
 		"/Users/jesus/jesus/Proyectos/map/runtime/dag/FocalFlow.cpp",
 		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Neighbor.hpp",
 		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Neighbor.cpp",
 		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Unary.cpp",
 		"/Users/jesus/jesus/Proyectos/map/front/Raster.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Loop.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/LoopCond.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/LoopHead.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/LoopTail.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Feedback.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Feedback.hpp",
 		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Constant.cpp",
 		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Constant.hpp",
 		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Rand.cpp",
 		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Binary.cpp",
 		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Conditional.cpp",
 		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Conditional.hpp",
-		"/Users/jesus/jesus/Proyectos/map/file/binary.hpp",
 		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Cast.cpp",
 		"/Users/jesus/jesus/Proyectos/map/python/mandelbrot.py",
 		"/Users/jesus/jesus/Proyectos/map/runtime/dag/LhsAccess.cpp",
 		"/Users/jesus/jesus/Proyectos/map/python/basin.py",
-		"/Users/jesus/jesus/Proyectos/map/python/hill.py",
 		"/Users/jesus/jesus/Proyectos/map/python/life.py",
 		"/Users/jesus/jesus/Proyectos/map/python/view.py",
-		"/Users/jesus/jesus/Proyectos/map/python/stats.py",
 		"/Users/jesus/jesus/Proyectos/map/python/wsum.py",
-		"/Users/jesus/jesus/Proyectos/map/file/tiff.cpp",
 		"/Users/jesus/jesus/Proyectos/map/file/File.cpp",
 		"/Users/jesus/jesus/Proyectos/map/file/File.hpp",
 		"/Users/jesus/jesus/Proyectos/map/runtime/dag/IO.cpp",
@@ -442,82 +527,13 @@
 		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Read.hpp",
 		"/Users/jesus/jesus/Proyectos/map/util/Array4.hpp",
 		"/Users/jesus/jesus/Proyectos/map/file/MetaData.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Node.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/skeleton/util.cpp",
 		"/Users/jesus/jesus/Proyectos/map/util/NumDim.cpp",
 		"/Users/jesus/jesus/Proyectos/map/python/pitfill.py",
-		"/Users/jesus/jesus/Proyectos/map/runtime/Runtime.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Loop.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/ListerBU.cpp",
 		"/Users/jesus/jesus/Proyectos/map/util/UnaryType.cpp",
 		"/Users/jesus/jesus/Proyectos/map/python/leastcost.py",
 		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Checkpoint.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/LoopCond.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/LoopHead.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/LoopTail.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/Cloner.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/util.cpp",
 		"/Users/jesus/jesus/Proyectos/map/util/UnaryType.hpp",
-		"/Users/jesus/jesus/Proyectos/map/util/BinaryType.hpp",
-		"/Users/jesus/jesus/Proyectos/map/util/BinaryType.cpp",
-		"/Users/jesus/jesus/Proyectos/map/bin/loop.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Group.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/SimplifierOnline.tpl",
-		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/Cloner.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Group.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/Cache.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/Cache.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/Worker.cpp",
-		"/Users/jesus/jesus/Proyectos/map/file/DataStats.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/Predictor.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/Predictor.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/Config.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/task/Task.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/task/ScalarTask.cpp",
-		"/Users/jesus/jesus/Proyectos/map/bin/stats.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/Program.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/task/Task.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/Pattern.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/Pattern.cpp",
-		"/Users/jesus/jesus/Proyectos/map/util/VariantType.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/task/ZonalTask.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/task/ScalarTask.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/ZonalReduc.cpp",
-		"/Users/jesus/jesus/Proyectos/map/util/ReductionType.cpp",
-		"/Users/jesus/jesus/Proyectos/map/util/ReductionType.tpl",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Scalar.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/task/FocalTask.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/task/RadiatingTask.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/Block.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/Block.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/Exporter.cpp",
-		"/Users/jesus/jesus/Proyectos/map/file/scalar.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Scalar.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/skeleton/ZonalSkeleton.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/skeleton/Skeleton.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/ListerBU.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/Fusioner.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/Fusioner.cpp",
-		"/Users/jesus/jesus/Proyectos/map/util/VariantType.hpp",
-		"/Users/jesus/jesus/Proyectos/map/util/DataType.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/Job.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/skeleton/Skeleton.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/skeleton/ZonalSkeleton.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/FusionerTD.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/visitor/FusionerTD.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/skeleton/FocalSkeleton.hpp",
-		"/Users/jesus/jesus/Proyectos/map/front/Raster.hpp",
-		"/Users/jesus/jesus/Proyectos/map/bin/hill.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/SpreadScan.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Stats.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/FocalPercent.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/SpreadNeighbor.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Diversity.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/FocalFunc.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/skeleton/util.hpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Write.cpp",
-		"/Users/jesus/jesus/Proyectos/map/runtime/dag/Read.cpp",
-		"/Users/jesus/jesus/Proyectos/map/DagE.csv"
+		"/Users/jesus/jesus/Proyectos/map/util/BinaryType.hpp"
 	],
 	"find":
 	{
@@ -568,134 +584,134 @@
 		"case_sensitive": true,
 		"find_history":
 		[
+			"vfmadd213ps",
+			"fmad",
+			"stat",
+			"\t 3",
+			"Stats",
+			"ymm11",
+			"LCPI0_3",
+			"4000",
+			"0.4",
+			"vfma",
+			"vfmadd",
+			"10000",
+			"0,4",
+			".400",
+			"0.400",
+			"fmad",
+			"BoundedNbh",
+			"Neighbo",
+			"len(ngb",
+			"LoopHead\t 1",
+			"Read\t 3",
+			"marked",
+			"195\tBinary",
+			"/",
+			"%",
+			"asser",
+			"8\t",
+			"next",
+			"%",
+			"clear",
+			"isolated",
+			"queue",
+			"8\t",
+			"8\tFeedback",
+			"prev",
+			"Marke",
+			"active",
+			"std::unordered_map<Node*",
+			"dynamic_cast",
+			"16\tFeedback",
+			"18",
+			"19",
+			"2\tFeedback",
+			"LoopHead",
+			"6\t",
+			"loop.prev",
+			"body.prev",
+			"i--",
+			"while(",
+			"while",
+			"loopAddNode",
+			"addNode",
+			"symloo",
+			"loop.prev",
+			"feed_out",
+			"16\tFeed",
+			"16\t",
+			".erase(",
+			"17\tFeedback",
+			"16\tFeedback",
+			"19\tWrite",
+			"helper",
+			"static",
+			"static_visit",
+			"Cloner",
+			"Exporter",
+			"Fusioner",
+			"Lister",
+			"Partitioner",
+			"List",
+			"uset",
+			"visited",
+			"sort",
+			"dep_hash",
+			"std::unordered_map<Node*",
+			"prev_hash",
+			"std::unordered_set<std::unordered_set<",
+			"visited",
+			"prev_hash",
+			"ListerBU",
+			"ListerBU.",
+			"TD.",
+			"BU.",
+			"BU",
+			"ListerBU",
+			"full_list",
 			"Loop",
-			"Neig",
-			"ma_bound",
-			"len(tp",
-			"catch(",
-			"ma_neigh",
-			"visitor",
-			"Coord",
-			"{1,1}",
-			"coord",
-			"arg",
-			"Bound",
-			"Bounded",
-			"BOunded",
-			"Neighbor",
-			"constant",
-			"rand",
-			"Rand::Factory",
-			"Conditional::Factory",
-			"Constant::Factory(",
-			"ma_binary",
-			"\t 0",
+			"... continue",
+			"// @@",
+			".removeNode",
+			"updatePrev",
+			"feed_in_list",
+			"old",
 			"Loop\t",
+			"Loop ",
 			"Loop",
-			"// @ Prints nodes",
-			"\t 0",
-			"Ass",
-			"Assign(targets=[",
-			"Assign",
-			"targets",
-			"]",
-			"target",
-			"var_lst",
-			"var_list",
-			"Assign",
-			"luup",
-			"\t 0",
-			"\t0",
-			"] =",
-			"\t 0",
-			"ZonalReduc",
-			"decr()",
-			"decr();",
-			"con",
-			"] =",
-			"flowDir",
-			"flow = flowDir(pit,stream)\n",
-			"flowDirFlat",
-			"flow",
-			"flow(ngb)",
-			"continue",
-			"__call__",
-			"astype",
-			"DataTypeEn",
-			"DataType",
-			"val",
-			"ma_cast",
-			"symloo",
-			"sum(",
-			"prod(",
-			"falses",
-			"TODO",
-			"pick",
-			"ma_rand",
-			"catch",
-			"Variant",
-			"constant",
-			"unfun",
-			"unfunc",
-			"LOG2",
-			"log2",
-			"122",
+			"old_hash.find(old->prev())->second;",
+			"Head",
+			"node_id_equal",
+			"position",
+			"list_position",
+			"prev(",
+			"----",
+			"std::cout << \"----\" << std::endl;\n\tfor (auto &node : node_list)\n\t\tstd::cout << node->id << \"\\t\" << node->getName() << \"\\t \" << node->ref << std::endl;\n\tstd::cout << \"----\" << std::endl;",
+			"Factor",
+			"VISIT(Loop",
+			"DECLARE_VISIT(LoopHead",
+			"tail",
+			"Node *newp = old_hash.find(prev)",
+			"Head",
+			"feed_in",
+			"prev_list",
+			"prevList",
+			"new_hash",
+			"feed_in",
+			"push_back",
 			"Feedback",
-			"LoopTail",
-			"LOCAL",
-			"Array",
-			"lst",
-			"Array(",
-			"Array()",
-			"datasize()",
-			"Array(",
-			"Array( ",
-			"Array(",
-			"numdim",
-			"ma_numdim",
-			"numdim",
-			"::size()",
-			"size()",
-			"ost",
-			"ma_constant",
-			"{}",
-			"raster",
-			"Array",
-			"ma_constan",
-			"U8",
-			"consta",
-			"DataSize2NumDim",
-			"getNumD",
-			"getNUmDi",
-			"getName",
-			"constexpr",
-			"size",
-			"data_size.size()",
-			"datasize.size()",
-			"ds.size()",
-			"DataSize",
-			"datasize",
-			"con(",
-			"nbh0",
-			"nbh1",
-			"dir2coord",
-			"symloop",
-			"ma_convolution",
-			"ma_focalFunc",
-			"fmin",
-			"focal",
-			"fmin",
-			"Assign",
-			"_like",
-			"full_like",
-			"Variant)",
-			"numdim()",
-			"_const_to",
-			"full_like",
-			"con",
-			"symloo",
-			"symloop",
-			"pitFill"
+			"Head",
+			"loop_node",
+			";\n",
+			"loop_nod",
+			"prev_list",
+			".prev",
+			".gprev",
+			".prev",
+			"loop_st",
+			".cond.",
+			"loop_struct["
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -703,6 +719,12 @@
 		"regex": false,
 		"replace_history":
 		[
+			"marked",
+			"Lister",
+			"Sorter",
+			"value_position",
+			"owner_loop",
+			"DEPEND_UNKNOWN",
 			"prev",
 			"BoundedNbh",
 			"arg",
@@ -824,13 +846,7 @@
 			"Access",
 			"LhsAccess",
 			"DataLhsNbh",
-			"DataLhsAcc",
-			"DataLHS",
-			":",
-			"",
-			"f_SOLID",
-			"f",
-			";\n"
+			"DataLhsAcc"
 		],
 		"reverse": false,
 		"show_context": true,
@@ -840,7 +856,7 @@
 	},
 	"incremental_find":
 	{
-		"height": 23.0
+		"height": 34.0
 	},
 	"input":
 	{
@@ -894,8 +910,344 @@
 		"selected_items":
 		[
 			[
+				"km",
+				"python/kmeans.py"
+			],
+			[
+				"asm",
+				"asm.txt"
+			],
+			[
+				"stats",
+				"runtime/dag/Stats.cpp"
+			],
+			[
+				"fusi",
+				"runtime/visitor/Fusioner.cpp"
+			],
+			[
+				"oliv",
+				"bin/olive.cpp"
+			],
+			[
+				"list",
+				"runtime/visitor/Lister.cpp"
+			],
+			[
+				"bou",
+				"runtime/dag/BoundedNbh.cpp"
+			],
+			[
+				"clo",
+				"runtime/visitor/Cloner.hpp"
+			],
+			[
+				"bounded",
+				"runtime/dag/BoundedNbh.cpp"
+			],
+			[
+				"visit",
+				"runtime/visitor/Visitor.hpp"
+			],
+			[
 				"sim",
-				"runtime/visitor/SimplifierOnline.cpp"
+				"runtime/visitor/SimplifierOnline.tpl"
+			],
+			[
+				"simpl",
+				"runtime/visitor/SimplifierOnline.hpp"
+			],
+			[
+				"mak",
+				"Makefile"
+			],
+			[
+				"sch",
+				"runtime/Scheduler.hpp"
+			],
+			[
+				"shc",
+				"runtime/Scheduler.cpp"
+			],
+			[
+				"wor",
+				"runtime/Worker.cpp"
+			],
+			[
+				"feed",
+				"runtime/dag/Feedback.cpp"
+			],
+			[
+				"loopta",
+				"runtime/dag/LoopTail.cpp"
+			],
+			[
+				"tm",
+				"tmp.txt"
+			],
+			[
+				"loop",
+				"runtime/dag/Loop.cpp"
+			],
+			[
+				"ru",
+				"runtime/Runtime.cpp"
+			],
+			[
+				"uti",
+				"runtime/dag/util.cpp"
+			],
+			[
+				"run",
+				"runtime/Runtime.hpp"
+			],
+			[
+				"no",
+				"runtime/dag/Node.hpp"
+			],
+			[
+				"visito",
+				"runtime/visitor/Visitor.cpp"
+			],
+			[
+				"visi",
+				"runtime/visitor/Visitor.hpp"
+			],
+			[
+				"lis",
+				"runtime/visitor/Lister.hpp"
+			],
+			[
+				"feedb",
+				"runtime/dag/Feedback.hpp"
+			],
+			[
+				"ex",
+				"runtime/visitor/Exporter.hpp"
+			],
+			[
+				"expo",
+				"runtime/visitor/Exporter.cpp"
+			],
+			[
+				"sor",
+				"runtime/visitor/Sorter.cpp"
+			],
+			[
+				"ut",
+				"runtime/dag/util.cpp"
+			],
+			[
+				"util",
+				"runtime/dag/util.cpp"
+			],
+			[
+				"gro",
+				"runtime/dag/Group.cpp"
+			],
+			[
+				"task",
+				"runtime/task/Task.cpp"
+			],
+			[
+				"wri",
+				"runtime/dag/Write.cpp"
+			],
+			[
+				"focalf",
+				"runtime/dag/FocalFunc.cpp"
+			],
+			[
+				"loopc",
+				"runtime/dag/LoopCond.cpp"
+			],
+			[
+				"feedba",
+				"runtime/dag/Feedback.cpp"
+			],
+			[
+				"looph",
+				"runtime/dag/LoopHead.cpp"
+			],
+			[
+				"lister",
+				"runtime/visitor/ListerBU.cpp"
+			],
+			[
+				"loopcond",
+				"runtime/dag/LoopCond.cpp"
+			],
+			[
+				"cond",
+				"runtime/dag/LoopCond.cpp"
+			],
+			[
+				"tail",
+				"runtime/dag/LoopTail.cpp"
+			],
+			[
+				"head",
+				"runtime/dag/LoopHead.cpp"
+			],
+			[
+				"loophe",
+				"runtime/dag/LoopHead.hpp"
+			],
+			[
+				"loo",
+				"runtime/dag/Loop.hpp"
+			],
+			[
+				"cloner",
+				"runtime/visitor/Cloner.hpp"
+			],
+			[
+				"cl",
+				"runtime/Clock.hpp"
+			],
+			[
+				"fee",
+				"runtime/dag/Feedback.hpp"
+			],
+			[
+				"loopco",
+				"runtime/dag/LoopCond.hpp"
+			],
+			[
+				"loopt",
+				"runtime/dag/LoopTail.hpp"
+			],
+			[
+				"loota",
+				"runtime/dag/LoopTail.hpp"
+			],
+			[
+				"node",
+				"runtime/dag/Node.hpp"
+			],
+			[
+				"dag",
+				"runtime/dag/dag.hpp"
+			],
+			[
+				"util.cpp",
+				"runtime/skeleton/util.cpp"
+			],
+			[
+				"looc",
+				"runtime/dag/LoopCond.cpp"
+			],
+			[
+				"loop.cpp",
+				"runtime/dag/Loop.cpp"
+			],
+			[
+				"clon",
+				"runtime/visitor/Cloner.cpp"
+			],
+			[
+				"bina",
+				"file/binary.hpp"
+			],
+			[
+				"read",
+				"README.md"
+			],
+			[
+				"binar",
+				"file/binary.cpp"
+			],
+			[
+				"tiff.cp",
+				"file/tiff.cpp"
+			],
+			[
+				"sk",
+				"runtime/skeleton/Skeleton.hpp"
+			],
+			[
+				"cle",
+				"cle/cle.hpp"
+			],
+			[
+				"ske",
+				"runtime/skeleton/FocalSkeleton.cpp"
+			],
+			[
+				"skele",
+				"runtime/skeleton/Skeleton.cpp"
+			],
+			[
+				".ig",
+				".gitignore"
+			],
+			[
+				"llv",
+				"llvm.txt"
+			],
+			[
+				"spi",
+				"spir.txt"
+			],
+			[
+				"sta",
+				"python/stats.py"
+			],
+			[
+				"hil",
+				"python/hill.py"
+			],
+			[
+				"llvm",
+				"llvm.txt"
+			],
+			[
+				"map",
+				"python/map.py"
+			],
+			[
+				".git",
+				".gitignore"
+			],
+			[
+				"git",
+				".gitignore"
+			],
+			[
+				".giti",
+				".gitignore"
+			],
+			[
+				"fus",
+				"runtime/visitor/Fusioner.hpp"
+			],
+			[
+				"spreadta",
+				"runtime/task/SpreadingTask.cpp"
+			],
+			[
+				"radiata",
+				"runtime/task/RadiatingTask.cpp"
+			],
+			[
+				"zonata",
+				"runtime/task/ZonalTask.cpp"
+			],
+			[
+				"focalta",
+				"runtime/task/FocalTask.cpp"
+			],
+			[
+				"bl",
+				"runtime/Block.cpp"
+			],
+			[
+				"job",
+				"runtime/Job.cpp"
+			],
+			[
+				"cac",
+				"runtime/Cache.cpp"
 			],
 			[
 				"bind",
@@ -914,20 +1266,8 @@
 				"runtime/dag/dag.cpp"
 			],
 			[
-				"dag",
-				"runtime/dag/dag.hpp"
-			],
-			[
 				"nod",
 				"runtime/dag/Node.hpp"
-			],
-			[
-				"visit",
-				"runtime/visitor/Visitor.hpp"
-			],
-			[
-				"mak",
-				"Makefile"
 			],
 			[
 				"datat",
@@ -962,10 +1302,6 @@
 				"front/Raster.cpp"
 			],
 			[
-				"binar",
-				"runtime/dag/Binary.cpp"
-			],
-			[
 				"condi",
 				"runtime/dag/Conditional.cpp"
 			],
@@ -974,20 +1310,12 @@
 				"front/Raster.cpp"
 			],
 			[
-				"cond",
-				"runtime/dag/Conditional.cpp"
-			],
-			[
 				"mand",
 				"python/mandelbrot.py"
 			],
 			[
 				"cast",
 				"runtime/dag/Cast.cpp"
-			],
-			[
-				"bina",
-				"runtime/dag/Binary.cpp"
 			],
 			[
 				"lhs",
@@ -1014,10 +1342,6 @@
 				"python/view.py"
 			],
 			[
-				"stats",
-				"python/stats.py"
-			],
-			[
 				"wsu",
 				"python/wsum.py"
 			],
@@ -1042,20 +1366,12 @@
 				"runtime/dag/IO.hpp"
 			],
 			[
-				"read",
-				"runtime/dag/Read.hpp"
-			],
-			[
 				"meta",
 				"file/MetaData.hpp"
 			],
 			[
 				"arr",
 				"util/Array4.hpp"
-			],
-			[
-				"no",
-				"runtime/dag/Node.cpp"
 			],
 			[
 				"numd",
@@ -1082,44 +1398,12 @@
 				"runtime/dag/LoopHead.cpp"
 			],
 			[
-				"tm",
-				"tmp.txt"
-			],
-			[
-				"run",
-				"runtime/Runtime.hpp"
-			],
-			[
-				"loo",
-				"runtime/dag/Loop.hpp"
-			],
-			[
 				"least",
 				"python/leastcost.py"
 			],
 			[
-				"feed",
-				"runtime/dag/Feedback.hpp"
-			],
-			[
-				"node",
-				"runtime/dag/Node.hpp"
-			],
-			[
-				"lister",
-				"runtime/visitor/ListerBU.cpp"
-			],
-			[
-				"fee",
-				"runtime/dag/Feedback.hpp"
-			],
-			[
 				"ch",
 				"runtime/dag/Checkpoint.cpp"
-			],
-			[
-				"tail",
-				"runtime/dag/LoopTail.cpp"
 			],
 			[
 				"pit",
@@ -1130,280 +1414,12 @@
 				"runtime/dag/LoopCond.cpp"
 			],
 			[
-				"loophe",
-				"runtime/dag/LoopHead.cpp"
-			],
-			[
 				"mandel",
 				"python/mandelbrot.py"
 			],
 			[
-				"loopc",
-				"runtime/dag/LoopCond.cpp"
-			],
-			[
-				"loopta",
-				"runtime/dag/LoopTail.hpp"
-			],
-			[
 				"loophead",
 				"runtime/dag/LoopHead.hpp"
-			],
-			[
-				"clo",
-				"runtime/visitor/Cloner.hpp"
-			],
-			[
-				"uti",
-				"runtime/dag/util.cpp"
-			],
-			[
-				"loopcond",
-				"runtime/dag/LoopCond.cpp"
-			],
-			[
-				"binart",
-				"util/BinaryType.cpp"
-			],
-			[
-				"unart",
-				"util/UnaryType.cpp"
-			],
-			[
-				"unaryt",
-				"util/UnaryType.hpp"
-			],
-			[
-				"dag.cpp",
-				"runtime/dag/dag.cpp"
-			],
-			[
-				"basin",
-				"python/basin.py"
-			],
-			[
-				"feedba",
-				"runtime/dag/Feedback.hpp"
-			],
-			[
-				"loop",
-				"bin/loop.cpp"
-			],
-			[
-				"gro",
-				"runtime/dag/Group.hpp"
-			],
-			[
-				"bindin",
-				"front/bindings.hpp"
-			],
-			[
-				"loop.p",
-				"python/loop.py"
-			],
-			[
-				"map.py",
-				"python/map.py"
-			],
-			[
-				"loop.",
-				"python/loop.py"
-			],
-			[
-				"tmp",
-				"tmp.txt"
-			],
-			[
-				"cac",
-				"runtime/Cache.cpp"
-			],
-			[
-				"metada",
-				"file/MetaData.hpp"
-			],
-			[
-				"ca",
-				"runtime/Cache.cpp"
-			],
-			[
-				"cost",
-				"python/leastcost.py"
-			],
-			[
-				"util",
-				"runtime/dag/util.cpp"
-			],
-			[
-				"wor",
-				"runtime/Worker.cpp"
-			],
-			[
-				"tailh",
-				"runtime/dag/LoopTail.hpp"
-			],
-			[
-				"data",
-				"file/DataStats.hpp"
-			],
-			[
-				"head",
-				"runtime/dag/LoopHead.hpp"
-			],
-			[
-				"bidn",
-				"front/bindings.cpp"
-			],
-			[
-				"map.p",
-				"python/map.py"
-			],
-			[
-				"simp",
-				"runtime/visitor/SimplifierOnline.cpp"
-			],
-			[
-				"simpli",
-				"runtime/visitor/SimplifierOnline.hpp"
-			],
-			[
-				"conf",
-				"runtime/Config.hpp"
-			],
-			[
-				"ru",
-				"runtime/Runtime.hpp"
-			],
-			[
-				"task",
-				"runtime/task/Task.cpp"
-			],
-			[
-				"stat",
-				"bin/stats.cpp"
-			],
-			[
-				"pred",
-				"runtime/visitor/Predictor.hpp"
-			],
-			[
-				"pre",
-				"runtime/visitor/Predictor.hpp"
-			],
-			[
-				"stats.p",
-				"python/stats.py"
-			],
-			[
-				"numdi",
-				"util/NumDim.cpp"
-			],
-			[
-				"tas",
-				"runtime/task/Task.cpp"
-			],
-			[
-				"pat",
-				"runtime/Pattern.cpp"
-			],
-			[
-				"patt",
-				"runtime/Pattern.hpp"
-			],
-			[
-				"scalart",
-				"runtime/task/ScalarTask.cpp"
-			],
-			[
-				"fusi",
-				"runtime/visitor/Fusioner.cpp"
-			],
-			[
-				"clon",
-				"runtime/visitor/Cloner.cpp"
-			],
-			[
-				"vara",
-				"util/VariantType.cpp"
-			],
-			[
-				"scalarta",
-				"runtime/task/ScalarTask.hpp"
-			],
-			[
-				"scala",
-				"runtime/dag/Scalar.hpp"
-			],
-			[
-				"red",
-				"util/ReductionType.cpp"
-			],
-			[
-				"zonalre",
-				"runtime/dag/ZonalReduc.cpp"
-			],
-			[
-				"reducti",
-				"util/ReductionType.cpp"
-			],
-			[
-				"bl",
-				"runtime/Block.cpp"
-			],
-			[
-				"expo",
-				"runtime/visitor/Exporter.cpp"
-			],
-			[
-				"radia",
-				"runtime/task/RadiatingTask.cpp"
-			],
-			[
-				"focalta",
-				"runtime/task/FocalTask.cpp"
-			],
-			[
-				"blo",
-				"runtime/Block.hpp"
-			],
-			[
-				"datas",
-				"file/DataStats.hpp"
-			],
-			[
-				"sca",
-				"runtime/dag/Scalar.cpp"
-			],
-			[
-				"cloner",
-				"runtime/visitor/Cloner.cpp"
-			],
-			[
-				"skel",
-				"runtime/skeleton/Skeleton.cpp"
-			],
-			[
-				"zonalsk",
-				"runtime/skeleton/ZonalSkeleton.cpp"
-			],
-			[
-				"bing",
-				"front/bindings.cpp"
-			],
-			[
-				"da",
-				"runtime/dag/dag.hpp"
-			],
-			[
-				"visi",
-				"runtime/visitor/Visitor.hpp"
-			],
-			[
-				"lis",
-				"runtime/visitor/ListerBU.cpp"
-			],
-			[
-				"list",
-				"runtime/visitor/ListerBU.hpp"
 			]
 		],
 		"width": 0.0

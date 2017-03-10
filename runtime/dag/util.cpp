@@ -15,6 +15,10 @@ bool node_id_less::operator()(const Node *lhs, const Node *rhs) {
 bool node_id_equal::operator()(const Node *lhs, const Node *rhs) {
 	return lhs->id == rhs->id;
 }
+
+bool node_id_greater::operator()(const Node *lhs, const Node *rhs) {
+	return lhs->id > rhs->id;
+}
 /*
 bool group_id_equal::operator()(const Group *lhs, const Group *rhs) {
 	return lhs->id == rhs->id;

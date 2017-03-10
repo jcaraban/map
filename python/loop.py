@@ -84,7 +84,8 @@ def catchAssign(flow,stream):
 
 def basinBorder(catch):
 	border = zeros_like(catch,U8)
-	for ngb in zip(nbh0,nbh1):
+	for i in range(1,9):
+		ngb = [nbh0[i],nbh1[i]]
 		cond = catch != catch(ngb)
 		border[cond] = True
 	return border
@@ -95,7 +96,7 @@ dem = read(in_file_path)
 stream = zeros_like(dem,S32)
 pit = pitFill(dem,stream)
 #
-write( pit, out_file_path)
+#write( pit, out_file_path)
 #
 flow = flowDir(pit,stream)
 flow = flowDirFlat(flow)

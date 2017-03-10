@@ -12,6 +12,21 @@
 
 namespace map { namespace detail {
 
+// Internal declarations
+
+LoopCond::Key::Key(LoopCond *node) {
+	prev = node->prev();
+	loop = node->loop();
+}
+
+bool LoopCond::Key::operator==(const Key& k) const {
+	return (prev==k.prev && loop==k.loop);
+}
+
+std::size_t LoopCond::Hash::operator()(const Key& k) const {
+	return std::hash<Node*>()(k.prev) ^ std::hash<Loop*>()(k.loop);
+}
+
 // Constructors & methods
 
 LoopCond::LoopCond(Loop *loop, Node *prev)

@@ -12,6 +12,21 @@
 
 namespace map { namespace detail {
 
+// Internal declarations
+
+LoopTail::Key::Key(LoopTail *node) {
+	prev = node->prev();
+	loop = node->loop();
+}
+
+bool LoopTail::Key::operator==(const Key& k) const {
+	return (prev==k.prev && loop==k.loop);
+}
+
+std::size_t LoopTail::Hash::operator()(const Key& k) const {
+	return std::hash<Node*>()(k.prev) ^ std::hash<Loop*>()(k.loop);
+}
+
 // Constructors & methods
 
 LoopTail::LoopTail(Loop *loop, Node *prev)
@@ -23,7 +38,7 @@ LoopTail::LoopTail(Loop *loop, Node *prev)
 	owner_loop = loop;
 	prev_list.resize(2);
 	prev_list[0] = prev;
-	prev_list[1] = loop;
+	prev_list[1] = loop; // @ first 'loop' or 'prev' ?
 	
 	// 'prev' should not point to anybody 'next' at this point
 	//assert( prev->nextList().empty() );

@@ -41,6 +41,7 @@ struct Cloner : public Visitor
 	DECLARE_VISIT(Conditional)
 	DECLARE_VISIT(Diversity)
 	DECLARE_VISIT(Neighbor)
+	DECLARE_VISIT(BoundedNbh)
 	DECLARE_VISIT(SpreadNeighbor)
 	DECLARE_VISIT(Convolution)
 	DECLARE_VISIT(FocalFunc)

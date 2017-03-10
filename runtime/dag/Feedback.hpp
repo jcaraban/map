@@ -17,6 +17,17 @@ struct LoopHead; //!< Forward declaration
 
 struct Feedback : public Node
 {
+	// Internal declarations
+	struct Key {
+		Key(Feedback *node);
+		bool operator==(const Key& k) const;
+		Node *prev;
+		Loop *loop;
+	};
+	struct Hash {
+		std::size_t operator()(const Key& k) const;
+	};
+	
 	// Constructors & methods
 	Feedback(Loop *loop, LoopHead *prev);
 	Feedback(Loop *loop, Feedback *feed_in, Node *prev);

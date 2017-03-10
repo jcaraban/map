@@ -129,6 +129,17 @@ void Cloner::visit(Neighbor *old) {
 	new_hash.insert( {node, old} );
 }
 
+void Cloner::visit(BoundedNbh *old) {
+	Node *prev = old_hash.find(old->prev())->second; // @@
+	Node *cx = old_hash.find(old->prev_list[1])->second;
+	Node *cy = old_hash.find(old->prev_list[2])->second;
+	Node *node = BoundedNbh::Factory(prev,cx,cy);
+
+	new_list.push_back( std::unique_ptr<Node>(node) );
+	old_hash.insert( {old, node} );
+	new_hash.insert( {node, old} );
+}
+
 void Cloner::visit(SpreadNeighbor *old) {
 	Node *prev = old_hash.find(old->prev())->second;
 	Node *dir = old_hash.find(old->dir())->second;
