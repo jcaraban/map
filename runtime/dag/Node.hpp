@@ -39,11 +39,11 @@ struct Node {
 	virtual ~Node();
 
 	virtual void accept(Visitor *visitor) = 0;
+	virtual void acceptPrev(Visitor *visitor);
+	virtual void acceptNext(Visitor *visitor);
+
 	virtual std::string getName() const = 0;
 	virtual std::string signature() const = 0;
-
-	virtual void goUp(Visitor *visitor);
-	virtual void goDown(Visitor *visitor);
 
 	void increaseRef();
 	void decreaseRef();

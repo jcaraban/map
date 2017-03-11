@@ -36,12 +36,12 @@ Node::~Node() {
 	assert(ref == 0);
 }
 
-void Node::goUp(Visitor *visitor) {
+void Node::acceptPrev(Visitor *visitor) {
 	for (auto &prev : prevList())
 		prev->accept(visitor);
 }
 
-void Node::goDown(Visitor *visitor) {
+void Node::acceptNext(Visitor *visitor) {
 	for (auto &next : nextList())
 		next->accept(visitor);
 }

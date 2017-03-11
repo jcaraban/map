@@ -66,7 +66,7 @@ void Lister::helper(T *node) {
 	if (wasVisited(node)) return;
 	setVisited(node);
 	
-	node->goUp(this);
+	node->acceptPrev(this);
 	node_list.push_back(node);
 }
 
