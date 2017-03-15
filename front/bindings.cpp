@@ -120,8 +120,8 @@ Node* ma_cast(Node *prev, DataTypeEnum type) {
 	return Runtime::getInstance().addNode(node);
 }
 
-Node* ma_index(Node *prev, NumDimEnum dim) {
-	Node *node = Index::Factory(prev,dim);
+Node* ma_index(DataSize ds, NumDimEnum dim, MemOrderEnum mo, BlockSize bs) {
+	Node *node = Index::Factory(ds,dim,mo,bs);
 	return Runtime::getInstance().addNode(node);
 }
 

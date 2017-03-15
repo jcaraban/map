@@ -518,7 +518,11 @@ def empty_like(raster,dt=NONE_DATATYPE,mo=NONE_MEMORDER):
 	return True # no_value_like?
 
 def index(raster,dim):
-	return Raster( _lib.ma_index(raster,dim) )
+	assert(raster.datasize() > D0)
+	ds = Array( raster.datasize() )
+	bs = Array( raster.blocksize() )
+	mo = raster.memorder()
+	return Raster( _lib.ma_index(ds,dim,mo,bs) )
 
 def rand(seed,ds=[],dt=NONE_DATATYPE ,mo=NONE_MEMORDER,bs=[]):
 	ds = seed.datasize() if isinstance(seed,Raster) else ds
@@ -763,7 +767,7 @@ _lib.ma_write.argtypes = [Raster, ct.c_char_p]
 _lib.ma_write.restype = ct.c_int
 _lib.ma_write.errcheck = err_write
 
-_lib.ma_index.argtypes = [Raster, ct.c_int]
+_lib.ma_index.argtypes = [Array, ct.c_int, ct.c_int, Array]
 _lib.ma_index.restype = Node
 
 _lib.ma_rand.argtypes = [Raster, ct.c_int, ct.c_int]

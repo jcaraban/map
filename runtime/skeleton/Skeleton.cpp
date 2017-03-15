@@ -298,7 +298,7 @@ void Skeleton::visit(Diversity *node) {
 
 void Skeleton::visit(LhsAccess *node) {
 	string var = var_name(node);
-	Coord coord = node->_coord;
+	Coord coord = node->cell_coord;
 	string lvar = var_name(node->left());
 	string rvar = var_name(node->right());
 	int N = node->numdim().toInt();
@@ -307,7 +307,7 @@ void Skeleton::visit(LhsAccess *node) {
 
 void Skeleton::visit(Access *node) {
 	string var = var_name(node);
-	Coord coord = node->_coord;
+	Coord coord = node->cell_coord;
 	string pvar = var_name(node->prev());
 	int N = node->prev()->numdim().toInt();
 

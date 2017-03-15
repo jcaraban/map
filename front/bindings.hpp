@@ -55,7 +55,7 @@ int ma_write(Node *node, const char *file_path);
 Node* ma_constant(VariantType var, DataSize ds, DataTypeEnum dt, MemOrderEnum mo, BlockSize bs);
 Node* ma_rand(Node *seed, DataTypeEnum dt, MemOrderEnum mo);
 Node* ma_cast(Node *node, DataTypeEnum type);
-Node* ma_index(Node *node, NumDimEnum dim);
+Node* ma_index(DataSize ds, NumDimEnum dim, MemOrderEnum mo, BlockSize bs);
 Node* ma_conditional(Node *cond, Node *lhs, Node *rhs);
 
 Node* ma_unary(Node *node, UnaryEnum type);

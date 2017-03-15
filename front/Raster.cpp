@@ -266,7 +266,10 @@ Raster astype(Raster data, DataType new_type) {
 }
 
 Raster index(Raster data, NumDim dim) {
-	return Raster( ma_index(data.node,dim.get()) );
+	DataSize ds = data.datasize();
+	MemOrder mo = data.memorder();
+	BlockSize bs = data.blocksize();
+	return Raster( ma_index(ds,dim.get(),mo.get(),bs) );
 }
 
 Raster con(Raster cond, Raster lhs, Raster rhs) {
