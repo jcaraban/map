@@ -17,6 +17,8 @@ Node::Node()
 	, ref(0)
 	, prev_list()
 	, next_list()
+	, back_list()
+	, forw_list()
 	, meta()
 	, stats()
 	, value()
@@ -27,10 +29,28 @@ Node::Node(const MetaData &meta)
 	, ref(0)
 	, prev_list()
 	, next_list()
+	, back_list()
+	, forw_list()
 	, meta(meta)
 	, stats()
 	, value()
 { }
+
+Node::Node(const Node *other, NodeList new_prev)
+	: id(other->id)
+	, ref(0)
+	, prev_list()
+	, next_list()
+	, back_list()
+	, forw_list()
+	, meta(other->meta)
+	, stats(other->stats)
+	, value(other->value)
+{
+	for (auto prev : new_prev)
+		prev->addNext(this);
+	this->prev_list = new_prev;
+}
 
 Node::~Node() {
 	assert(ref == 0);
@@ -64,6 +84,14 @@ const NodeList& Node::nextList() const {
 	return next_list;
 }
 
+const NodeList& Node::backList() const {
+	return back_list;
+}
+
+const NodeList& Node::forwList() const {
+	return forw_list;
+}
+
 const MetaData& Node::metadata() const {
 	return meta;
 }
@@ -83,9 +111,22 @@ void Node::updateNext(Node *old_node, Node *new_node) {
 	*it = new_node;
 }
 
+void Node::addPrev(Node *node) {
+	prev_list.push_back(node);
+}
+
 void Node::addNext(Node *node) {
 	next_list.push_back(node);
 	increaseRef();
+}
+
+void Node::addBack(Node *node) {
+	back_list.push_back(node);
+	increaseRef();
+}
+
+void Node::addForw(Node *node) {
+	forw_list.push_back(node);
 }
 
 void Node::removeNext(Node *node) {

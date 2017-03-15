@@ -424,6 +424,9 @@ void Runtime::unlinkIsolated(const OwnerNodeList &node_list, bool drop) {
 }
 
 void Runtime::evaluate(NodeList list_to_eval) {
+	/****************************************/
+	/******** ENTRY POINT to Runtime ********/
+	/****************************************/
 	assert(clenv.contextSize() == 1);
 
 	// Prepares the clock for another round
@@ -440,9 +443,9 @@ void Runtime::evaluate(NodeList list_to_eval) {
 	NodeList full_list;
 	if (list_to_eval.size() == 0) // eval all nodes
 	{
-		full_list.reserve(node_list.size());
-		for (auto &node : node_list)
-			full_list.push_back(node.get());
+		full_list.reserve(node_list.size());	// @ What is the intended behaviour of eval_all ?
+		for (auto &node : node_list)			//  - eval all accumulated Output and D0 nodes ?
+			full_list.push_back(node.get());	//  - eval absolutely everything like matlab ?
 	}
 	else if (list_to_eval.size() == 1) // eval one node
 	{

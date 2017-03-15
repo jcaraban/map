@@ -34,9 +34,9 @@ NodeList Sorter::sort(NodeList list) {
 	for (auto node : list) {
 		int count = node->prevList().size();
 		// Feedback nodes are a exception...
-		auto feed = dynamic_cast<Feedback*>(node);
-		if (feed && feed->feedIn())
-			count--;
+		//auto feed = dynamic_cast<Feedback*>(node);
+		//if (feed && feed->feedIn())
+		//	count--;
 
 		if (count == 0) { // ready nodes go into the queue
 			queue.push(node);
@@ -54,10 +54,10 @@ NodeList Sorter::sort(NodeList list) {
 
 		for (auto next : node->nextList()) {
 			// Feedback nodes are a exception...
-			auto feedout = dynamic_cast<Feedback*>(node);
-			auto feedin = dynamic_cast<Feedback*>(next);
-			if (feedin && feedout)
-				continue;
+			//auto feedout = dynamic_cast<Feedback*>(node);
+			//auto feedin = dynamic_cast<Feedback*>(next);
+			//if (feedin && feedout)
+			//	continue;
 			//assert(prev_count.find(next) != prev_count.end());
 
 			prev_count[next]--;
