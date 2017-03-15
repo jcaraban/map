@@ -27,7 +27,11 @@ std::size_t LoopHead::Hash::operator()(const Key& k) const {
 	return std::hash<Node*>()(k.prev) ^ std::hash<Loop*>()(k.loop);
 }
 
-// Constructors & methods
+Node* LoopHead::clone(NodeList new_prev_list) {
+	return new LoopHead(this,new_prev_list);
+}
+
+// Constructors
 
 LoopHead::LoopHead(Loop *loop, Node *prev)
 	: Node()
@@ -36,8 +40,8 @@ LoopHead::LoopHead(Loop *loop, Node *prev)
 	meta = prev->metadata();
 
 	owner_loop = loop;
-	prev_list.resize(1);
-	prev_list[0] = prev;
+	prev_list.reserve(1);
+	this->addPrev(prev);
 	
 	// 'next' of 'prev' inside 'cond'+'body' now link to 'head'
 	for (auto next : prev->nextList()) {
@@ -60,6 +64,14 @@ LoopHead::LoopHead(Loop *loop, Node *prev)
 	// 'loop' owns 'head', so no need for it to point to 'head'
 	prev->addNext(this); // 'prev' points to 'head', not to 'loop'
 }
+
+LoopHead::LoopHead(const LoopHead *other, NodeList new_prev_list)
+	: Node(other,new_prev_list)
+{
+	this->owner_loop = other->owner_loop;
+}
+
+// Methods
 
 void LoopHead::accept(Visitor *visitor) {
 	visitor->visit(this);

@@ -30,11 +30,14 @@ struct Scalar : public OutputNode
 	};
 	
 	// Factory
-	static Node* Factory(Node *arg);
-	static Node* Clone(Scalar *scalar, Node *prev); // @
+	static Node* Factory(Node *prev);
+	Node* clone(NodeList new_prev_list);
 
-	// Constructors & methods
+	// Constructors
 	Scalar(Node *prev, SharedFile sca_file);
+	Scalar(const Scalar *other, NodeList new_prev_list);
+
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;

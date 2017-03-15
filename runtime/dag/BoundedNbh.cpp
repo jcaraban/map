@@ -45,18 +45,32 @@ Node* BoundedNbh::Factory(Node *prev, Node *cx, Node* cy) {
 	return new BoundedNbh(meta,prev,cx,cy);
 }
 
-// Constructors & methods
+Node* BoundedNbh::clone(NodeList new_prev_list) {
+	return new BoundedNbh(this,new_prev_list);
+}
 
-BoundedNbh::BoundedNbh(const MetaData &meta, Node *prev, Node *cx, Node* cy) : Node(meta) {
-	prev_list.resize(3);
-	prev_list[0] = prev;
-	prev_list[1] = cx;
-	prev_list[2] = cy;
+// Constructors
+
+BoundedNbh::BoundedNbh(const MetaData &meta, Node *prev, Node *cx, Node* cy)
+	: Node(meta)
+{
+	prev_list.reserve(3);
+	this->addPrev(prev);
+	this->addPrev(cx);
+	this->addPrev(cy);
 	
 	prev->addNext(this);
 	cx->addNext(this);
 	cy->addNext(this);
 }
+
+BoundedNbh::BoundedNbh(const BoundedNbh *other, NodeList new_prev_list)
+	: Node(other,new_prev_list)
+{
+	// ??
+}
+
+// Methods
 
 void BoundedNbh::accept(Visitor *visitor) {
 	visitor->visit(this);

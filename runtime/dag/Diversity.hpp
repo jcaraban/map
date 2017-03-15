@@ -28,9 +28,13 @@ struct Diversity : public Node
 
 	// Factory
 	static Node* Factory(NodeList prev_list, DiversityType type);
+	Node* clone(NodeList new_prev_list);
 
-	// Constructors & methods
+	// Constructors
 	Diversity(const MetaData &meta, NodeList prev_list, DiversityType type);
+	Diversity(const Diversity *other, NodeList new_prev_list);
+
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;

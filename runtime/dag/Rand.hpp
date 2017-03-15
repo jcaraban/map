@@ -28,10 +28,13 @@ struct Rand : public Node
 
 	// Factory
 	static Node* Factory(Node *seed, DataType dt, MemOrder mo);
-	static Node* Factory(VariantType seed, DataSize ds, DataType dt, MemOrder mo, BlockSize bs);
+	Node* clone(NodeList new_prev_list);
 
-	// Constructors & methods
+	// Constructors
 	Rand(const MetaData &meta, Node *seed);
+	Rand(const Rand *other, NodeList new_prev_list);
+
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;

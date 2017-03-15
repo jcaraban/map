@@ -44,17 +44,24 @@ Node* Read::Factory(std::string file_path) {
 	// Reading the file is lazy
 	return new Read(in_file);
 }
-// @
-Node* Read::Clone(Read *read) {
-	return new Read(read->io_file);
+
+Node* Read::clone(NodeList new_prev_list) {
+	return new Read(this,new_prev_list);
 }
 
-// Constructors & methods
+// Constructors
 
-Read::Read(SharedFile in_file) :
-	IONode(in_file,InputNodeFlag()), // because of virtual inheritance
-	InputNode(in_file)
+Read::Read(SharedFile in_file)
+	: IONode(in_file,InputNodeFlag()) // because of virtual inheritance
+	, InputNode(in_file)
 { }
+
+Read::Read(const Read *other, NodeList new_prev_list)
+	: IONode(other,new_prev_list)
+	, InputNode() // @@ InputNode(other) ?
+{ }
+
+// Methods
 
 void Read::accept(Visitor *visitor) {
 	visitor->visit(this);

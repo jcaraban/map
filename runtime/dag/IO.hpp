@@ -22,6 +22,7 @@ struct IONode : public Node
 	IONode();
 	IONode(SharedFile file, InputNodeFlag not_used);
 	IONode(SharedFile file, OutputNodeFlag not_used);
+	IONode(const IONode *other, NodeList new_prev);
 
 	IFile* file();
 	const IFile* file() const;
@@ -58,6 +59,7 @@ struct InOutNode {
 
 struct OutInNode : public InputNode, public OutputNode
 {
+	OutInNode();
 	OutInNode(Node *prev, SharedFile file);
 
 	const NodeList& prevList() const;

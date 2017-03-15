@@ -4,7 +4,7 @@
  *
  * Node representing a Focal Generic operation with static mask and configurable RedOP and BinOP
  *
- * TODO: a BinaryType should be added to allow more ops. than multiplication with the mask
+ * TODO: a FocalFuncType should be added to allow more ops. than multiplication with the mask
  */
 
 #ifndef MAP_RUNTIME_DAG_FOCALFUNC_HPP_
@@ -32,9 +32,13 @@ struct FocalFunc : public Node
 
 	// Factory
 	static Node* Factory(Node *arg, const Mask &mask, ReductionType type);
+	Node* clone(NodeList new_prev_list);
 
-	// Constructors & methods
+	// Constructors
 	FocalFunc(const MetaData &meta, Node *prev, const Mask &mask, ReductionType type);
+	FocalFunc(const FocalFunc *other, NodeList new_prev_list);
+
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;
@@ -48,7 +52,7 @@ struct FocalFunc : public Node
 	// Variables
 	Mask smask; //!< Static mask
 	ReductionType type;
-	//BinaryType btype;
+	//FocalFuncType btype;
 };
 
 } } // namespace map::detail

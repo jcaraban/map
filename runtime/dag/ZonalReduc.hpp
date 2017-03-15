@@ -28,9 +28,13 @@ struct ZonalReduc : public Node
 
 	// Factory
 	static Node* Factory(Node *arg, ReductionType type);
+	Node* clone(NodeList new_prev_list);
 
-	// Constructors & methods
+	// Constructors
 	ZonalReduc(const MetaData &meta, Node *prev, ReductionType type);
+	ZonalReduc(const ZonalReduc *other, NodeList new_prev_list);
+
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;

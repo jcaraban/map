@@ -35,6 +35,10 @@ std::size_t Diversity::Hash::operator()(const Key& k) const {
 	return h;
 }
 
+Node* Diversity::clone(NodeList new_prev_list) {
+	return new Diversity(this,new_prev_list);
+}
+
 // Factory
 
 Node* Diversity::Factory(NodeList prev_list, DiversityType type) {
@@ -62,15 +66,25 @@ Node* Diversity::Factory(NodeList prev_list, DiversityType type) {
 	return new Diversity(meta,prev_list,type);
 }
 
-// Constructors & methods
+// Constructors
 
-Diversity::Diversity(const MetaData &meta, NodeList prev_list, DiversityType type) : Node(meta) {
+Diversity::Diversity(const MetaData &meta, NodeList prev_list, DiversityType type)
+	: Node(meta)
+{
 	this->prev_list = prev_list;
 	this->type = type;
 
 	for (auto prev : prev_list)
 		prev->addNext(this);
 }
+
+Diversity::Diversity(const Diversity *other, NodeList new_prev_list)
+	: Node(other,new_prev_list)
+{
+	this->type = other->type;
+}
+
+// Methods
 
 void Diversity::accept(Visitor *visitor) {
 	visitor->visit(this);

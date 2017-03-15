@@ -17,8 +17,14 @@ struct Temporal : public Node
 {
 	// Internal declarations
 	
-	// Constructors & methods
+	// Factory
+	Node* clone(NodeList new_prev_list);
+
+	// Constructors
 	Temporal(const MetaData &meta);
+	Temporal(const Temporal *other, NodeList new_prev_list);
+
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;

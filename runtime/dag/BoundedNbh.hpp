@@ -30,9 +30,13 @@ struct BoundedNbh : public Node
 
 	// Factory
 	static Node* Factory(Node *prev, Node *cx, Node *cy);
+	Node* clone(NodeList new_prev_list);
 
-	// Constructors & methods
+	// Constructors
 	BoundedNbh(const MetaData &meta, Node *prev, Node *cx, Node *cy);
+	BoundedNbh(const BoundedNbh *other, NodeList new_prev_list);
+	
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;

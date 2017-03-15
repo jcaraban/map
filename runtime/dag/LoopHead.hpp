@@ -26,9 +26,15 @@ struct LoopHead : public Node
 	struct Hash {
 		std::size_t operator()(const Key& k) const;
 	};
+
+	// Factory
+	Node* clone(NodeList new_prev_list);
 	
-	// Constructors & methods
+	// Constructors
 	LoopHead(Loop *loop, Node *prev);
+	LoopHead(const LoopHead *other, NodeList new_prev_list);
+
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;

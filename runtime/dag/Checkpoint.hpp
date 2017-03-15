@@ -28,9 +28,13 @@ struct Checkpoint : public OutInNode
 	
 	// Factory
 	static Node* Factory(Node *prev);
+	Node* clone(NodeList new_prev_list);
 
-	// Constructors & methods
+	// Constructors
 	Checkpoint(Node *prev, SharedFile tmp_file);
+	Checkpoint(const Checkpoint *other, NodeList new_prev_list);
+
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;

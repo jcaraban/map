@@ -28,10 +28,14 @@ struct SpreadNeighbor : public Node
 	};
 
 	// Factory
-	static Node* Factory(Node *arg, Node *dir, ReductionType type);
+	static Node* Factory(Node *prev, Node *dir, ReductionType type);
+	Node* clone(NodeList new_prev_list);
 
-	// Constructors & methods
+	// Constructors
 	SpreadNeighbor(const MetaData &meta, Node *prev, Node *dir, ReductionType type);
+	SpreadNeighbor(const SpreadNeighbor *other, NodeList new_prev_list);
+
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;

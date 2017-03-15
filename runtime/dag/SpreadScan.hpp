@@ -28,9 +28,13 @@ struct SpreadScan : public Node
 
 	// Factory
 	static Node* Factory(Node *arg, Node *dir, ReductionType type);
+	Node* clone(NodeList new_prev_list);
 
-	// Constructors & methods
+	// Constructors
 	SpreadScan(const MetaData &meta, Node *prev, Node *dir, ReductionType type);
+	SpreadScan(const SpreadScan *other, NodeList new_prev_list);
+
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;

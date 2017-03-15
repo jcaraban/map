@@ -30,10 +30,13 @@ struct Read : public InputNode
 	
 	// Factory
 	static Node* Factory(std::string file_path);
-	static Node* Clone(Read *read); // @
+	Node* clone(NodeList new_prev_list);
 
-	// Constructors & methods
+	// Constructors
 	Read(SharedFile in_file);
+	Read(const Read *other, NodeList new_prev_list);
+
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;

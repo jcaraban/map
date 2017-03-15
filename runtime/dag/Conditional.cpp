@@ -86,18 +86,30 @@ Node* Conditional::Factory(Node *cond, Node *lhs, Node *rhs) {
 	return new Conditional(meta,cond,lhs,rhs);
 }
 
-// Constructors & methods
+Node* Conditional::clone(NodeList new_prev_list) {
+	return new Conditional(this,new_prev_list);
+}
 
-Conditional::Conditional(const MetaData &meta, Node *cond, Node *lprev, Node *rprev) : Node(meta) {
-	prev_list.resize(3);
-	prev_list[0] = cond;
-	prev_list[1] = lprev;
-	prev_list[2] = rprev;
+// Constructors
+
+Conditional::Conditional(const MetaData &meta, Node *cond, Node *lprev, Node *rprev)
+	: Node(meta)
+{
+	prev_list.reserve(3);
+	this->addPrev(cond);  // [0]
+	this->addPrev(lprev); // [1]
+	this->addPrev(rprev); // [2]
 	
 	cond->addNext(this);
 	lprev->addNext(this);
 	rprev->addNext(this);
 }
+
+Conditional::Conditional(const Conditional *other, NodeList new_prev_list)
+	: Node(other,new_prev_list)
+{ }
+
+// Methods
 
 void Conditional::accept(Visitor *visitor) {
 	visitor->visit(this);

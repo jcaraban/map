@@ -29,23 +29,28 @@ std::size_t Index::Hash::operator()(const Key& k) const {
 Node* Index::Factory(DataSize ds, NumDim dim, MemOrder mo, BlockSize bs) {
 	DataType dt = S64;
 	MetaData meta(ds,dt,mo,bs);
-	return new Index(meta,dim);
+	return new Index(meta,dim);	
 }
 
-Node* Index::Factory(Node *arg, NumDim dim) {
-	assert(arg != nullptr);
-	DataSize ds = arg->datasize();
-	MemOrder mo = arg->memorder();
-	BlockSize bs = arg->blocksize();
-	
-	return Factory(ds,dim,mo,bs);
+Node* Index::clone(NodeList new_prev_list) {
+	return new Index(this,new_prev_list);
 }
 
-// Constructors & methods
+// Constructors
 
-Index::Index(const MetaData &meta, NumDim dim) : Node(meta) {
+Index::Index(const MetaData &meta, NumDim dim)
+	: Node(meta)
+{
 	this->dim = dim;
 }
+
+Index::Index(const Index *other, NodeList new_prev_list)
+	: Node(other,new_prev_list)
+{
+	this->dim = other->dim;
+}
+
+// Methods
 
 void Index::accept(Visitor *visitor) {
 	visitor->visit(this);

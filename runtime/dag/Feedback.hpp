@@ -27,10 +27,16 @@ struct Feedback : public Node
 	struct Hash {
 		std::size_t operator()(const Key& k) const;
 	};
+
+	// Factory
+	Node* clone(NodeList new_prev_list);
 	
-	// Constructors & methods
+	// Constructors
 	Feedback(Loop *loop, LoopHead *prev);
 	Feedback(Loop *loop, Feedback *feed_in, Node *prev);
+	Feedback(const Feedback *other, NodeList new_prev_list);
+
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;
@@ -48,7 +54,6 @@ struct Feedback : public Node
 	Loop *owner_loop;
 	bool in_or_out; //!< true / false --> FeedIn / FeedOut type
 	Feedback *twin; // linked feedback (i.e. feed_in <--> feed_out)
-	//NodeList prev_both, next_both;
 };
 
 } } // namespace map::detail

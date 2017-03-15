@@ -44,16 +44,31 @@ Node* FocalFunc::Factory(Node *arg, const Mask &mask, ReductionType type) {
 	return new FocalFunc(meta,arg,mask,type);
 }
 
-// Constructors & methods
+Node* FocalFunc::clone(NodeList new_prev_list) {
+	return new FocalFunc(this,new_prev_list);
+}
 
-FocalFunc::FocalFunc(const MetaData &meta, Node *prev, const Mask &mask, ReductionType type) : Node(meta) {
-	prev_list.resize(1);
-	prev_list[0] = prev;
+// Constructors
+
+FocalFunc::FocalFunc(const MetaData &meta, Node *prev, const Mask &mask, ReductionType type)
+	: Node(meta)
+{
+	prev_list.reserve(1);
+	this->addPrev(prev);
 	this->smask = mask;
 	this->type = type;
 	
 	prev->addNext(this);
 }
+
+FocalFunc::FocalFunc(const FocalFunc *other, NodeList new_prev_list)
+	: Node(other,new_prev_list)
+{
+	this->smask = other->smask;
+	this->type = other->type;
+}
+
+// Methods
 
 void FocalFunc::accept(Visitor *visitor) {
 	visitor->visit(this);

@@ -28,9 +28,13 @@ struct Unary : public Node
 
 	// Factory
 	static Node* Factory(Node *arg, UnaryType type);
+	Node* clone(NodeList new_prev_list);
 
-	// Constructors & methods
+	// Constructors
 	Unary(const MetaData &meta, Node *prev, UnaryType type);
+	Unary(const Unary *other, NodeList new_prev_list);
+
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;

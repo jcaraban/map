@@ -28,9 +28,13 @@ struct Constant : public Node
 
 	// Factory
 	static Node* Factory(VariantType arg, DataSize ds, DataType dt, MemOrder mo, BlockSize bs);
+	Node* clone(NodeList new_prev_list);
 
-	// Constructors & methods
+	// Constructors
 	Constant(const MetaData &meta, VariantType val);
+	Constant(const Constant *other, NodeList new_prev_list);
+
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;

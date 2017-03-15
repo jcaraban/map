@@ -27,10 +27,14 @@ struct Cast : public Node
 	};
 
 	// Factory
-	static Node* Factory(Node *arg, DataType new_type);
+	static Node* Factory(Node *prev, DataType new_type);
+	Node* clone(NodeList new_prev_list);
 
-	// Constructors & methods
+	// Constructors
 	Cast(const MetaData &meta, Node *prev);
+	Cast(const Cast *other, NodeList new_prev_list);
+
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;

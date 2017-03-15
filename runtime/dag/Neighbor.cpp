@@ -44,15 +44,29 @@ Node* Neighbor::Factory(Node *prev, const Coord &coord) {
 	return new Neighbor(meta,prev,coord);
 }
 
-// Constructors & methods
+Node* Neighbor::clone(NodeList new_prev_list) {
+	return new Neighbor(this,new_prev_list);
+}
 
-Neighbor::Neighbor(const MetaData &meta, Node *prev, const Coord &coord) : Node(meta) {
-	prev_list.resize(1);
-	prev_list[0] = prev;
+// Constructors
+
+Neighbor::Neighbor(const MetaData &meta, Node *prev, const Coord &coord)
+	: Node(meta)
+{
+	prev_list.reserve(1);
+	this->addPrev(prev);
 	this->scoord = coord;
 	
 	prev->addNext(this);
 }
+
+Neighbor::Neighbor(const Neighbor *other, NodeList new_prev_list)
+	: Node(other,new_prev_list)
+{
+	this->scoord = other->scoord;
+}
+
+// Methods
 
 void Neighbor::accept(Visitor *visitor) {
 	visitor->visit(this);

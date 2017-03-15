@@ -44,12 +44,18 @@ Node* SpreadScan::Factory(Node *prev, Node *dir, ReductionType type) {
 	return new SpreadScan(meta,prev,dir,type);
 }
 
-// Constructors & methods
+Node* SpreadScan::clone(NodeList new_prev_list) {
+	return new SpreadScan(this,new_prev_list);
+}
 
-SpreadScan::SpreadScan(const MetaData &meta, Node *prev, Node *dir, ReductionType type) : Node(meta) {
-	prev_list.resize(5);
-	prev_list[0] = prev;
-	prev_list[1] = dir;
+// Constructors
+
+SpreadScan::SpreadScan(const MetaData &meta, Node *prev, Node *dir, ReductionType type)
+	: Node(meta)
+{
+	prev_list.reserve(5);
+	this->addPrev(prev);
+	this->addPrev(dir);
 	this->type = type;
 	// Temporal node for the spreading raster (e.g. water)
 	// @ TODO: spread = Copy::Factory(prev);
@@ -70,6 +76,14 @@ SpreadScan::SpreadScan(const MetaData &meta, Node *prev, Node *dir, ReductionTyp
 	buffer->addNext(this);
 	stable->addNext(this);
 }
+
+SpreadScan::SpreadScan(const SpreadScan *other, NodeList new_prev_list)
+	: Node(other,new_prev_list)
+{
+	this->type = other->type;
+}
+
+// Methods
 
 void SpreadScan::accept(Visitor *visitor) {
 	visitor->visit(this);

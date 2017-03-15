@@ -62,17 +62,31 @@ Node* Binary::Factory(Node *lhs, Node *rhs, BinaryType type) {
 	return new Binary(meta,lhs,rhs,type);
 }
 
-// Constructors & methods
+Node* Binary::clone(NodeList new_prev_list) {
+	return new Binary(this,new_prev_list);
+}
 
-Binary::Binary(const MetaData &meta, Node *lprev, Node *rprev, BinaryType type) : Node(meta) {
-	prev_list.resize(2);
-	prev_list[0] = lprev;
-	prev_list[1] = rprev;
+// Constructors
+
+Binary::Binary(const MetaData &meta, Node *lprev, Node *rprev, BinaryType type)
+	: Node(meta)
+{
+	prev_list.reserve(2);
+	this->addPrev(lprev); // pos [0]
+	this->addPrev(rprev); // pos [1]
 	this->type = type;
 	
 	lprev->addNext(this);
 	rprev->addNext(this);
 }
+
+Binary::Binary(const Binary *other, NodeList new_prev_list)
+	: Node(other,new_prev_list)
+{
+	this->type = other->type;
+}
+
+// Methods
 
 void Binary::accept(Visitor *visitor) {
 	visitor->visit(this);

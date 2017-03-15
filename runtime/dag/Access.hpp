@@ -23,7 +23,7 @@ struct Access : public Node
 		Key(Access *node);
 		bool operator==(const Key& k) const;
 		Node *prev;
-		Coord _coord;
+		Coord coord;
 	};
 	struct Hash {
 		std::size_t operator()(const Key& k) const;
@@ -31,9 +31,13 @@ struct Access : public Node
 
 	// Factory
 	static Node* Factory(Node *arg, const Coord &coord);
+	Node* clone(NodeList new_prev_list);
 
-	// Constructors & methods
+	// Constructors
 	Access(const MetaData &meta, Node *prev, const Coord &coord);
+	Access(const Access *other, NodeList new_prev_list);
+
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;
@@ -44,7 +48,7 @@ struct Access : public Node
 	Pattern pattern() const { return LOCAL; }
 
 	// Variables
-	Coord _coord; //!< Access coordinate
+	Coord cell_coord; //!< Access coordinate
 };
 
 } } // namespace map::detail

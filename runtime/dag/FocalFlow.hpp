@@ -30,9 +30,13 @@ struct FocalFlow : public Node
 
 	// Factory
 	static Node* Factory(Node *arg);
+	Node* clone(NodeList new_prev_list);
 
-	// Constructors & methods
+	// Constructors
 	FocalFlow(const MetaData &meta, Node *prev);
+	FocalFlow(const FocalFlow *other, NodeList new_prev_list);
+
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;

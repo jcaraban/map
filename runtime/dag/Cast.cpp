@@ -27,28 +27,42 @@ std::size_t Cast::Hash::operator()(const Key& k) const {
 
 // Factory
 
-Node* Cast::Factory(Node *arg, DataType new_type) {
-	assert(arg != nullptr);
+Node* Cast::Factory(Node *prev, DataType new_type) {
+	assert(prev != nullptr);
 	assert(new_type != NONE_DATATYPE);
 
-	DataSize ds = arg->datasize();
+	DataSize ds = prev->datasize();
 	DataType dt = new_type;
-	MemOrder mo = arg->memorder();
-	BlockSize bs = arg->blocksize();
+	MemOrder mo = prev->memorder();
+	BlockSize bs = prev->blocksize();
 	MetaData meta(ds,dt,mo,bs);
 
-	return new Cast(meta,arg);
+	return new Cast(meta,prev);
 }
 
-// Constructors & methods
+Node* Cast::clone(NodeList new_prev_list) {
+	return new Cast(this,new_prev_list);
+}
 
-Cast::Cast(const MetaData &meta, Node *prev) : Node(meta) {
-	prev_list.resize(1);
-	prev_list[0] = prev;
+// Constructors
+
+Cast::Cast(const MetaData &meta, Node *prev)
+	: Node(meta)
+{
+	prev_list.reserve(1);
+	this->addPrev(prev); // [0]
 	this->type = meta.getDataType();
 	
 	prev->addNext(this);
 }
+
+Cast::Cast(const Cast *other, NodeList new_prev_list)
+	: Node(other,new_prev_list)
+{
+	this->type = other->type;
+}
+
+// Methods
 
 void Cast::accept(Visitor *visitor) {
 	visitor->visit(this);

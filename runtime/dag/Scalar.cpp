@@ -43,17 +43,24 @@ Node* Scalar::Factory(Node *prev) {
 	// Creates and evaluates Scalar node
 	return new Scalar(prev,SharedFile(sca_file));
 }
-// @
-Node* Scalar::Clone(Scalar *scalar, Node *prev) {
-	return new Scalar(prev,scalar->io_file);
+
+Node* Scalar::clone(NodeList new_prev_list) {
+	return new Scalar(this,new_prev_list);
 }
 
-// Constructors & methods
+// Constructors
 
 Scalar::Scalar(Node *prev, SharedFile sca_file) :
 	IONode(sca_file,OutputNodeFlag()), // because of virtual inheritance
 	OutputNode(prev,sca_file)
 { }
+
+Scalar::Scalar(const Scalar *other, NodeList new_prev_list)
+	: IONode(other,new_prev_list)
+	, OutputNode() // @@ InputNode(other) ?
+{ }
+
+// Methods
 
 void Scalar::accept(Visitor *visitor) {
 	visitor->visit(this);

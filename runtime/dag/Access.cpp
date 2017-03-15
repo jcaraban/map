@@ -14,17 +14,17 @@ namespace map { namespace detail {
 
 Access::Key::Key(Access *node) {
 	prev = node->prev();
-	_coord = node->coord();
+	coord = node->coord();
 }
 
 bool Access::Key::operator==(const Key& k) const {
-	return (prev==k.prev && all(_coord==k._coord));
+	return (prev==k.prev && all(coord==k.coord));
 }
 
 std::size_t Access::Hash::operator()(const Key& k) const {
 	size_t hash = std::hash<Node*>()(k.prev);
-	for (int i=0; i<k._coord.size(); i++)
-		hash ^= std::hash<int>()(k._coord[i]);
+	for (int i=0; i<k.coord.size(); i++)
+		hash ^= std::hash<int>()(k.coord[i]);
 	return hash;
 }
 
@@ -43,15 +43,27 @@ Node* Access::Factory(Node *arg, const Coord &coord) {
 	return new Access(meta,arg,coord);
 }
 
-// Constructors & methods
+Node* Access::clone(NodeList new_prev_list) {
+	return new Access(this,new_prev_list);
+}
+
+// Constructors
 
 Access::Access(const MetaData &meta, Node *prev, const Coord &coord) : Node(meta) {
-	prev_list.resize(1);
-	prev_list[0] = prev;
-	this->_coord = coord;
+	prev_list.reserve(1);
+	this->addPrev(prev);
+	this->cell_coord = coord;
 	
 	prev->addNext(this);
 }
+
+Access::Access(const Access *other, NodeList new_prev_list)
+	: Node(other,new_prev_list)
+{
+	this->cell_coord = other->cell_coord;
+}
+
+// Methods
 
 void Access::accept(Visitor *visitor) {
 	visitor->visit(this);
@@ -79,7 +91,7 @@ Node* Access::prev() const {
 }
 
 Coord Access::coord() const {
-	return _coord;
+	return cell_coord;
 }
 
 } } // namespace map::detail

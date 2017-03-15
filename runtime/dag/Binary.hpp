@@ -28,9 +28,13 @@ struct Binary : public Node
 
 	// Factory
 	static Node* Factory(Node *lhs, Node *rhs, BinaryType type);
+	Node* clone(NodeList new_prev_list);
 
-	// Constructors & methods
+	// Constructors
 	Binary(const MetaData &meta, Node *lprev, Node *rprev, BinaryType type);
+	Binary(const Binary *other, NodeList new_prev_list);
+
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;

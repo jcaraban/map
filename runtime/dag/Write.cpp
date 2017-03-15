@@ -53,17 +53,24 @@ Node* Write::Factory(Node *prev, std::string file_path) {
 	// Creates and evaluates the Write node
 	return new Write(prev,out_file);
 }
-// @
-Node* Write::Clone(Write *write, Node *prev) {
-	return new Write(prev,write->io_file);
+
+Node* Write::clone(NodeList new_prev_list) {
+	return new Write(this,new_prev_list);
 }
 
-// Constructors & methods
+// Constructors
 
 Write::Write(Node *prev, SharedFile out_file) :
 	IONode(out_file,OutputNodeFlag()), // because of virtual inheritance
 	OutputNode(prev,out_file)
 { }
+
+Write::Write(const Write *other, NodeList new_prev_list)
+	: IONode(other,new_prev_list)
+	, OutputNode() // @@ InputNode(other) ?
+{ }
+
+// Methods
 
 void Write::accept(Visitor *visitor) {
 	visitor->visit(this);

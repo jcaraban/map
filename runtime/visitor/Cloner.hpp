@@ -28,44 +28,12 @@ struct Cloner : public Visitor
   // methods
 	void clear();
 
-  // helper
-	template <typename T> void helper(T *node);
-
   // visit
-	DECLARE_VISIT(Constant)
-	DECLARE_VISIT(Rand)
-	DECLARE_VISIT(Index)
-	DECLARE_VISIT(Cast)
-	DECLARE_VISIT(Unary)
-	DECLARE_VISIT(Binary)
-	DECLARE_VISIT(Conditional)
-	DECLARE_VISIT(Diversity)
-	DECLARE_VISIT(Neighbor)
-	DECLARE_VISIT(BoundedNbh)
-	DECLARE_VISIT(SpreadNeighbor)
-	DECLARE_VISIT(Convolution)
-	DECLARE_VISIT(FocalFunc)
-	DECLARE_VISIT(FocalPercent)
-	DECLARE_VISIT(FocalFlow)
-	DECLARE_VISIT(ZonalReduc)
-	DECLARE_VISIT(RadialScan)
-	DECLARE_VISIT(SpreadScan)
-	DECLARE_VISIT(Loop)
-	DECLARE_VISIT(LoopCond)
-	DECLARE_VISIT(LoopHead)
-	DECLARE_VISIT(LoopTail)
-	DECLARE_VISIT(Feedback)
-	DECLARE_VISIT(Access)
-	DECLARE_VISIT(LhsAccess)
-	DECLARE_VISIT(Read)
-	DECLARE_VISIT(Write)
-	DECLARE_VISIT(Scalar)
-	DECLARE_VISIT(Checkpoint)
-	DECLARE_VISIT(Stats)
-	DECLARE_VISIT(Barrier)
+	void static_visit(Node *node);
+	//DECLARE_VISIT(...)
 
   // vars
-	OwnerNodeList &new_list; //!< Aggregation, Cloner does not own the data
+	OwnerNodeList &clone_list; //!< Aggregation, Cloner does not own the data
 	std::unordered_map<Node*,Node*> old_hash; //!< Map from old to new nodes
 	std::unordered_map<Node*,Node*> new_hash; //!<  "    "  new to old   " 
 };

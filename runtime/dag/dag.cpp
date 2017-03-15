@@ -47,6 +47,7 @@ DEFINE_NODESIGN( Temporal, 68 )
 DEFINE_NODESIGN( Checkpoint, 69 )
 DEFINE_NODESIGN( Stats, 80 )
 DEFINE_NODESIGN( Barrier, 81 )
+
 #undef DEFINE_NODESIGN
 
 } } // namespace map::detail

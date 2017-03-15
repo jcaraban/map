@@ -27,9 +27,13 @@ struct Barrier : public Node
 
 	// Factory
 	static Node* Factory(Node *arg);
+	Node* clone(NodeList new_prev_list);
 
-	// Constructors & methods
+	// Constructors
 	Barrier(const MetaData &meta, Node *prev);
+	Barrier(const Barrier *other, NodeList new_prev_list);
+
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;

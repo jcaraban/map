@@ -31,10 +31,13 @@ struct Write : public OutputNode
 	
 	// Factory
 	static Node* Factory(Node *prev, std::string file_path);
-	static Node* Clone(Write *write, Node *prev); // @
+	Node* clone(NodeList new_prev_list);
 
-	// Constructors & methods
+	// Constructors
 	Write(Node *prev, SharedFile out_file);
+	Write(const Write *other, NodeList new_prev_list);
+
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;

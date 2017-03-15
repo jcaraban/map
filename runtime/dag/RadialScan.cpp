@@ -44,16 +44,31 @@ Node* RadialScan::Factory(Node *arg, ReductionType type, Coord start) {
 	return new RadialScan(meta,arg,type,start);
 }
 
-// Constructors & methods
+Node* RadialScan::clone(NodeList new_prev_list) {
+	return new RadialScan(this,new_prev_list);
+}
 
-RadialScan::RadialScan(const MetaData &meta, Node *prev, ReductionType type, Coord start) : Node(meta) {
-	prev_list.resize(1);
-	prev_list[0] = prev;
+// Constructors
+
+RadialScan::RadialScan(const MetaData &meta, Node *prev, ReductionType type, Coord start)
+	: Node(meta)
+{
+	prev_list.reserve(1);
+	this->addPrev(prev);
 	this->type = type;
 	this->start = start;
 	
 	prev->addNext(this);
 }
+
+RadialScan::RadialScan(const RadialScan *other, NodeList new_prev_list)
+	: Node(other,new_prev_list)
+{
+	this->type = other->type;
+	this->start = other->start;
+}
+
+// Methods
 
 void RadialScan::accept(Visitor *visitor) {
 	visitor->visit(this);

@@ -29,9 +29,13 @@ struct RadialScan : public Node
 
 	// Factory
 	static Node* Factory(Node *arg, ReductionType type, Coord start);
+	Node* clone(NodeList new_prev_list);
 
-	// Constructors & methods
+	// Constructors
 	RadialScan(const MetaData &meta, Node *prev, ReductionType type, Coord start);
+	RadialScan(const RadialScan *other, NodeList new_prev_list);
+
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;

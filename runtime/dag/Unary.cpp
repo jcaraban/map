@@ -47,15 +47,27 @@ Node* Unary::Factory(Node *arg, UnaryType type) {
 	return new Unary(meta,arg,type);
 }
 
-// Constructors & methods
+Node* Unary::clone(NodeList new_prev_list) {
+	return new Unary(this,new_prev_list);
+}
+
+// Constructors
 
 Unary::Unary(const MetaData &meta, Node *prev, UnaryType type) : Node(meta) {
-	prev_list.resize(1);
-	prev_list[0] = prev;
+	prev_list.reserve(1);
+	this->addPrev(prev); // [0]
 	this->type = type;
 	
 	prev->addNext(this);
 }
+
+Unary::Unary(const Unary *other, NodeList new_prev_list)
+	: Node(other,new_prev_list)
+{
+	this->type = other->type;
+}
+
+// Methods
 
 void Unary::accept(Visitor *visitor) {
 	visitor->visit(this);

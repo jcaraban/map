@@ -39,14 +39,26 @@ Node* FocalFlow::Factory(Node *arg) {
 	return new FocalFlow(meta,arg);
 }
 
-// Constructors & methods
+Node* FocalFlow::clone(NodeList new_prev_list) {
+	return new FocalFlow(this,new_prev_list);
+}
 
-FocalFlow::FocalFlow(const MetaData &meta, Node *prev) : Node(meta) {
-	prev_list.resize(1);
-	prev_list[0] = prev;
+// Constructors
+
+FocalFlow::FocalFlow(const MetaData &meta, Node *prev)
+	: Node(meta)
+{
+	prev_list.reserve(1);
+	this->addPrev(prev);
 	
 	prev->addNext(this);
 }
+
+FocalFlow::FocalFlow(const FocalFlow *other, NodeList new_prev_list)
+	: Node(other,new_prev_list)
+{ }
+
+// Methods
 
 void FocalFlow::accept(Visitor *visitor) {
 	visitor->visit(this);

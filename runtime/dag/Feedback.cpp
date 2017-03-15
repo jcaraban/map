@@ -26,7 +26,13 @@ std::size_t Feedback::Hash::operator()(const Key& k) const {
 	return std::hash<Node*>()(k.prev) ^ std::hash<Loop*>()(k.loop);
 }
 
-// Constructors & methods
+// Feedback
+
+Node* Feedback::clone(NodeList new_prev_list) {
+	return new Feedback(this,new_prev_list);
+}
+
+// Constructors
 
 Feedback::Feedback(Loop *loop, LoopHead *prev)
 	: Node()
@@ -84,15 +90,19 @@ Feedback::Feedback(Loop *loop, Feedback *feed_in, Node *prev)
 	// Links twin feedback nodes
 	feed_in->twin = this; // feed_in --> feed_out
 	this->twin = feed_in; // feed_out --> feed_in
-	feed_in->prev_list.push_back(this);
-	this->addNext(feed_in);
-	/*
-	feed_in->prev_both = full_join(feed_in->prev_list,this->prev_list);
-	this->prev_both = feed_in->prev_both;
-	feed_in->next_both = full_join(feed_in->next_list,this->next_list);
-	this->next_both = feed_in->next_both;
-	*/
+	feed_in->addForw(this);
+	this->addBack(feed_in);
 }
+
+Feedback::Feedback(const Feedback *other, NodeList new_prev_list)
+	: Node(other,new_prev_list)
+{
+	this->owner_loop = other->owner_loop;
+	this->in_or_out = other->in_or_out;
+	this->twin = other->twin;
+}
+
+// Methods
 
 void Feedback::accept(Visitor *visitor) {
 	visitor->visit(this);

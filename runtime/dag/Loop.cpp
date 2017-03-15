@@ -75,7 +75,11 @@ Node* Loop::Factory(NodeList prev_list, Node *cond_node, NodeList body_list, Nod
 	return new Loop(meta,prev_list,cond_node,body_list,feed_in_list,feed_out_list);
 }
 
-// Constructors & methods
+Node* Loop::clone(NodeList new_prev_list) {
+	return new Loop(this,new_prev_list);
+}
+
+// Constructors
 
 Loop::Loop(const MetaData &meta, NodeList prev_list, Node *cond_node, NodeList body_list, NodeList feed_in_list, NodeList feed_out_list)
 	: Node(meta)
@@ -125,20 +129,22 @@ Loop::Loop(const MetaData &meta, NodeList prev_list, Node *cond_node, NodeList b
 	// assert ?
 }
 
-Loop::~Loop() {
-	// ... continue ... nodes to unlink, delete?
-	/*
-	delete cond_node;
-	for (auto head : head_list)
-		delete head;
-	for (auto feed : feed_in_list)
-		delete feed;
-	for (auto feed : feed_out_list)
-		delete feed;
-	for (auto tail : tail_list)
-		delete tail;
-	*/
+Loop::Loop(const Loop *other, NodeList new_prev_list)
+	: Node(other,new_prev_list)
+{
+	this->cond_node = other->cond_node;
+	this->body_list = other->body_list;
+	this->head_list = other->head_list;
+	this->tail_list = other->tail_list;
+	this->feed_in_list = other->feed_in_list;
+	this->feed_out_list = other->feed_out_list;
+	this->gen_num_dim = other->gen_num_dim;
+	this->gen_data_size = other->gen_data_size;
+	this->gen_block_size = other->gen_block_size;
+	this->gen_num_block = other->gen_num_block;
 }
+
+// Methods
 
 void Loop::accept(Visitor *visitor) {
 	visitor->visit(this);

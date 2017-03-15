@@ -15,17 +15,17 @@ namespace map { namespace detail {
 LhsAccess::Key::Key(LhsAccess *node) {
 	lprev = node->left();
 	rprev = node->right();
-	_coord = node->coord();
+	coord = node->coord();
 }
 
 bool LhsAccess::Key::operator==(const Key& k) const {
-	return (lprev==k.lprev && rprev==k.rprev && all(_coord==k._coord));
+	return (lprev==k.lprev && rprev==k.rprev && all(coord==k.coord));
 }
 
 std::size_t LhsAccess::Hash::operator()(const Key& k) const {
 	size_t hash = std::hash<Node*>()(k.lprev) ^ std::hash<Node*>()(k.rprev);
-	for (int i=0; i<k._coord.size(); i++)
-		hash ^= std::hash<int>()(k._coord[i]);
+	for (int i=0; i<k.coord.size(); i++)
+		hash ^= std::hash<int>()(k.coord[i]);
 	return hash;
 }
 
@@ -46,17 +46,31 @@ Node* LhsAccess::Factory(Node *lhs, Node *rhs, const Coord &coord) {
 	return new LhsAccess(meta,lhs,rhs,coord);
 }
 
-// Constructors & methods
+Node* LhsAccess::clone(NodeList new_prev_list) {
+	return new LhsAccess(this,new_prev_list);
+}
 
-LhsAccess::LhsAccess(const MetaData &meta, Node *lprev, Node *rprev, const Coord &coord) : Node(meta) {
-	prev_list.resize(2);
-	prev_list[0] = lprev;
-	prev_list[1] = rprev;
-	this->_coord = coord;
+// Constructors
+
+LhsAccess::LhsAccess(const MetaData &meta, Node *lprev, Node *rprev, const Coord &coord)
+	: Node(meta)
+{
+	prev_list.reserve(2);
+	this->addPrev(lprev);
+	this->addPrev(rprev);
+	this->cell_coord = coord;
 	
 	lprev->addNext(this);
 	rprev->addNext(this);
 }
+
+LhsAccess::LhsAccess(const LhsAccess *other, NodeList new_prev_list)
+	: Node(other,new_prev_list)
+{
+	this->cell_coord = other->cell_coord;
+}
+
+// Methods
 
 void LhsAccess::accept(Visitor *visitor) {
 	visitor->visit(this);
@@ -94,7 +108,7 @@ Node* LhsAccess::right() const {
 }
 
 Coord LhsAccess::coord() const {
-	return _coord;
+	return cell_coord;
 }
 
 } } // namespace map::detail

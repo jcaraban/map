@@ -24,6 +24,11 @@ IONode::IONode(SharedFile file, OutputNodeFlag not_used)
 	, io_file(file)
 { }
 
+IONode::IONode(const IONode *other, NodeList new_prev)
+	: Node(other,new_prev)
+	, io_file(other->io_file)
+{ }
+
 IFile* IONode::file() {
 	return io_file.get();
 }
@@ -96,6 +101,8 @@ Node* OutputNode::prev() const {
 /*********
    OutIn
  *********/
+
+OutInNode::OutInNode() { }
 
 OutInNode::OutInNode(Node *prev, SharedFile file)
 	: IONode(file,OutputNodeFlag())

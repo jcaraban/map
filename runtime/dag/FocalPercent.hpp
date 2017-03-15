@@ -31,10 +31,14 @@ struct FocalPercent : public Node
 	};
 
 	// Factory
-	static Node* Factory(Node *arg, const Mask &mask, PercentType type);
+	static Node* Factory(Node *prev, const Mask &mask, PercentType type);
+	Node* clone(NodeList new_prev_list);
 
-	// Constructors & methods
+	// Constructors
 	FocalPercent(const MetaData &meta, Node *prev, const Mask &mask, PercentType type);
+	FocalPercent(const FocalPercent *other, NodeList new_prev_list);
+
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;

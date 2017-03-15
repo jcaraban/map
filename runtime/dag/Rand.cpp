@@ -70,14 +70,26 @@ Node* Rand::Factory(Node *seed, DataType type, MemOrder order) {
 	return new Rand(meta,seed);
 }
 
-// Constructors & methods
+Node* Rand::clone(NodeList new_prev_list) {
+	return new Rand(this,new_prev_list);
+}
 
-Rand::Rand(const MetaData &meta, Node *seed) : Node(meta) {
-	prev_list.resize(1);
-	prev_list[0] = seed;
+// Constructors
+
+Rand::Rand(const MetaData &meta, Node *seed)
+	: Node(meta)
+{
+	prev_list.reserve(1);
+	this->addPrev(seed); // [0]
 
 	seed->addNext(this);
 }
+
+Rand::Rand(const Rand *other, NodeList new_prev_list)
+	: Node(other,new_prev_list)
+{ }
+
+// Methods
 
 void Rand::accept(Visitor *visitor) {
 	visitor->visit(this);

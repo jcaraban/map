@@ -26,25 +26,29 @@ std::size_t Stats::Hash::operator()(const Key& k) const {
 
 // Factory
 
-Node* Stats::Factory(Node *arg) {
-	assert(arg != nullptr);
+Node* Stats::Factory(Node *prev) {
+	assert(prev != nullptr);
 
-	DataSize ds = arg->datasize();
-	DataType dt = arg->datatype();
-	MemOrder mo = arg->memorder();
-	BlockSize bs = arg->blocksize();
+	DataSize ds = prev->datasize();
+	DataType dt = prev->datatype();
+	MemOrder mo = prev->memorder();
+	BlockSize bs = prev->blocksize();
 	MetaData meta(ds,dt,mo,bs);
 
-	return new Stats(meta,arg);
+	return new Stats(meta,prev);
 }
 
-// Constructors & methods
+Node* Stats::clone(NodeList new_prev_list) {
+	return new Stats(this,new_prev_list);
+}
+
+// Constructors
 
 Stats::Stats(const MetaData &meta, Node *prev) { //: Node(meta) {
-	prev_list.resize(3);
-	prev_list[0] = prev;
-	prev_list[1] = ZonalReduc::Factory(prev,MAX); // Extra nodes for the
-	prev_list[2] = ZonalReduc::Factory(prev,MIN); // reduction operations
+	prev_list.reserve(3);
+	this->addPrev(prev);
+	this->addPrev( ZonalReduc::Factory(prev,MAX) ); // Extra nodes for the
+	this->addPrev( ZonalReduc::Factory(prev,MIN) ); // reduction operations
 
 	// Does not call :Node(meta) to get the id after ZonalReduc nodes
 	this->id = id_count++;
@@ -62,6 +66,12 @@ Stats::Stats(const MetaData &meta, Node *prev) { //: Node(meta) {
 	this->max()->addNext(this);
 	this->min()->addNext(this);
 }
+
+Stats::Stats(const Stats *other, NodeList new_prev_list)
+	: Node(other,new_prev_list)
+{ }
+
+// Methods
 
 void Stats::accept(Visitor *visitor) {
 	visitor->visit(this);

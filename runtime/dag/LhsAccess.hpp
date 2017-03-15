@@ -22,7 +22,7 @@ struct LhsAccess : public Node
 		Key(LhsAccess *node);
 		bool operator==(const Key& k) const;
 		Node *lprev, *rprev;
-		Coord _coord;
+		Coord coord;
 	};
 	struct Hash {
 		std::size_t operator()(const Key& k) const;
@@ -30,9 +30,13 @@ struct LhsAccess : public Node
 
 	// Factory
 	static Node* Factory(Node *lhs, Node *rhs, const Coord &coord);
+	Node* clone(NodeList new_prev_list);
 
-	// Constructors & methods
+	// Constructors
 	LhsAccess(const MetaData &meta, Node *lprev, Node *rprev, const Coord &coord);
+	LhsAccess(const LhsAccess *other, NodeList new_prev_list);
+
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;
@@ -45,7 +49,7 @@ struct LhsAccess : public Node
 	Pattern pattern() const { return LOCAL; }
 
 	// Variables
-	Coord _coord; //!< LhsAccess coordinate
+	Coord cell_coord; //!< LhsAccess coordinate
 };
 
 } } // namespace map::detail

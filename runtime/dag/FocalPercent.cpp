@@ -28,31 +28,46 @@ std::size_t FocalPercent::Hash::operator()(const Key& k) const {
 
 // Factory
 
-Node* FocalPercent::Factory(Node *arg, const Mask &mask, PercentType type) {
-	assert(arg != nullptr);
-	assert(arg->numdim() != D0);
+Node* FocalPercent::Factory(Node *prev, const Mask &mask, PercentType type) {
+	assert(prev != nullptr);
+	assert(prev->numdim() != D0);
 	assert(type != NONE_PERCENT);
-	assert(arg->numdim() == mask.numdim());
+	assert(prev->numdim() == mask.numdim());
 
-	DataSize ds = arg->datasize();
-	DataType dt = arg->datatype();
-	MemOrder mo = arg->memorder();
-	BlockSize bs = arg->blocksize();
+	DataSize ds = prev->datasize();
+	DataType dt = prev->datatype();
+	MemOrder mo = prev->memorder();
+	BlockSize bs = prev->blocksize();
 	MetaData meta(ds,dt,mo,bs);
 
-	return new FocalPercent(meta,arg,mask,type);
+	return new FocalPercent(meta,prev,mask,type);
 }
 
-// Constructors & methods
+Node* FocalPercent::clone(NodeList new_prev_list) {
+	return new FocalPercent(this,new_prev_list);
+}
 
-FocalPercent::FocalPercent(const MetaData &meta, Node *prev, const Mask &mask, PercentType type) : Node(meta) {
-	prev_list.resize(1);
-	prev_list[0] = prev;
+// Constructors
+
+FocalPercent::FocalPercent(const MetaData &meta, Node *prev, const Mask &mask, PercentType type)
+	: Node(meta)
+{
+	prev_list.reserve(1);
+	this->addPrev(prev);
 	this->smask = mask;
 	this->type = type;
 	
 	prev->addNext(this);
 }
+
+FocalPercent::FocalPercent(const FocalPercent *other, NodeList new_prev_list)
+	: Node(other,new_prev_list)
+{
+	this->smask = other->smask;
+	this->type = other->type;
+}
+
+// Methods
 
 void FocalPercent::accept(Visitor *visitor) {
 	visitor->visit(this);

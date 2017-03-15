@@ -27,10 +27,13 @@ struct Index : public Node
 
 	// Factory
 	static Node* Factory(DataSize ds, NumDim dim, MemOrder mo, BlockSize bs);
-	static Node* Factory(Node *arg, NumDim dim);
+	Node* clone(NodeList new_prev_list);
 
-	// Constructors & methods
+	// Constructors
 	Index(const MetaData &meta, NumDim dim);
+	Index(const Index *other, NodeList new_prev_list);
+
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;

@@ -42,15 +42,29 @@ Node* Convolution::Factory(Node *arg, const Mask &mask) {
 	return new Convolution(meta,arg,mask);
 }
 
-// Constructors & methods
+Node* Convolution::clone(NodeList new_prev_list) {
+	return new Convolution(this,new_prev_list);
+}
 
-Convolution::Convolution(const MetaData &meta, Node *prev, const Mask &mask) : Node(meta) {
-	prev_list.resize(1);
-	prev_list[0] = prev;
+// Constructors
+
+Convolution::Convolution(const MetaData &meta, Node *prev, const Mask &mask)
+	: Node(meta)
+{
+	prev_list.reserve(1);
+	this->addPrev(prev);
 	this->smask = mask;
 	
 	prev->addNext(this);
 }
+
+Convolution::Convolution(const Convolution *other, NodeList new_prev_list)
+	: Node(other,new_prev_list)
+{
+	this->smask = other->smask;
+}
+
+// Methods
 
 void Convolution::accept(Visitor *visitor) {
 	visitor->visit(this);

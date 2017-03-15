@@ -38,14 +38,24 @@ Node* Barrier::Factory(Node *arg) {
 	return new Barrier(meta,arg);
 }
 
-// Constructors & methods
+Node* Barrier::clone(NodeList new_prev_list) {
+	return new Barrier(this,new_prev_list);
+}
+
+// Constructors
 
 Barrier::Barrier(const MetaData &meta, Node *prev) : Node(meta) {
-	prev_list.resize(1);
-	prev_list[0] = prev;
+	prev_list.reserve(1);
+	this->addPrev(prev);
 
 	this->prev()->addNext(this);
 }
+
+Barrier::Barrier(const Barrier *other, NodeList new_prev_list)
+	: Node(other,new_prev_list)
+{ }
+
+// Methods
 
 void Barrier::accept(Visitor *visitor) {
 	visitor->visit(this);

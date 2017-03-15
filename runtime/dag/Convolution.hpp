@@ -30,10 +30,14 @@ struct Convolution : public Node
 	};
 
 	// Factory
-	static Node* Factory(Node *arg, const Mask &mask);
+	static Node* Factory(Node *prev, const Mask &mask);
+	Node* clone(NodeList new_prev_list);
 
-	// Constructors & methods
+	// Constructors
 	Convolution(const MetaData &meta, Node *prev, const Mask &mask);
+	Convolution(const Convolution *other, NodeList new_prev_list);
+
+	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;

@@ -40,16 +40,29 @@ Node* ZonalReduc::Factory(Node *arg, ReductionType type) {
 	return new ZonalReduc(meta,arg,type);
 }
 
-// Constructors & methods
+Node* ZonalReduc::clone(NodeList new_prev_list) {
+	return new ZonalReduc(this,new_prev_list);
+}
+
+// Constructors
 
 ZonalReduc::ZonalReduc(const MetaData &meta, Node *prev, ReductionType type) : Node(meta) {
-	prev_list.resize(1);
-	prev_list[0] = prev;
+	prev_list.reserve(1);
+	this->addPrev(prev);
 	this->type = type;
 	this->value = type.neutral(datatype()); // @
 	
 	prev->addNext(this);
 }
+
+ZonalReduc::ZonalReduc(const ZonalReduc *other, NodeList new_prev_list)
+	: Node(other,new_prev_list)
+{
+	this->type = other->type;
+	this->value = other->value;
+}
+
+// Methods
 
 void ZonalReduc::accept(Visitor *visitor) {
 	visitor->visit(this);

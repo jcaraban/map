@@ -44,17 +44,31 @@ Node* SpreadNeighbor::Factory(Node *arg, Node *dir, ReductionType type) {
 	return new SpreadNeighbor(meta,arg,dir,type);
 }
 
-// Constructors & methods
+Node* SpreadNeighbor::clone(NodeList new_prev_list) {
+	return new SpreadNeighbor(this,new_prev_list);
+}
 
-SpreadNeighbor::SpreadNeighbor(const MetaData &meta, Node *prev, Node *dir, ReductionType type) : Node(meta) {
-	prev_list.resize(2);
-	prev_list[0] = prev;
-	prev_list[1] = dir;
+// Constructors
+
+SpreadNeighbor::SpreadNeighbor(const MetaData &meta, Node *prev, Node *dir, ReductionType type)
+	: Node(meta)
+{
+	prev_list.reserve(2);
+	this->addPrev(prev);
+	this->addPrev(dir);
 	this->type = type;
 	
 	prev->addNext(this);
 	dir->addNext(this);
 }
+
+SpreadNeighbor::SpreadNeighbor(const SpreadNeighbor *other, NodeList new_prev_list)
+	: Node(other,new_prev_list)
+{
+	this->type = other->type;
+}
+
+// Methods
 
 void SpreadNeighbor::accept(Visitor *visitor) {
 	visitor->visit(this);
