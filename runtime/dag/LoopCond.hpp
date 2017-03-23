@@ -30,11 +30,11 @@ struct LoopCond : public Node
 	};
 
 	// Factory
-	Node* clone(NodeList new_prev_list);
+	Node* clone(NodeList new_prev_list, NodeList new_back_list);
 
 	// Constructors
 	LoopCond(Loop *loop, Node *prev);
-	LoopCond(const LoopCond *other, NodeList new_prev_list);
+	LoopCond(const LoopCond *other, NodeList new_prev_list, NodeList new_back_list);
 
 	// Methods
 	void accept(Visitor *visitor);

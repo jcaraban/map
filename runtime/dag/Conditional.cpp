@@ -86,8 +86,8 @@ Node* Conditional::Factory(Node *cond, Node *lhs, Node *rhs) {
 	return new Conditional(meta,cond,lhs,rhs);
 }
 
-Node* Conditional::clone(NodeList new_prev_list) {
-	return new Conditional(this,new_prev_list);
+Node* Conditional::clone(NodeList new_prev_list, NodeList new_back_list) {
+	return new Conditional(this,new_prev_list,new_back_list);
 }
 
 // Constructors
@@ -105,8 +105,8 @@ Conditional::Conditional(const MetaData &meta, Node *cond, Node *lprev, Node *rp
 	rprev->addNext(this);
 }
 
-Conditional::Conditional(const Conditional *other, NodeList new_prev_list)
-	: Node(other,new_prev_list)
+Conditional::Conditional(const Conditional *other, NodeList new_prev_list, NodeList new_back_list)
+	: Node(other,new_prev_list,new_back_list)
 { }
 
 // Methods

@@ -54,8 +54,8 @@ Node* Write::Factory(Node *prev, std::string file_path) {
 	return new Write(prev,out_file);
 }
 
-Node* Write::clone(NodeList new_prev_list) {
-	return new Write(this,new_prev_list);
+Node* Write::clone(NodeList new_prev_list, NodeList new_back_list) {
+	return new Write(this,new_prev_list,new_back_list);
 }
 
 // Constructors
@@ -65,8 +65,8 @@ Write::Write(Node *prev, SharedFile out_file) :
 	OutputNode(prev,out_file)
 { }
 
-Write::Write(const Write *other, NodeList new_prev_list)
-	: IONode(other,new_prev_list)
+Write::Write(const Write *other, NodeList new_prev_list, NodeList new_back_list)
+	: IONode(other,new_prev_list,new_back_list)
 	, OutputNode() // @@ InputNode(other) ?
 { }
 

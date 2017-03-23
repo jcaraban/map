@@ -75,8 +75,8 @@ Node* Loop::Factory(NodeList prev_list, Node *cond_node, NodeList body_list, Nod
 	return new Loop(meta,prev_list,cond_node,body_list,feed_in_list,feed_out_list);
 }
 
-Node* Loop::clone(NodeList new_prev_list) {
-	return new Loop(this,new_prev_list);
+Node* Loop::clone(NodeList new_prev_list, NodeList new_back_list) {
+	return new Loop(this,new_prev_list,new_back_list);
 }
 
 // Constructors
@@ -89,7 +89,7 @@ Loop::Loop(const MetaData &meta, NodeList prev_list, Node *cond_node, NodeList b
 	assert(cond_node != nullptr);
 	assert(feed_in_list.size() == feed_out_list.size());
 
-	// 'body' is owned by Runtime::node_list, might change in the future?
+	// The 'body' (and other) nodes are owned by Runtime::node_list
 	this->body_list = body_list;
 	
 	// Creates a 'head' node per 'prev' node outside 'loop'
@@ -113,7 +113,7 @@ Loop::Loop(const MetaData &meta, NodeList prev_list, Node *cond_node, NodeList b
 	this->prev_list[0] = this->cond_node;
 	this->cond_node->addNext(this);
 
-	// Creates a 'feedback-out' node per link back into the loop, and connect it to a 'feedback-in'
+	// Creates a 'feedback-out' node per back-edge in the loop, and connect it to a 'feedback-in'
 	for (int i=0; i<feed_out_list.size(); i++)
 		this->feed_out_list.push_back( new Feedback(this,this->feed_in_list[i],feed_out_list[i]) );
 
@@ -129,8 +129,8 @@ Loop::Loop(const MetaData &meta, NodeList prev_list, Node *cond_node, NodeList b
 	// assert ?
 }
 
-Loop::Loop(const Loop *other, NodeList new_prev_list)
-	: Node(other,new_prev_list)
+Loop::Loop(const Loop *other, NodeList new_prev_list, NodeList new_back_list)
+	: Node(other,new_prev_list,new_back_list)
 {
 	this->cond_node = other->cond_node;
 	this->body_list = other->body_list;

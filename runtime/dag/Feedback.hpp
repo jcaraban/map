@@ -29,12 +29,12 @@ struct Feedback : public Node
 	};
 
 	// Factory
-	Node* clone(NodeList new_prev_list);
+	Node* clone(NodeList new_prev_list, NodeList new_back_list);
 	
 	// Constructors
 	Feedback(Loop *loop, LoopHead *prev);
 	Feedback(Loop *loop, Feedback *feed_in, Node *prev);
-	Feedback(const Feedback *other, NodeList new_prev_list);
+	Feedback(const Feedback *other, NodeList new_prev_list, NodeList new_back_list);
 
 	// Methods
 	void accept(Visitor *visitor);

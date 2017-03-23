@@ -44,8 +44,8 @@ Node* RadialScan::Factory(Node *arg, ReductionType type, Coord start) {
 	return new RadialScan(meta,arg,type,start);
 }
 
-Node* RadialScan::clone(NodeList new_prev_list) {
-	return new RadialScan(this,new_prev_list);
+Node* RadialScan::clone(NodeList new_prev_list, NodeList new_back_list) {
+	return new RadialScan(this,new_prev_list,new_back_list);
 }
 
 // Constructors
@@ -61,8 +61,8 @@ RadialScan::RadialScan(const MetaData &meta, Node *prev, ReductionType type, Coo
 	prev->addNext(this);
 }
 
-RadialScan::RadialScan(const RadialScan *other, NodeList new_prev_list)
-	: Node(other,new_prev_list)
+RadialScan::RadialScan(const RadialScan *other, NodeList new_prev_list, NodeList new_back_list)
+	: Node(other,new_prev_list,new_back_list)
 {
 	this->type = other->type;
 	this->start = other->start;

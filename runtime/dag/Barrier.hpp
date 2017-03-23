@@ -27,11 +27,11 @@ struct Barrier : public Node
 
 	// Factory
 	static Node* Factory(Node *arg);
-	Node* clone(NodeList new_prev_list);
+	Node* clone(NodeList new_prev_list, NodeList new_back_list);
 
 	// Constructors
 	Barrier(const MetaData &meta, Node *prev);
-	Barrier(const Barrier *other, NodeList new_prev_list);
+	Barrier(const Barrier *other, NodeList new_prev_list, NodeList new_back_list);
 
 	// Methods
 	void accept(Visitor *visitor);

@@ -32,11 +32,11 @@ struct FocalPercent : public Node
 
 	// Factory
 	static Node* Factory(Node *prev, const Mask &mask, PercentType type);
-	Node* clone(NodeList new_prev_list);
+	Node* clone(NodeList new_prev_list, NodeList new_back_list);
 
 	// Constructors
 	FocalPercent(const MetaData &meta, Node *prev, const Mask &mask, PercentType type);
-	FocalPercent(const FocalPercent *other, NodeList new_prev_list);
+	FocalPercent(const FocalPercent *other, NodeList new_prev_list, NodeList new_back_list);
 
 	// Methods
 	void accept(Visitor *visitor);

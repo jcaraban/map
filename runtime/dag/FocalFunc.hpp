@@ -32,11 +32,11 @@ struct FocalFunc : public Node
 
 	// Factory
 	static Node* Factory(Node *arg, const Mask &mask, ReductionType type);
-	Node* clone(NodeList new_prev_list);
+	Node* clone(NodeList new_prev_list, NodeList new_back_list);
 
 	// Constructors
 	FocalFunc(const MetaData &meta, Node *prev, const Mask &mask, ReductionType type);
-	FocalFunc(const FocalFunc *other, NodeList new_prev_list);
+	FocalFunc(const FocalFunc *other, NodeList new_prev_list, NodeList new_back_list);
 
 	// Methods
 	void accept(Visitor *visitor);

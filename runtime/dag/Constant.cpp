@@ -32,8 +32,8 @@ Node* Constant::Factory(VariantType var, DataSize ds, DataType dt, MemOrder mo, 
 	return new Constant(meta,var);
 }
 
-Node* Constant::clone(NodeList new_prev_list) {
-	return new Constant(this,new_prev_list);
+Node* Constant::clone(NodeList new_prev_list, NodeList new_back_list) {
+	return new Constant(this,new_prev_list,new_back_list);
 }
 
 // Constructors
@@ -45,8 +45,8 @@ Constant::Constant(const MetaData &meta, VariantType val)
 	assert(val.datatype() == meta.getDataType());
 }
 
-Constant::Constant(const Constant *other, NodeList new_prev_list)
-	: Node(other,new_prev_list)
+Constant::Constant(const Constant *other, NodeList new_prev_list, NodeList new_back_list)
+	: Node(other,new_prev_list,new_back_list)
 {
 	this->cnst = other->cnst;
 	assert(cnst.datatype() == meta.getDataType());

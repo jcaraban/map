@@ -32,11 +32,11 @@ struct Conditional : public Node
 
 	// Factory
 	static Node* Factory(Node *cond, Node *lhs, Node *rhs);
-	Node* clone(NodeList new_prev_list);
+	Node* clone(NodeList new_prev_list, NodeList new_back_list);
 
 	// Constructors
 	Conditional(const MetaData &meta, Node *cond, Node *lprev, Node *rprev);
-	Conditional(const Conditional *other, NodeList new_prev_list);
+	Conditional(const Conditional *other, NodeList new_prev_list, NodeList new_back_list);
 
 	// Methods
 	void accept(Visitor *visitor);

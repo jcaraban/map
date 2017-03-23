@@ -28,8 +28,8 @@ std::size_t Feedback::Hash::operator()(const Key& k) const {
 
 // Feedback
 
-Node* Feedback::clone(NodeList new_prev_list) {
-	return new Feedback(this,new_prev_list);
+Node* Feedback::clone(NodeList new_prev_list, NodeList new_back_list) {
+	return new Feedback(this,new_prev_list,new_back_list);
 }
 
 // Constructors
@@ -40,21 +40,21 @@ Feedback::Feedback(Loop *loop, LoopHead *prev)
 	id = prev->id;
 	meta = prev->metadata();
 
-	owner_loop = loop;
+	owner_loop = loop; // 'feed' knows who its 'loop' is
 	in_or_out = true;
 	prev_list.resize(1);
 	prev_list[0] = prev;
 	
 	/* Feed In constructor */
 
-	// 'next' of 'prev' inside the loop 'cond'+'body' now link to 'prev' (= head)
+	// 'next' of 'prev' inside the loop 'cond'+'body' now link to 'feed'
 	for (auto next : prev->nextList()) {
 		assert( is_included(next,loop->bodyList()) || next==loop->condition() );
 		this->addNext(next);
 		next->updatePrev(prev,this);
 	}
 	
-	// 'prev' looses the links into 'body'
+	// 'prev' looses the links into 'cond'+'body'
 	int i = 0;
 	while (i < prev->nextList().size()) {
 		Node *next = prev->nextList()[i++];
@@ -64,7 +64,6 @@ Feedback::Feedback(Loop *loop, LoopHead *prev)
 		}
 	}
 
-	// 'loop' owns 'feedback', so no need for it to point here
 	prev->addNext(this); // 'prev' is a 'head' that points to 'feed'
 }
 
@@ -74,8 +73,8 @@ Feedback::Feedback(Loop *loop, Feedback *feed_in, Node *prev)
 	id = prev->id;
 	meta = prev->metadata();
 	//stats = prev->datastats();
-
-	owner_loop = loop;
+	
+	owner_loop = loop; // 'feed' knows who its 'loop' is
 	in_or_out = false;
 	prev_list.resize(1);
 	prev_list[0] = prev;
@@ -83,8 +82,6 @@ Feedback::Feedback(Loop *loop, Feedback *feed_in, Node *prev)
 	/* Feed Out constructor */
 	
 	// 'prev' does not looses any 'next', it continues as it was
-
-	// 'loop' owns 'feedback', so no need for it to point here
 	prev->addNext(this); // 'prev' is a 'body' node that points to 'feed'
 
 	// Links twin feedback nodes
@@ -94,8 +91,8 @@ Feedback::Feedback(Loop *loop, Feedback *feed_in, Node *prev)
 	this->addBack(feed_in);
 }
 
-Feedback::Feedback(const Feedback *other, NodeList new_prev_list)
-	: Node(other,new_prev_list)
+Feedback::Feedback(const Feedback *other, NodeList new_prev_list, NodeList new_back_list)
+	: Node(other,new_prev_list,new_back_list)
 {
 	this->owner_loop = other->owner_loop;
 	this->in_or_out = other->in_or_out;

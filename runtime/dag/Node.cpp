@@ -36,7 +36,7 @@ Node::Node(const MetaData &meta)
 	, value()
 { }
 
-Node::Node(const Node *other, NodeList new_prev)
+Node::Node(const Node *other, NodeList new_prev_list, NodeList new_back_list)
 	: id(other->id)
 	, ref(0)
 	, prev_list()
@@ -47,9 +47,13 @@ Node::Node(const Node *other, NodeList new_prev)
 	, stats(other->stats)
 	, value(other->value)
 {
-	for (auto prev : new_prev)
+	for (auto prev : new_prev_list)
 		prev->addNext(this);
-	this->prev_list = new_prev;
+	this->prev_list = new_prev_list;
+
+	for (auto back : new_back_list)
+		back->addBack(this);
+	this->back_list = new_back_list;
 }
 
 Node::~Node() {

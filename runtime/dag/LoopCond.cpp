@@ -29,8 +29,8 @@ std::size_t LoopCond::Hash::operator()(const Key& k) const {
 
 // Factory
 
-Node* LoopCond::clone(NodeList new_prev_list) {
-	return new LoopCond(this,new_prev_list);
+Node* LoopCond::clone(NodeList new_prev_list, NodeList new_back_list) {
+	return new LoopCond(this,new_prev_list,new_back_list);
 }
 
 // Constructors
@@ -41,8 +41,8 @@ LoopCond::LoopCond(Loop *loop, Node *prev)
 	id = prev->id;
 	meta = prev->metadata();
 	meta.data_type = U8; // @ because OpenCL
-
-	owner_loop = loop;
+	
+	owner_loop = loop; // 'cond' knows who its 'loop' is
 	prev_list.resize(1);
 	prev_list[0] = prev;
 	
@@ -50,8 +50,8 @@ LoopCond::LoopCond(Loop *loop, Node *prev)
 	// 'loop' will point to 'cond' in order to close the dependency chain
 }
 
-LoopCond::LoopCond(const LoopCond *other, NodeList new_prev_list)
-	: Node(other,new_prev_list)
+LoopCond::LoopCond(const LoopCond *other, NodeList new_prev_list, NodeList new_back_list)
+	: Node(other,new_prev_list,new_back_list)
 {
 	this->owner_loop = other->owner_loop;
 }

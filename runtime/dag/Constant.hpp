@@ -28,11 +28,11 @@ struct Constant : public Node
 
 	// Factory
 	static Node* Factory(VariantType arg, DataSize ds, DataType dt, MemOrder mo, BlockSize bs);
-	Node* clone(NodeList new_prev_list);
+	Node* clone(NodeList new_prev_list, NodeList new_back_list);
 
 	// Constructors
 	Constant(const MetaData &meta, VariantType val);
-	Constant(const Constant *other, NodeList new_prev_list);
+	Constant(const Constant *other, NodeList new_prev_list, NodeList new_back_list);
 
 	// Methods
 	void accept(Visitor *visitor);

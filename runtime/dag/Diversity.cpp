@@ -35,8 +35,8 @@ std::size_t Diversity::Hash::operator()(const Key& k) const {
 	return h;
 }
 
-Node* Diversity::clone(NodeList new_prev_list) {
-	return new Diversity(this,new_prev_list);
+Node* Diversity::clone(NodeList new_prev_list, NodeList new_back_list) {
+	return new Diversity(this,new_prev_list,new_back_list);
 }
 
 // Factory
@@ -78,8 +78,8 @@ Diversity::Diversity(const MetaData &meta, NodeList prev_list, DiversityType typ
 		prev->addNext(this);
 }
 
-Diversity::Diversity(const Diversity *other, NodeList new_prev_list)
-	: Node(other,new_prev_list)
+Diversity::Diversity(const Diversity *other, NodeList new_prev_list, NodeList new_back_list)
+	: Node(other,new_prev_list,new_back_list)
 {
 	this->type = other->type;
 }

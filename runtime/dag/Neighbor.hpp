@@ -28,11 +28,11 @@ struct Neighbor : public Node
 
 	// Factory
 	static Node* Factory(Node *prev, const Coord &coord);
-	Node* clone(NodeList new_prev_list);
+	Node* clone(NodeList new_prev_list, NodeList new_back_list);
 
 	// Constructors
 	Neighbor(const MetaData &meta, Node *prev, const Coord &coord);
-	Neighbor(const Neighbor *other, NodeList new_prev_list);
+	Neighbor(const Neighbor *other, NodeList new_prev_list, NodeList new_back_list);
 
 	// Methods
 	void accept(Visitor *visitor);

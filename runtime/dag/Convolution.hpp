@@ -31,11 +31,11 @@ struct Convolution : public Node
 
 	// Factory
 	static Node* Factory(Node *prev, const Mask &mask);
-	Node* clone(NodeList new_prev_list);
+	Node* clone(NodeList new_prev_list, NodeList new_back_list);
 
 	// Constructors
 	Convolution(const MetaData &meta, Node *prev, const Mask &mask);
-	Convolution(const Convolution *other, NodeList new_prev_list);
+	Convolution(const Convolution *other, NodeList new_prev_list, NodeList new_back_list);
 
 	// Methods
 	void accept(Visitor *visitor);

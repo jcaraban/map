@@ -44,8 +44,8 @@ Node* Neighbor::Factory(Node *prev, const Coord &coord) {
 	return new Neighbor(meta,prev,coord);
 }
 
-Node* Neighbor::clone(NodeList new_prev_list) {
-	return new Neighbor(this,new_prev_list);
+Node* Neighbor::clone(NodeList new_prev_list, NodeList new_back_list) {
+	return new Neighbor(this,new_prev_list,new_back_list);
 }
 
 // Constructors
@@ -60,8 +60,8 @@ Neighbor::Neighbor(const MetaData &meta, Node *prev, const Coord &coord)
 	prev->addNext(this);
 }
 
-Neighbor::Neighbor(const Neighbor *other, NodeList new_prev_list)
-	: Node(other,new_prev_list)
+Neighbor::Neighbor(const Neighbor *other, NodeList new_prev_list, NodeList new_back_list)
+	: Node(other,new_prev_list,new_back_list)
 {
 	this->scoord = other->scoord;
 }

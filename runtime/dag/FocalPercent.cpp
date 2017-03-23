@@ -43,8 +43,8 @@ Node* FocalPercent::Factory(Node *prev, const Mask &mask, PercentType type) {
 	return new FocalPercent(meta,prev,mask,type);
 }
 
-Node* FocalPercent::clone(NodeList new_prev_list) {
-	return new FocalPercent(this,new_prev_list);
+Node* FocalPercent::clone(NodeList new_prev_list, NodeList new_back_list) {
+	return new FocalPercent(this,new_prev_list,new_back_list);
 }
 
 // Constructors
@@ -60,8 +60,8 @@ FocalPercent::FocalPercent(const MetaData &meta, Node *prev, const Mask &mask, P
 	prev->addNext(this);
 }
 
-FocalPercent::FocalPercent(const FocalPercent *other, NodeList new_prev_list)
-	: Node(other,new_prev_list)
+FocalPercent::FocalPercent(const FocalPercent *other, NodeList new_prev_list, NodeList new_back_list)
+	: Node(other,new_prev_list,new_back_list)
 {
 	this->smask = other->smask;
 	this->type = other->type;

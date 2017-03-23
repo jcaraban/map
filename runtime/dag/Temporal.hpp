@@ -18,11 +18,11 @@ struct Temporal : public Node
 	// Internal declarations
 	
 	// Factory
-	Node* clone(NodeList new_prev_list);
+	Node* clone(NodeList new_prev_list, NodeList new_back_list);
 
 	// Constructors
 	Temporal(const MetaData &meta);
-	Temporal(const Temporal *other, NodeList new_prev_list);
+	Temporal(const Temporal *other, NodeList new_prev_list, NodeList new_back_list);
 
 	// Methods
 	void accept(Visitor *visitor);

@@ -31,11 +31,11 @@ struct Access : public Node
 
 	// Factory
 	static Node* Factory(Node *arg, const Coord &coord);
-	Node* clone(NodeList new_prev_list);
+	Node* clone(NodeList new_prev_list, NodeList new_back_list);
 
 	// Constructors
 	Access(const MetaData &meta, Node *prev, const Coord &coord);
-	Access(const Access *other, NodeList new_prev_list);
+	Access(const Access *other, NodeList new_prev_list, NodeList new_back_list);
 
 	// Methods
 	void accept(Visitor *visitor);

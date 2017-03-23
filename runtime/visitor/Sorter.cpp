@@ -33,14 +33,10 @@ NodeList Sorter::sort(NodeList list) {
 	// Walks all nodes first to registers them in the data structures
 	for (auto node : list) {
 		int count = node->prevList().size();
-		// Feedback nodes are a exception...
-		//auto feed = dynamic_cast<Feedback*>(node);
-		//if (feed && feed->feedIn())
-		//	count--;
 
-		if (count == 0) { // ready nodes go into the queue
+		if (count == 0) { // ready nodes with 'prev = 0' go into the queue
 			queue.push(node);
-		} else { // nodes with '> 0' prevs keep the count
+		} else { // nodes with 'prev > 0' store the count until 'prev = 0'
 			prev_count[node] = count;
 		}
 	}
@@ -53,12 +49,7 @@ NodeList Sorter::sort(NodeList list) {
 		node_list.push_back(node);
 
 		for (auto next : node->nextList()) {
-			// Feedback nodes are a exception...
-			//auto feedout = dynamic_cast<Feedback*>(node);
-			//auto feedin = dynamic_cast<Feedback*>(next);
-			//if (feedin && feedout)
-			//	continue;
-			//assert(prev_count.find(next) != prev_count.end());
+			assert(prev_count.find(next) != prev_count.end());
 
 			prev_count[next]--;
 			if (prev_count[next] == 0) {
@@ -68,7 +59,7 @@ NodeList Sorter::sort(NodeList list) {
 		}	
 	}
 
-	//assert(prev_count.empty());
+	assert(prev_count.empty());
 	return node_list;
 }
 

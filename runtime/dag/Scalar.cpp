@@ -44,8 +44,8 @@ Node* Scalar::Factory(Node *prev) {
 	return new Scalar(prev,SharedFile(sca_file));
 }
 
-Node* Scalar::clone(NodeList new_prev_list) {
-	return new Scalar(this,new_prev_list);
+Node* Scalar::clone(NodeList new_prev_list, NodeList new_back_list) {
+	return new Scalar(this,new_prev_list,new_back_list);
 }
 
 // Constructors
@@ -55,8 +55,8 @@ Scalar::Scalar(Node *prev, SharedFile sca_file) :
 	OutputNode(prev,sca_file)
 { }
 
-Scalar::Scalar(const Scalar *other, NodeList new_prev_list)
-	: IONode(other,new_prev_list)
+Scalar::Scalar(const Scalar *other, NodeList new_prev_list, NodeList new_back_list)
+	: IONode(other,new_prev_list,new_back_list)
 	, OutputNode() // @@ InputNode(other) ?
 { }
 

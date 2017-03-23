@@ -44,8 +44,8 @@ Node* SpreadScan::Factory(Node *prev, Node *dir, ReductionType type) {
 	return new SpreadScan(meta,prev,dir,type);
 }
 
-Node* SpreadScan::clone(NodeList new_prev_list) {
-	return new SpreadScan(this,new_prev_list);
+Node* SpreadScan::clone(NodeList new_prev_list, NodeList new_back_list) {
+	return new SpreadScan(this,new_prev_list,new_back_list);
 }
 
 // Constructors
@@ -77,8 +77,8 @@ SpreadScan::SpreadScan(const MetaData &meta, Node *prev, Node *dir, ReductionTyp
 	stable->addNext(this);
 }
 
-SpreadScan::SpreadScan(const SpreadScan *other, NodeList new_prev_list)
-	: Node(other,new_prev_list)
+SpreadScan::SpreadScan(const SpreadScan *other, NodeList new_prev_list, NodeList new_back_list)
+	: Node(other,new_prev_list,new_back_list)
 {
 	this->type = other->type;
 }

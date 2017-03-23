@@ -28,11 +28,11 @@ struct SpreadScan : public Node
 
 	// Factory
 	static Node* Factory(Node *arg, Node *dir, ReductionType type);
-	Node* clone(NodeList new_prev_list);
+	Node* clone(NodeList new_prev_list, NodeList new_back_list);
 
 	// Constructors
 	SpreadScan(const MetaData &meta, Node *prev, Node *dir, ReductionType type);
-	SpreadScan(const SpreadScan *other, NodeList new_prev_list);
+	SpreadScan(const SpreadScan *other, NodeList new_prev_list, NodeList new_back_list);
 
 	// Methods
 	void accept(Visitor *visitor);

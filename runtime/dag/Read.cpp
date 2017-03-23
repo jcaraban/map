@@ -45,8 +45,8 @@ Node* Read::Factory(std::string file_path) {
 	return new Read(in_file);
 }
 
-Node* Read::clone(NodeList new_prev_list) {
-	return new Read(this,new_prev_list);
+Node* Read::clone(NodeList new_prev_list, NodeList new_back_list) {
+	return new Read(this,new_prev_list,new_back_list);
 }
 
 // Constructors
@@ -56,8 +56,8 @@ Read::Read(SharedFile in_file)
 	, InputNode(in_file)
 { }
 
-Read::Read(const Read *other, NodeList new_prev_list)
-	: IONode(other,new_prev_list)
+Read::Read(const Read *other, NodeList new_prev_list, NodeList new_back_list)
+	: IONode(other,new_prev_list,new_back_list)
 	, InputNode() // @@ InputNode(other) ?
 { }
 

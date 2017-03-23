@@ -31,11 +31,11 @@ struct Scalar : public OutputNode
 	
 	// Factory
 	static Node* Factory(Node *prev);
-	Node* clone(NodeList new_prev_list);
+	Node* clone(NodeList new_prev_list, NodeList new_back_list);
 
 	// Constructors
 	Scalar(Node *prev, SharedFile sca_file);
-	Scalar(const Scalar *other, NodeList new_prev_list);
+	Scalar(const Scalar *other, NodeList new_prev_list, NodeList new_back_list);
 
 	// Methods
 	void accept(Visitor *visitor);

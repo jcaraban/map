@@ -36,11 +36,11 @@ struct Loop : public Node
 
 	// Factory
 	static Node* Factory(NodeList prev_list, Node *cond, NodeList body_list, NodeList feed_in_list, NodeList feed_out_list);
-	Node* clone(NodeList new_prev_list);
+	Node* clone(NodeList new_prev_list, NodeList new_back_list);
 
 	// Constructors
 	Loop(const MetaData &meta, NodeList prev_list, Node *cond, NodeList body_list, NodeList feed_in_list, NodeList feed_out_list);
-	Loop(const Loop *other, NodeList new_prev_list);
+	Loop(const Loop *other, NodeList new_prev_list, NodeList new_back_list);
 
 	// Methods
 	void accept(Visitor *visitor);

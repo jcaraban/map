@@ -36,8 +36,8 @@ Node* Checkpoint::Factory(Node *prev) {
 	return new Checkpoint(prev,tmp_file);
 }
 
-Node* Checkpoint::clone(NodeList new_prev_list) {
-	return new Checkpoint(this,new_prev_list);
+Node* Checkpoint::clone(NodeList new_prev_list, NodeList new_back_list) {
+	return new Checkpoint(this,new_prev_list,new_back_list);
 }
 
 // Constructors
@@ -63,8 +63,8 @@ Checkpoint::Checkpoint(Node *prev, SharedFile tmp_file)
 	prev->addNext(this);
 }
 
-Checkpoint::Checkpoint(const Checkpoint *other, NodeList new_prev_list)
-	: IONode(other,new_prev_list) // because of virtual inheritance
+Checkpoint::Checkpoint(const Checkpoint *other, NodeList new_prev_list, NodeList new_back_list)
+	: IONode(other,new_prev_list,new_back_list) // because of virtual inheritance
 	, OutInNode()
 { }
 

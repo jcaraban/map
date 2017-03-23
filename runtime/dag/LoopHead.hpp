@@ -28,11 +28,11 @@ struct LoopHead : public Node
 	};
 
 	// Factory
-	Node* clone(NodeList new_prev_list);
+	Node* clone(NodeList new_prev_list, NodeList new_back_list);
 	
 	// Constructors
 	LoopHead(Loop *loop, Node *prev);
-	LoopHead(const LoopHead *other, NodeList new_prev_list);
+	LoopHead(const LoopHead *other, NodeList new_prev_list, NodeList new_back_list);
 
 	// Methods
 	void accept(Visitor *visitor);

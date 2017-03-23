@@ -30,11 +30,11 @@ struct FocalFlow : public Node
 
 	// Factory
 	static Node* Factory(Node *arg);
-	Node* clone(NodeList new_prev_list);
+	Node* clone(NodeList new_prev_list, NodeList new_back_list);
 
 	// Constructors
 	FocalFlow(const MetaData &meta, Node *prev);
-	FocalFlow(const FocalFlow *other, NodeList new_prev_list);
+	FocalFlow(const FocalFlow *other, NodeList new_prev_list, NodeList new_back_list);
 
 	// Methods
 	void accept(Visitor *visitor);

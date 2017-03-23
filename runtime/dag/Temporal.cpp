@@ -11,8 +11,8 @@ namespace map { namespace detail {
 
 // Factory
 
-Node* Temporal::clone(NodeList new_prev_list) {
-	return new Temporal(this,new_prev_list);
+Node* Temporal::clone(NodeList new_prev_list, NodeList new_back_list) {
+	return new Temporal(this,new_prev_list,new_back_list);
 }
 
 // Constructors
@@ -21,8 +21,8 @@ Temporal::Temporal(const MetaData &meta) :
 	Node(meta)
 { }
 
-Temporal::Temporal(const Temporal *other, NodeList new_prev_list)
-	: Node(other,new_prev_list)
+Temporal::Temporal(const Temporal *other, NodeList new_prev_list, NodeList new_back_list)
+	: Node(other,new_prev_list,new_back_list)
 { }
 
 // Methods

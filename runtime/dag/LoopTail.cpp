@@ -29,8 +29,8 @@ std::size_t LoopTail::Hash::operator()(const Key& k) const {
 
 // Factory
 
-Node* LoopTail::clone(NodeList new_prev_list) {
-	return new LoopTail(this,new_prev_list);
+Node* LoopTail::clone(NodeList new_prev_list, NodeList new_back_list) {
+	return new LoopTail(this,new_prev_list,new_back_list);
 }
 
 // Constructors
@@ -53,8 +53,8 @@ LoopTail::LoopTail(Loop *loop, Node *prev)
 	prev->addNext(this); // 'prev' is a 'feedback' that points to 'tail'
 }
 
-LoopTail::LoopTail(const LoopTail *other, NodeList new_prev_list)
-	: Node(other,new_prev_list)
+LoopTail::LoopTail(const LoopTail *other, NodeList new_prev_list, NodeList new_back_list)
+	: Node(other,new_prev_list,new_back_list)
 {
 	this->owner_loop = other->owner_loop;
 }

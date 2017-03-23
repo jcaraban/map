@@ -42,8 +42,8 @@ Node* Convolution::Factory(Node *arg, const Mask &mask) {
 	return new Convolution(meta,arg,mask);
 }
 
-Node* Convolution::clone(NodeList new_prev_list) {
-	return new Convolution(this,new_prev_list);
+Node* Convolution::clone(NodeList new_prev_list, NodeList new_back_list) {
+	return new Convolution(this,new_prev_list,new_back_list);
 }
 
 // Constructors
@@ -58,8 +58,8 @@ Convolution::Convolution(const MetaData &meta, Node *prev, const Mask &mask)
 	prev->addNext(this);
 }
 
-Convolution::Convolution(const Convolution *other, NodeList new_prev_list)
-	: Node(other,new_prev_list)
+Convolution::Convolution(const Convolution *other, NodeList new_prev_list, NodeList new_back_list)
+	: Node(other,new_prev_list,new_back_list)
 {
 	this->smask = other->smask;
 }

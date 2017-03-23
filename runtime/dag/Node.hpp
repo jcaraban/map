@@ -37,8 +37,8 @@ struct Node {
 	Node(const MetaData &meta);
 	virtual ~Node();
   // Clone constructor
-	Node(const Node *old, NodeList new_prev);
-	virtual Node* clone(NodeList new_prev) = 0;
+	Node(const Node *old, NodeList new_prev_list, NodeList new_back_list);
+	virtual Node* clone(NodeList new_prev_list, NodeList new_back_list) = 0;
   // Visitor methods
 	virtual void accept(Visitor *visitor) = 0;
 	virtual void acceptPrev(Visitor *visitor);

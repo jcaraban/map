@@ -28,11 +28,11 @@ struct Checkpoint : public OutInNode
 	
 	// Factory
 	static Node* Factory(Node *prev);
-	Node* clone(NodeList new_prev_list);
+	Node* clone(NodeList new_prev_list, NodeList new_back_list);
 
 	// Constructors
 	Checkpoint(Node *prev, SharedFile tmp_file);
-	Checkpoint(const Checkpoint *other, NodeList new_prev_list);
+	Checkpoint(const Checkpoint *other, NodeList new_prev_list, NodeList new_back_list);
 
 	// Methods
 	void accept(Visitor *visitor);

@@ -28,11 +28,11 @@ struct Rand : public Node
 
 	// Factory
 	static Node* Factory(Node *seed, DataType dt, MemOrder mo);
-	Node* clone(NodeList new_prev_list);
+	Node* clone(NodeList new_prev_list, NodeList new_back_list);
 
 	// Constructors
 	Rand(const MetaData &meta, Node *seed);
-	Rand(const Rand *other, NodeList new_prev_list);
+	Rand(const Rand *other, NodeList new_prev_list, NodeList new_back_list);
 
 	// Methods
 	void accept(Visitor *visitor);

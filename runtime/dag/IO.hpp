@@ -22,7 +22,7 @@ struct IONode : public Node
 	IONode();
 	IONode(SharedFile file, InputNodeFlag not_used);
 	IONode(SharedFile file, OutputNodeFlag not_used);
-	IONode(const IONode *other, NodeList new_prev);
+	IONode(const IONode *other, NodeList new_prev_list, NodeList new_back_list);
 
 	IFile* file();
 	const IFile* file() const;

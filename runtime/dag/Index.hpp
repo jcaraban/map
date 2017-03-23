@@ -27,11 +27,11 @@ struct Index : public Node
 
 	// Factory
 	static Node* Factory(DataSize ds, NumDim dim, MemOrder mo, BlockSize bs);
-	Node* clone(NodeList new_prev_list);
+	Node* clone(NodeList new_prev_list, NodeList new_back_list);
 
 	// Constructors
 	Index(const MetaData &meta, NumDim dim);
-	Index(const Index *other, NodeList new_prev_list);
+	Index(const Index *other, NodeList new_prev_list, NodeList new_back_list);
 
 	// Methods
 	void accept(Visitor *visitor);

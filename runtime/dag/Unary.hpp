@@ -28,11 +28,11 @@ struct Unary : public Node
 
 	// Factory
 	static Node* Factory(Node *arg, UnaryType type);
-	Node* clone(NodeList new_prev_list);
+	Node* clone(NodeList new_prev_list, NodeList new_back_list);
 
 	// Constructors
 	Unary(const MetaData &meta, Node *prev, UnaryType type);
-	Unary(const Unary *other, NodeList new_prev_list);
+	Unary(const Unary *other, NodeList new_prev_list, NodeList new_back_list);
 
 	// Methods
 	void accept(Visitor *visitor);
