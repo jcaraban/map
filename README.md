@@ -13,7 +13,7 @@ For my **PhD** I design a Parallel Map Algebra framework that runs efficiently o
 ## Sample script: *Hillshade*
 The following script depicts a hillshade algorithm. It computes and matches the derivatives of a DEM to the azimuth and altitude of the sun to achieve an effect of topographic relief.
 
-```{.py}
+```python
 	from map import * ## Parallel Map Algebra		# This is it, a Python import. Now the python script
 	PI = 3.141593									# will execute the Map Algebra operations in parallel
 
