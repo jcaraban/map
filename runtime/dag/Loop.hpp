@@ -27,8 +27,11 @@ struct Loop : public Node
 	struct Key {
 		Key(Loop *node);
 		bool operator==(const Key& k) const;
-		NodeList prev_list;
-		NodeList cond_list, body_list;
+		LoopCond *cond_node;
+		NodeList prev_list, body_list;
+		HeadList head_list;
+		TailList tail_list;
+		FeedList feed_in_list, feed_out_list;
 	};
 	struct Hash {
 		std::size_t operator()(const Key& k) const;

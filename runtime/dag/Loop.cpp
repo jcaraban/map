@@ -15,35 +15,57 @@ namespace map { namespace detail {
 // Internal declarations
 
 Loop::Key::Key(Loop *node) {
+	cond_node = node->cond_node;
 	prev_list = node->prev_list;
-	cond_list = node->prev_list;
-	body_list = node->prev_list;
+	body_list = node->body_list;
+	head_list = node->head_list;
+	tail_list = node->tail_list;
+	feed_in_list = node->feed_in_list;
+	feed_out_list = node->feed_out_list;
 }
 
 bool Loop::Key::operator==(const Key& k) const {
 	if (prev_list.size() != k.prev_list.size())
 		return false;
-	if (cond_list.size() != k.cond_list.size())
-		return false;
 	if (body_list.size() != k.body_list.size())
 		return false;
-	bool b = true;
+	if (head_list.size() != k.head_list.size())
+		return false;
+	if (tail_list.size() != k.tail_list.size())
+		return false;
+	if (feed_in_list.size() != k.feed_in_list.size())
+		return false;
+	if (feed_out_list.size() != k.feed_out_list.size())
+		return false;
+	bool b = cond_node == k.cond_node;
 	for (int i=0; i<prev_list.size(); i++)
 		b &= prev_list[i] == k.prev_list[i];
-	for (int i=0; i<cond_list.size(); i++)
-		b &= cond_list[i] == k.cond_list[i];
 	for (int i=0; i<body_list.size(); i++)
 		b &= body_list[i] == k.body_list[i];
+	for (int i=0; i<head_list.size(); i++)
+		b &= head_list[i] == k.head_list[i];
+	for (int i=0; i<tail_list.size(); i++)
+		b &= tail_list[i] == k.tail_list[i];
+	for (int i=0; i<feed_in_list.size(); i++)
+		b &= feed_in_list[i] == k.feed_in_list[i];
+	for (int i=0; i<feed_out_list.size(); i++)
+		b &= feed_out_list[i] == k.feed_out_list[i];
 	return b;
 }
 
 std::size_t Loop::Hash::operator()(const Key& k) const {
-	size_t h = 0;
+	size_t h = std::hash<Node*>()(k.cond_node);
 	for (auto &node : k.prev_list)
 		h ^= std::hash<Node*>()(node);
-	for (auto &node : k.cond_list)
-		h ^= std::hash<Node*>()(node);
 	for (auto &node : k.body_list)
+		h ^= std::hash<Node*>()(node);
+	for (auto &node : k.head_list)
+		h ^= std::hash<Node*>()(node);
+	for (auto &node : k.tail_list)
+		h ^= std::hash<Node*>()(node);
+	for (auto &node : k.feed_in_list)
+		h ^= std::hash<Node*>()(node);
+	for (auto &node : k.feed_out_list)
 		h ^= std::hash<Node*>()(node);
 	return h;
 }

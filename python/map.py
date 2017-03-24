@@ -236,10 +236,10 @@ class Raster:
 		if tree is None:
 			return
 		self._symloop_execution(tree) # call loop start/end, execute body
-		return False # __bool__ in Py3, hook into the Python internal system
+		return False # hackish way to hook into the Python internal system
 
 	def _symloop_extraction(self):
-		# Note: thid code requires 'inspect' and probably only work with CPython
+		# Note: this code requires 'inspect' and probably only work with CPython
 		(_, filename, lineno, _, _, _) = inspect.stack()[2]
 		if filename == '<stdin>':
 			print("Symbolic loops are not supported in interactive interpretation mode!")
@@ -302,10 +302,10 @@ class Raster:
 				node.lineno += lineno-1
 
 	def _update_variables(self,local_scope,wile,loop):
-		agains = ct.POINTER(Node)()
-		tails = ct.POINTER(Node)()
+		oldpy = ct.POINTER(Node)()
+		newpy = ct.POINTER(Node)()
 		num = ct.c_int()
-		_lib.ma_loopAgainTail(loop,ct.byref(agains),ct.byref(tails),ct.byref(num))
+		_lib.ma_loopUpdateVars(loop,ct.byref(oldpy),ct.byref(newpy),ct.byref(num))
 		# collects python variables holding rasters
 		var_lst = []
 		for node in ast.walk(wile):
@@ -320,11 +320,11 @@ class Raster:
 					value = local_scope[var]
 					if isinstance(value,Raster):
 						var_lst.append(var)
-		# update the rasters' nodes to hold the tails
+		# update the python variables to hold the right nodes
 		for var in var_lst:
 			for i in range(num.value):
-				if local_scope[var]._node.value == agains[i].value:
-					local_scope[var] = Raster( tails[i] )
+				if local_scope[var]._node.value == oldpy[i].value:
+					local_scope[var] = Raster( newpy[i] )
 
 	## Public methods
 
@@ -830,5 +830,5 @@ _lib.ma_loopAssemble.restype = Node
 _lib.ma_loopEnd.argtypes = []
 _lib.ma_loopEnd.restype = None
 
-_lib.ma_loopAgainTail.argtypes = [Raster,ct.POINTER(ct.POINTER(Node)),ct.POINTER(ct.POINTER(Node)),ct.POINTER(ct.c_int)]
-_lib.ma_loopAgainTail.restype = None
+_lib.ma_loopUpdateVars.argtypes = [Raster,ct.POINTER(ct.POINTER(Node)),ct.POINTER(ct.POINTER(Node)),ct.POINTER(ct.c_int)]
+_lib.ma_loopUpdateVars.restype = None

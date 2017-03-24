@@ -15,6 +15,7 @@
 #include "visitor/Fusioner.hpp"
 #include "visitor/Exporter.hpp"
 #include "visitor/Cloner.hpp"
+#include <algorithm>
 
 
 namespace map { namespace detail {
@@ -198,6 +199,8 @@ void Runtime::loopClear() {
 	loop_struct[loop_level].feed_out.clear();
 	loop_struct[loop_level].head.clear();
 	loop_struct[loop_level].tail.clear();
+	loop_struct[loop_level].oldpy.clear();
+	loop_struct[loop_level].newpy.clear();
 }
 
 void Runtime::loopAddNode(Node *node) {
@@ -227,6 +230,7 @@ void Runtime::loopCondition(Node *node) {
 Node* Runtime::loopAssemble() {
 	assert(loop_mode == LOOP_AGAIN);
 	LoopStruct &loop = loop_struct[loop_level];
+	int i;
 
 	// Note: the order of the nodes inside the lists is important,
 	//       do not apply optimizations (e.g. set) that break that order !!
@@ -250,22 +254,38 @@ Node* Runtime::loopAssemble() {
 				const_set.insert(prev);
 	NodeList const_list = NodeList(const_set.begin(),const_set.end());
 
-	// All 'body' nodes that only depend on the 'cons_list' are loop invariant nodes
-	int i = 0;
+	// Remove from 'again' all nodes repeated in 'body'. They were used to find the invariants
+	loop.again = left_join(loop.again,loop.body);
+
+	// All 'body' nodes that only depend on the 'const_list' are in-loop-invariant nodes
+	i = 0;
 	while (i < loop.body.size()) {
 		Node *node = loop.body[i++];
-		bool invar = true;
-		for (auto prev : node->prevList())
-			if (invar && !is_included(prev,const_list))
-				invar = false;
-		// Detected a loop invariant, moves it out of 'body'
-		if (invar) {
+		// Do all 'prev' of this 'body' node only depend on 'const' nodes?
+		auto pred = [&](Node *n){ return is_included(n,const_list); };
+		bool is_invar = std::all_of(node->prevList().begin(),node->prevList().end(),pred);
+		// yes? Then 'node' is a in-loop-invariant, move it out of 'body'
+		if (is_invar) {
 			remove_value(node,loop.body);
 			loop.prev.push_back(node);
 			const_list.push_back(node);
 			i--;
 		}
-		// @@ test this code better
+	}
+
+	// Some 'const' / 'prev' of invariants might not be 'prev' anymore
+	i = 0;
+	while (i < const_list.size()) {
+		Node *node = const_list[i++];
+		// Does any 'next' of this 'const' node depends on 'body' ?
+		auto pred = [&](Node *n){ return is_included(n,loop.body); };
+		bool is_prev = std::any_of(node->nextList().begin(),node->nextList().end(),pred);
+		// no? Then this 'const' is not 'prev' of the 'loop' anymore
+		if (not is_prev) {
+			remove_value(node,const_list);
+			remove_value(node,loop.prev);
+			i--;
+		}
 	}
 
 	// 'feed_in' nodes are those 'prevs' not found on the constant list
@@ -279,6 +299,7 @@ Node* Runtime::loopAssemble() {
 
 	// Note: 'feed_in' and 'feed_out' must maintain same size and --> order <--
 	assert(loop.feed_in.size() == loop.feed_out.size());
+	assert(not loop.feed_in.empty());
 
 	// Unlinks 'again' nodes, now that we have figured out the feedbacks
 	for (auto it=loop.again.rbegin(); it!=loop.again.rend(); it++) {
@@ -293,6 +314,39 @@ Node* Runtime::loopAssemble() {
 		// With loopAgainTail() Python updates the loop variables to 'tail' nodes
 		// which lets the garbage collector delete the 'again' nodes, sometime later
 		Node::id_count--; // @ I'd be fired for this
+	}
+
+	// Unreachable 'body' nodes when going up from 'feed_out' are out-loop-invariants
+	std::queue<Node*> queue;
+	std::set<Node*> unr_set;
+	for (auto out : loop.feed_out)
+		queue.push(out);
+	while (not queue.empty()) {
+		Node *node = queue.front();
+		queue.pop();
+		for (auto prev : node->prevList())
+			if (is_included(prev,loop.body))
+				queue.push(prev);
+		unr_set.insert(node);
+	}
+
+	// Gets the out-loop-invariants as the left_join of 'body' with the 'unreachable'
+	NodeList out_invar = left_join(loop.body, NodeList(unr_set.begin(),unr_set.end()) );
+	
+	// Removes the out-loop-invariants from 'body' and 'again' (NB: they share the same index)
+	assert(loop.body.size() == loop.again.size());
+	i = 0;
+	while (i < loop.body.size()) {
+		if (is_included(loop.body[i],out_invar)) {
+			//
+			loop.oldpy.push_back(loop.again[i]);
+			loop.newpy.push_back(loop.body[i]);
+			//
+			loop.body.erase(loop.body.begin()+i);
+			loop.again.erase(loop.again.begin()+i);
+		} else {
+			i++;
+		}
 	}
 
 	// 'loop' node creation, insertion, simplification
@@ -333,37 +387,21 @@ void Runtime::loopAgainTail(Node *node, Node ***agains, Node ***tails, int *num)
 	LoopStruct &loop = loop_struct[loop_level];
 	assert(loop.loop == node);
 
-	*agains = loop.again.data();
-	*tails = loop.tail.data();
-	*num = loop.again.size();
-	assert(*num <= loop.tail.size());
-}
+	loop.oldpy.insert(loop.oldpy.end(),loop.again.begin(),loop.again.end());
+	loop.newpy.insert(loop.newpy.end(),loop.tail.begin(),loop.tail.end());
 
-void Runtime::work() {
-	TimedRegion region(clock,EXEC);
+	*agains = loop.oldpy.data();
+	*tails = loop.newpy.data();
+	*num = loop.oldpy.size();
 
-	threads.clear();
-
-	// Threads spawn, each with a worker
-	int i = 0;
-	for (int n=0; n<conf.num_machines; n++) {
-		for (int d=0; d<conf.num_devices; d++) {
-			for (int r=0; r<conf.num_ranks; r++) {
-				auto thr = new std::thread(&Worker::work, &workers[i], ThreadId(n,d,r));
-				threads.push_back( std::unique_ptr<std::thread>(thr) );
-				i++;
-			}
-		}
-	}
-
-	// Workers gathering
-	for (auto &thr : threads)
-		thr->join();
+	assert(*num == loop.newpy.size());
 }
 
 Node* Runtime::addNode(Node *node) {
 	// TimedRegion region(clock,ADDNODE);
+	LoopStruct &loop = loop_struct[loop_level];
 	Node *orig;
+
 	if (loop_mode == NORMAL_MODE)  // Not inside a loop
 	{
 		node_list.push_back( std::unique_ptr<Node>(node) );
@@ -378,6 +416,9 @@ Node* Runtime::addNode(Node *node) {
 		//   - the node is FREE (i.e. read, const)
 		if (orig == node && orig->pattern()!=FREE)
 			loopAddNode(orig);
+		// Add the repeated node if we are AGAIN and it was included in 'body'
+		if (orig != node && loop_mode == LOOP_AGAIN && is_included(orig,loop.body))
+			loopAddNode(orig); // @ necessary for the input invariant nodes
 	}
 	return orig;
 }
@@ -433,6 +474,12 @@ void Runtime::evaluate(NodeList list_to_eval) {
 	clock.prepare();
 	clock.start(EVAL);
 
+// @ Prints nodes
+std::cout << "----" << std::endl;
+for (auto &node : node_list)
+	std::cout << node->id << "\t" << node->getName() << "\t " << node->ref << std::endl;
+std::cout << "----" << std::endl;
+
 	// Unlinks all unaccessible (i.e. isolated) nodes & removes them from simplifier 
 	unlinkIsolated(node_list,true);
 
@@ -456,22 +503,28 @@ void Runtime::evaluate(NodeList list_to_eval) {
 		full_list = Lister().list(list_to_eval);
 	}
 
-	// Sorts the list by 'dependencies' 1st, and 'id' 2nd
-	auto sort_list = Sorter().sort(full_list);
-
-// @ Prints nodes 4rd
+// @ Prints nodes
 std::cout << "----" << std::endl;
-for (auto node : sort_list)
+for (auto &node : full_list)
 	std::cout << node->id << "\t" << node->getName() << "\t " << node->ref << std::endl;
 std::cout << "----" << std::endl;
 
-	// ... continue ... make clone keep the ids
+	// Sorts the list by 'dependencies' 1st, and 'id' 2nd
+	auto sort_list = Sorter().sort(full_list);
+
+// @ Prints nodes
+std::cout << "----" << std::endl;
+for (auto &node : sort_list)
+	std::cout << node->id << "\t" << node->getName() << "\t " << node->ref << std::endl;
+std::cout << "----" << std::endl;
 
 	// Clones the list of sorted nodes into new list of new nodes
 	OwnerNodeList priv_list; //!< Owned by this particular evaluation
 	auto cloner = Cloner(priv_list);
 	auto graph = cloner.clone(sort_list);
 	auto map_new_old = cloner.new_hash;
+
+// ... continue ... why does Write and Feedback get ref=0 after Cloner ?
 
 // @ Prints nodes 5rd
 std::cout << "----" << std::endl;
@@ -530,6 +583,28 @@ void Runtime::workflow(NodeList list) {
 
 	// Release of cache entries
 	cache.freeEntries();
+}
+
+void Runtime::work() {
+	TimedRegion region(clock,EXEC);
+
+	threads.clear();
+
+	// Threads spawn, each with a worker
+	int i = 0;
+	for (int n=0; n<conf.num_machines; n++) {
+		for (int d=0; d<conf.num_devices; d++) {
+			for (int r=0; r<conf.num_ranks; r++) {
+				auto thr = new std::thread(&Worker::work, &workers[i], ThreadId(n,d,r));
+				threads.push_back( std::unique_ptr<std::thread>(thr) );
+				i++;
+			}
+		}
+	}
+
+	// Workers gathering
+	for (auto &thr : threads)
+		thr->join();
 }
 
 void Runtime::reportEval() {

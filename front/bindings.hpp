@@ -88,8 +88,8 @@ void ma_loopCond(Node *cond);
 void ma_loopBody();
 void ma_loopAgain();
 Node* ma_loopAssemble();
+void ma_loopUpdateVars(Node *loop, Node ***oldpy, Node ***newpy, int *num);
 void ma_loopEnd();
-void ma_loopAgainTail(Node *loop, Node ***agains, Node ***tails, int *num);
 
 } // extern C
 

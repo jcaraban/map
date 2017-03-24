@@ -53,6 +53,8 @@ struct LoopStruct {
 	Node *loop;
 	NodeList head; //!< Head nodes created by Loop
 	NodeList tail; //!< Tail nodes created by Loop
+	NodeList oldpy;
+	NodeList newpy;
 };
 
 /*
@@ -68,11 +70,11 @@ class Runtime
 	void operator=(const Runtime &P) = delete;  // Not Implemented
 
 	void clear(); // runtime structures are cleared
-	void work(); // stars a series of threads to work
 	void reportEval(); // prints execution time whitin 'eval'
 	void reportOver(); // prints overall execution times
 
 	void workflow(NodeList list); // Executes the list of nodes
+	void work(); // stars a series of threads to work
 
   public:
 	static Runtime& getInstance();
@@ -118,7 +120,7 @@ class Runtime
 	SimplifierOnline simplifier; //!<
 
 	LoopMode loop_mode; //!< Indicates if we are inside a (possibly nested) loop
-	int loop_level; //!< Loop nesting level, tracks the recursion, from 0..16
+	int loop_level; //!< Tracks the loop nesting level, from 0 .. nested_loop_limit
 	std::vector<LoopStruct> loop_struct; //!< Stores the ongoing (nested?) loop
 };
 

@@ -47,24 +47,18 @@ Feedback::Feedback(Loop *loop, LoopHead *prev)
 	
 	/* Feed In constructor */
 
-	// 'next' of 'prev' inside the loop 'cond'+'body' now link to 'feed'
+	// 'next' of 'prev' (which must be inside 'cond'+'body') now link to 'feed'
 	for (auto next : prev->nextList()) {
 		assert( is_included(next,loop->bodyList()) || next==loop->condition() );
 		this->addNext(next);
 		next->updatePrev(prev,this);
 	}
-	
-	// 'prev' looses the links into 'cond'+'body'
-	int i = 0;
-	while (i < prev->nextList().size()) {
-		Node *next = prev->nextList()[i++];
-		if (is_included(next,loop->bodyList()) || next==loop->condition()) {
-			prev->removeNext(next);
-			i--;
-		}
-	}
 
-	prev->addNext(this); // 'prev' is a 'head' that points to 'feed'
+	// 'prev' looses all its 'next' links
+	for (auto next : prev->nextList())
+		prev->removeNext(next);
+
+	prev->addNext(this); // 'prev' is a 'head' that ONLY points to 'feed'
 }
 
 Feedback::Feedback(Loop *loop, Feedback *feed_in, Node *prev)
@@ -81,7 +75,18 @@ Feedback::Feedback(Loop *loop, Feedback *feed_in, Node *prev)
 	
 	/* Feed Out constructor */
 	
-	// 'prev' does not looses any 'next', it continues as it was
+	// the 'next' of 'prev' outside 'body' are moved down
+	int i = 0; // this are the out-loop-invariants
+	while (i < prev->nextList().size()) {
+		Node *next = prev->nextList()[i++];
+		if (not is_included(next,loop->bodyList())) {
+			this->addNext(next);
+			next->updatePrev(prev,this);
+			prev->removeNext(next);
+			i--;
+		}
+	}
+
 	prev->addNext(this); // 'prev' is a 'body' node that points to 'feed'
 
 	// Links twin feedback nodes

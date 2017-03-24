@@ -46,10 +46,19 @@ LoopTail::LoopTail(Loop *loop, Node *prev)
 	prev_list[0] = prev;
 	prev_list[1] = loop; // @ first 'loop' or 'prev' ?
 	
-	// 'prev' should not point to anybody 'next' at this point
-	//assert( prev->nextList().empty() );
+	// the 'next' of 'prev' outside 'body' are moved down
+	int i = 0; // this are the out-loop-invariants
+	while (i < prev->nextList().size()) {
+		Node *next = prev->nextList()[i++];
+		if (not is_included(next,loop->bodyList())) {
+			this->addNext(next);
+			next->updatePrev(prev,this);
+			prev->removeNext(next);
+			i--;
+		}
+	}
 
-	loop->addNext(this); // @ take care with this complex linking...
+	loop->addNext(this); // 'loop' is reached through its 'tail' nodes
 	prev->addNext(this); // 'prev' is a 'feedback' that points to 'tail'
 }
 

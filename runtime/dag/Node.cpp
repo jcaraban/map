@@ -47,13 +47,15 @@ Node::Node(const Node *other, NodeList new_prev_list, NodeList new_back_list)
 	, stats(other->stats)
 	, value(other->value)
 {
-	for (auto prev : new_prev_list)
+	for (auto prev : new_prev_list) {
 		prev->addNext(this);
-	this->prev_list = new_prev_list;
+		this->addPrev(prev);
+	}
 
-	for (auto back : new_back_list)
-		back->addBack(this);
-	this->back_list = new_back_list;
+	for (auto back : new_back_list) {
+		back->addForw(this);
+		this->addBack(back);
+	}
 }
 
 Node::~Node() {

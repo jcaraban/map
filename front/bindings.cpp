@@ -257,17 +257,16 @@ void ma_loopAgain() {
 	Runtime::getInstance().loopDigestion(0,0,true,0);
 }
 
-Node* ma_loopAssemble
-() {
+Node* ma_loopAssemble () {
 	return Runtime::getInstance().loopAssemble();
+}
+
+void ma_loopUpdateVars(Node *loop, Node ***oldpy, Node ***newpy, int *num) {
+	Runtime::getInstance().loopAgainTail(loop,oldpy,newpy,num);
 }
 
 void ma_loopEnd() {
 	Runtime::getInstance().loopDigestion(0,0,0,true);
-}
-
-void ma_loopAgainTail(Node *loop, Node ***agains, Node ***tails, int *num) {
-	Runtime::getInstance().loopAgainTail(loop,agains,tails,num);
 }
 
 } // extern C
