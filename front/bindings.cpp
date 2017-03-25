@@ -242,19 +242,19 @@ Node* ma_barrier(Node *prev) {
 /* Sym Loop */
 
 void ma_loopStart() {
-	Runtime::getInstance().loopDigestion(true,0,0,0);
+	Runtime::getLoopAssembler().digestion(true,0,0,0);
 }
 
 void ma_loopCond(Node *cond) {
-	Runtime::getInstance().loopCondition(cond);
+	Runtime::getLoopAssembler().condition(cond);
 }
 
 void ma_loopBody() {
-	Runtime::getInstance().loopDigestion(0,true,0,0);
+	Runtime::getLoopAssembler().digestion(0,true,0,0);
 }
 
 void ma_loopAgain() {
-	Runtime::getInstance().loopDigestion(0,0,true,0);
+	Runtime::getLoopAssembler().digestion(0,0,true,0);
 }
 
 Node* ma_loopAssemble () {
@@ -262,11 +262,11 @@ Node* ma_loopAssemble () {
 }
 
 void ma_loopUpdateVars(Node *loop, Node ***oldpy, Node ***newpy, int *num) {
-	Runtime::getInstance().loopAgainTail(loop,oldpy,newpy,num);
+	Runtime::getLoopAssembler().updateVars(loop,oldpy,newpy,num);
 }
 
 void ma_loopEnd() {
-	Runtime::getInstance().loopDigestion(0,0,0,true);
+	Runtime::getLoopAssembler().digestion(0,0,0,true);
 }
 
 } // extern C

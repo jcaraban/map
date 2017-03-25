@@ -28,8 +28,8 @@ struct Visitor
 
   	void visit(Node *node) = delete;
 	DECLARE_VISIT(Constant)
-	DECLARE_VISIT(Rand)
 	DECLARE_VISIT(Index)
+	DECLARE_VISIT(Rand)
 	DECLARE_VISIT(Cast)
 	DECLARE_VISIT(Unary)
 	DECLARE_VISIT(Binary)

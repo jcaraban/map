@@ -44,7 +44,7 @@ void Fusioner::fuse(NodeList list) {
 
 //print(); // @
 
-	for (auto node : list) {// Flat-fuses gently ## still 1st stage ##
+	for (auto node : list) { // Flat-fuses gently ## still 1st stage ##
 		flatGently(node);
 	}
 
@@ -60,13 +60,13 @@ void Fusioner::fuse(NodeList list) {
 	auto free = [](Node *n){ return n->pattern()==FREE; };
 	forwarding(free); // Replicates lonely free nodes ## 3rd fusion tage ##
 
-//print(); // @
+print(); // @
 
 	linking(); // Marks as input/output all those nodes in the group boundary
 
 	// fuse the output nodes only at the end
 
-	sorting(); // Shorts 'group_list' (in topological order) and group_list[*]->node_list (in id order)
+	sorting(); // Sorts 'group_list' (in topological order) and group_list[*]->node_list (in id order)
 
 	print(); // Prints groups and nodes once linked & sorted
 }

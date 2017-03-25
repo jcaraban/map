@@ -20,8 +20,8 @@ SimplifierOnline::SimplifierOnline(OwnerNodeList &node_list)
 void SimplifierOnline::clear() {
 	orig = nullptr;
 	ConstantMap.clear();
-	RandMap.clear();
 	IndexMap.clear();
+	RandMap.clear();
 	CastMap.clear();
 	UnaryMap.clear();
 	BinaryMap.clear();
@@ -72,8 +72,8 @@ void SimplifierOnline::drop(Node *node) {
 	}
 	
 	DEFINE_VISIT(Constant)
-	DEFINE_VISIT(Rand)
 	DEFINE_VISIT(Index)
+	DEFINE_VISIT(Rand)
 	DEFINE_VISIT(Cast)
 	DEFINE_VISIT(Unary)
 	DEFINE_VISIT(Binary)

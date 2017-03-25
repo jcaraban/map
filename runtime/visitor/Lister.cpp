@@ -45,7 +45,7 @@ void Lister::static_visit(Node *node) {
 	bool all_visited = true;
 	for (auto prev : node->prevList()) {
 		static_visit(prev); // goes up recursively...
-		all_visited &= wasVisited(prev);// || prev->id > node->id;
+		all_visited &= wasVisited(prev);
 	}
 	for (auto forw : node->forwList()) {
 		static_visit(forw); // forward nodes depending on this, due to cycles

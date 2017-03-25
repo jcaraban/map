@@ -2,8 +2,6 @@
  * @file	Runtime.cpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * TODO: is a nested simplifier necessary for the loop?
- * TODO: in loopAssemble, is_included can be avoided by tagging the loop nodes upon insertion
  */
 
 #include "Runtime.hpp"
@@ -43,6 +41,10 @@ Clock& Runtime::getClock() {
 	return getInstance().clock;
 }
 
+LoopAssembler& Runtime::getLoopAssembler() {
+	return getInstance().assembler;
+}
+
 cle::OclEnv& Runtime::getOclEnv() {
 	return getInstance().clenv;
 }
@@ -60,8 +62,7 @@ Runtime::Runtime()
 	, group_list()
 	, task_list()
 	, simplifier(node_list)
-	, loop_mode(NORMAL_MODE)
-	, loop_level(-1)
+	, assembler(conf.loop_nested_limit)
 {
 	// Overall process timing
 	clock.start(OVERALL);
@@ -70,9 +71,6 @@ Runtime::Runtime()
 	for (int i=0; i<conf.max_num_workers; i++) {
 		workers.emplace_back(cache,scheduler,clock,conf);
 	}
-
-	// Initialize loop supporting structures
-	loop_struct.resize(conf.nested_loop_limit);
 
 	//// something else could be initialized here ////
 }
@@ -155,210 +153,16 @@ void Runtime::setupDevices(std::string plat_name, DeviceType dev, std::string de
 	cache.allocChunks(clenv.C(0));
 }
 
-Node* Runtime::loopDigestion(bool start, bool body, bool again, bool end) {
-	Node *node = nullptr;
-	LoopStruct &loop = loop_struct[loop_level];
-
-	if (start) // Starts the process of digesting a loop
-	{
-		assert(loop_mode == NORMAL_MODE); // @ not covering nested case
-		loop_level++;
-		loopClear();
-		loop_mode = LOOP_START;
-	}
-	else if (body) // The condition has been digested, next is the body
-	{
-		assert(loop_mode == LOOP_START);
-		assert(not loop.cond.empty());
-		loop_mode = LOOP_BODY;
-	}
-	else if (again) // Digested the body again to find the feedback links
-	{
-		assert(loop_mode == LOOP_BODY);
-		assert(not loop.body.empty());
-		loop_mode = LOOP_AGAIN;
-	}
-	else if (end) // Ends the digestion and assembles the final Loop node
-	{
-		assert(loop_mode == LOOP_AGAIN);
-		loop_level--;
-		loop_mode = NORMAL_MODE;
-	}
-	else {
-		assert(0);
-	}
-	return node;
-}
-
-void Runtime::loopClear() {
-	loop_struct[loop_level].prev.clear();
-	loop_struct[loop_level].cond.clear();
-	loop_struct[loop_level].body.clear();
-	loop_struct[loop_level].again.clear();
-	loop_struct[loop_level].feed_in.clear();
-	loop_struct[loop_level].feed_out.clear();
-	loop_struct[loop_level].head.clear();
-	loop_struct[loop_level].tail.clear();
-	loop_struct[loop_level].oldpy.clear();
-	loop_struct[loop_level].newpy.clear();
-}
-
-void Runtime::loopAddNode(Node *node) {
-	LoopStruct &loop = loop_struct[loop_level];
-	// Stores nodes first, assembles them later
-	if (loop_mode == LOOP_START)
-	{
-		loop.cond.push_back(node);
-	}
-	else if (loop_mode == LOOP_BODY)
-	{
-		loop.body.push_back(node);
-	}
-	else if (loop_mode == LOOP_AGAIN)
-	{
-		loop.again.push_back(node);
-	}
-	else {
-		assert(0);
-	}
-}
-
-void Runtime::loopCondition(Node *node) {
-	loop_struct[loop_level].cond.push_back(node);
-}
-
 Node* Runtime::loopAssemble() {
-	assert(loop_mode == LOOP_AGAIN);
-	LoopStruct &loop = loop_struct[loop_level];
-	int i;
-
-	// Note: the order of the nodes inside the lists is important,
-	//       do not apply optimizations (e.g. set) that break that order !!
-
-	assert(loop.cond.size() == 2);
-	Node *cond_node = loop.cond[0]; // 'cond' node that activated the Python while loop
-	loop.prev.push_back(loop.cond[0]); // 'cond' is the first 'prev' and thus first 'feed_in'
-	loop.feed_out.push_back(loop.cond[1]); // 'again-cond' is the first 'feed_out'
-
-	// 'prev' of 'loop' are all those 'prev' to 'body', but outside 'body'
-	for (auto node : loop.body)
-		for (auto prev : node->prevList())
-			if (!is_included(prev,loop.body) && !is_included(prev,loop.prev))
-				loop.prev.push_back(prev);
-
-	// The constant 'prev' are the 'prev' of 'again' outside 'body'+'again'
-	NodeSet const_set; // No need for order here, so std::set is ok
-	for (auto node : loop.again)
-		for (auto prev : node->prevList())
-			if (!is_included(prev,loop.body) && !is_included(prev,loop.again))
-				const_set.insert(prev);
-	NodeList const_list = NodeList(const_set.begin(),const_set.end());
-
-	// Remove from 'again' all nodes repeated in 'body'. They were used to find the invariants
-	loop.again = left_join(loop.again,loop.body);
-
-	// All 'body' nodes that only depend on the 'const_list' are in-loop-invariant nodes
-	i = 0;
-	while (i < loop.body.size()) {
-		Node *node = loop.body[i++];
-		// Do all 'prev' of this 'body' node only depend on 'const' nodes?
-		auto pred = [&](Node *n){ return is_included(n,const_list); };
-		bool is_invar = std::all_of(node->prevList().begin(),node->prevList().end(),pred);
-		// yes? Then 'node' is a in-loop-invariant, move it out of 'body'
-		if (is_invar) {
-			remove_value(node,loop.body);
-			loop.prev.push_back(node);
-			const_list.push_back(node);
-			i--;
-		}
-	}
-
-	// Some 'const' / 'prev' of invariants might not be 'prev' anymore
-	i = 0;
-	while (i < const_list.size()) {
-		Node *node = const_list[i++];
-		// Does any 'next' of this 'const' node depends on 'body' ?
-		auto pred = [&](Node *n){ return is_included(n,loop.body); };
-		bool is_prev = std::any_of(node->nextList().begin(),node->nextList().end(),pred);
-		// no? Then this 'const' is not 'prev' of the 'loop' anymore
-		if (not is_prev) {
-			remove_value(node,const_list);
-			remove_value(node,loop.prev);
-			i--;
-		}
-	}
-
-	// 'feed_in' nodes are those 'prevs' not found on the constant list
-	loop.feed_in = left_join(loop.prev,const_list);
-
-	// 'feed_out' nodes are those reused between iterations
-	for (auto node : loop.again)
-		for (auto prev : node->prevList())
-			if (is_included(prev,loop.body) && !is_included(prev,loop.feed_out))
-				loop.feed_out.push_back(prev);
-
-	// Note: 'feed_in' and 'feed_out' must maintain same size and --> order <--
-	assert(loop.feed_in.size() == loop.feed_out.size());
-	assert(not loop.feed_in.empty());
-
-	// Unlinks 'again' nodes, now that we have figured out the feedbacks
-	for (auto it=loop.again.rbegin(); it!=loop.again.rend(); it++) {
-		Node *node = *it;
-		// Nobody should link here
-		assert(node->nextList().empty());
-		// Inform prev nodes
-		for (auto &prev : node->prevList())
-			prev->removeNext(node);
-		node->prev_list.clear();
-		// The 'again' nodes are not deleted just yet, Python still points to them.
-		// With loopAgainTail() Python updates the loop variables to 'tail' nodes
-		// which lets the garbage collector delete the 'again' nodes, sometime later
-		Node::id_count--; // @ I'd be fired for this
-	}
-
-	// Unreachable 'body' nodes when going up from 'feed_out' are out-loop-invariants
-	std::queue<Node*> queue;
-	std::set<Node*> unr_set;
-	for (auto out : loop.feed_out)
-		queue.push(out);
-	while (not queue.empty()) {
-		Node *node = queue.front();
-		queue.pop();
-		for (auto prev : node->prevList())
-			if (is_included(prev,loop.body))
-				queue.push(prev);
-		unr_set.insert(node);
-	}
-
-	// Gets the out-loop-invariants as the left_join of 'body' with the 'unreachable'
-	NodeList out_invar = left_join(loop.body, NodeList(unr_set.begin(),unr_set.end()) );
-	
-	// Removes the out-loop-invariants from 'body' and 'again' (NB: they share the same index)
-	assert(loop.body.size() == loop.again.size());
-	i = 0;
-	while (i < loop.body.size()) {
-		if (is_included(loop.body[i],out_invar)) {
-			//
-			loop.oldpy.push_back(loop.again[i]);
-			loop.newpy.push_back(loop.body[i]);
-			//
-			loop.body.erase(loop.body.begin()+i);
-			loop.again.erase(loop.again.begin()+i);
-		} else {
-			i++;
-		}
-	}
-
-	// 'loop' node creation, insertion, simplification
-	Node *node = Loop::Factory(loop.prev,cond_node,loop.body,loop.feed_in,loop.feed_out);
+	Node* node = assembler.assemble();
 	node_list.push_back( std::unique_ptr<Node>(node) );
 
 	// TODO: how to simplify a loop?
 	Node *orig = node; // = simplifier.simplify(node);
 
-	// Ask 'loop' for its newly created 'head' and 'tail' nodes
-	loop.loop = orig;
+	// Ask 'loop' for its newly created 'head', 'tail' and 'feed' nodes
 	Loop *loop_node = dynamic_cast<Loop*>(orig);
+	assert(loop_node != nullptr);
 
 	// Inserts the 'cond' / 'head' / 'feed' in/out / 'tail' nodes into the node_list
 	node_list.push_back( std::unique_ptr<Node>(loop_node->cond_node) );
@@ -371,55 +175,18 @@ Node* Runtime::loopAssemble() {
 	for (auto node : loop_node->tail_list)
 		node_list.push_back( std::unique_ptr<Node>(node) );
 
-	// 'head' nodes are not used at the moment, maybe in the future?
-	loop.head.reserve(loop_node->headList().size());
-	for (auto head : loop_node->headList())
-		loop.head.push_back(head);
-	// 'tail' nodes are sent back to Python to update its variables
-	loop.tail.reserve(loop_node->tailList().size());
-	for (auto tail : loop_node->tailList())
-		loop.tail.push_back(tail);
-
-	return orig;
-}
-
-void Runtime::loopAgainTail(Node *node, Node ***agains, Node ***tails, int *num) {
-	LoopStruct &loop = loop_struct[loop_level];
-	assert(loop.loop == node);
-
-	loop.oldpy.insert(loop.oldpy.end(),loop.again.begin(),loop.again.end());
-	loop.newpy.insert(loop.newpy.end(),loop.tail.begin(),loop.tail.end());
-
-	*agains = loop.oldpy.data();
-	*tails = loop.newpy.data();
-	*num = loop.oldpy.size();
-
-	assert(*num == loop.newpy.size());
+	return node;
 }
 
 Node* Runtime::addNode(Node *node) {
 	// TimedRegion region(clock,ADDNODE);
-	LoopStruct &loop = loop_struct[loop_level];
-	Node *orig;
 
-	if (loop_mode == NORMAL_MODE)  // Not inside a loop
-	{
-		node_list.push_back( std::unique_ptr<Node>(node) );
-		orig = simplifier.simplify(node);
-	}
-	else // Inside a (possibly nested) loop
-	{
-		node_list.push_back( std::unique_ptr<Node>(node) );
-		orig = simplifier.simplify(node);
-		// Dont add node to loop if:
-		//   - it was repeated (i.e. orig != node)
-		//   - the node is FREE (i.e. read, const)
-		if (orig == node && orig->pattern()!=FREE)
-			loopAddNode(orig);
-		// Add the repeated node if we are AGAIN and it was included in 'body'
-		if (orig != node && loop_mode == LOOP_AGAIN && is_included(orig,loop.body))
-			loopAddNode(orig); // @ necessary for the input invariant nodes
-	}
+	node_list.push_back( std::unique_ptr<Node>(node) );
+	Node *orig = simplifier.simplify(node);
+
+	if (assembler.mode() != NORMAL_MODE) // Inside a (possibly nested) loop
+		assembler.addNode(node,orig);
+
 	return orig;
 }
 
@@ -523,8 +290,6 @@ std::cout << "----" << std::endl;
 	auto cloner = Cloner(priv_list);
 	auto graph = cloner.clone(sort_list);
 	auto map_new_old = cloner.new_hash;
-
-// ... continue ... why does Write and Feedback get ref=0 after Cloner ?
 
 // @ Prints nodes 5rd
 std::cout << "----" << std::endl;

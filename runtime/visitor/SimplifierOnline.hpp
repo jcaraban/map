@@ -47,8 +47,8 @@ struct SimplifierOnline : public Visitor
 
   // declarations
 	DECLARE_MAP(Constant)
-	DECLARE_MAP(Rand)
 	DECLARE_MAP(Index)
+	DECLARE_MAP(Rand)
 	DECLARE_MAP(Cast)
 	DECLARE_MAP(Unary)
 	DECLARE_MAP(Binary)
@@ -81,8 +81,8 @@ struct SimplifierOnline : public Visitor
   // visit
 	//void static_visit(Node *node);
 	DECLARE_VISIT(Constant)
-	DECLARE_VISIT(Rand)
 	DECLARE_VISIT(Index)
+	DECLARE_VISIT(Rand)
 	DECLARE_VISIT(Cast)
 	DECLARE_VISIT(Unary)
 	DECLARE_VISIT(Binary)
