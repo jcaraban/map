@@ -17,6 +17,7 @@
 #include "Worker.hpp"
 #include "Clock.hpp"
 #include "Config.hpp"
+#include "LoopAssembler.hpp"
 #include "visitor/SimplifierOnline.hpp"
 #include "../cle/cle.hpp"
 
@@ -39,23 +40,6 @@ typedef std::vector<std::unique_ptr<Group>> OwnerGroupList;
 typedef std::vector<std::unique_ptr<Task>> OwnerTaskList;
 typedef std::vector<std::unique_ptr<Version>> OwnerVersionList;
 typedef std::vector<Node*> NodeList;
-typedef std::set<Node*> NodeSet;
-
-enum LoopMode { NORMAL_MODE, LOOP_START, LOOP_BODY, LOOP_AGAIN };
-
-struct LoopStruct {
-	NodeList prev; //!< Previous existing nodes used in the loop
-	NodeList cond; //!< Nodes expressing the halt condition
-	NodeList body; //!< Nodes composing the main loop body
-	NodeList again; //!< Again the body, to find feedbacks
-	NodeList feed_in; //!< Nodes that feedback into body (input side)
-	NodeList feed_out; //!< (output side), repeteadly swap with (feed_in)
-	Node *loop;
-	NodeList head; //!< Head nodes created by Loop
-	NodeList tail; //!< Tail nodes created by Loop
-	NodeList oldpy;
-	NodeList newpy;
-};
 
 /*
  * Runtime class
@@ -80,17 +64,12 @@ class Runtime
 	static Runtime& getInstance();
 	static Config& getConfig();
 	static Clock& getClock();
+	static LoopAssembler& getLoopAssembler();
 	static cle::OclEnv& getOclEnv();
 
 	void setupDevices(std::string plat_name, DeviceType dev, std::string dev_name);
-
-	Node* loopDigestion(bool start, bool body, bool again, bool end);
-	void loopClear();
-	void loopCondition(Node *node);
-	void loopAddNode(Node *node);
 	Node* loopAssemble();
-	void loopAgainTail(Node *loop, Node ***agains, Node ***tails, int *num);
-
+	
 	Node* addNode(Node *node);
 	Task* addTask(Task *task);
 	Group* addGroup(Group *group);
@@ -118,10 +97,7 @@ class Runtime
 	OwnerVersionList ver_list; //!< List of code versions required by the tasks
 
 	SimplifierOnline simplifier; //!<
-
-	LoopMode loop_mode; //!< Indicates if we are inside a (possibly nested) loop
-	int loop_level; //!< Tracks the loop nesting level, from 0 .. nested_loop_limit
-	std::vector<LoopStruct> loop_struct; //!< Stores the ongoing (nested?) loop
+	LoopAssembler assembler;
 };
 
 } } // namespace map::detail

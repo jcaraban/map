@@ -56,7 +56,7 @@ struct Config {
 	// Limits
 	const int hard_nodes_limit = 1050; // @ 1024
 	const int soft_nodes_limit = 512;
-	const int nested_loop_limit = 4;
+	const int loop_nested_limit = 4;
 
 	//// Mutable options, configurable at runtime
 	int num_machines = def_num_machines;
