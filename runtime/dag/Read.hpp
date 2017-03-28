@@ -30,11 +30,11 @@ struct Read : public InputNode
 	
 	// Factory
 	static Node* Factory(std::string file_path);
-	Node* clone(NodeList new_prev_list, NodeList new_back_list);
+	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
 
 	// Constructors
 	Read(SharedFile in_file);
-	Read(const Read *other, NodeList new_prev_list, NodeList new_back_list);
+	Read(const Read *other, std::unordered_map<Node*,Node*> other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);

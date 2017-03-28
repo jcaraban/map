@@ -39,8 +39,8 @@ Node* FocalFlow::Factory(Node *arg) {
 	return new FocalFlow(meta,arg);
 }
 
-Node* FocalFlow::clone(NodeList new_prev_list, NodeList new_back_list) {
-	return new FocalFlow(this,new_prev_list,new_back_list);
+Node* FocalFlow::clone(std::unordered_map<Node*,Node*> other_to_this) {
+	return new FocalFlow(this,other_to_this);
 }
 
 // Constructors
@@ -54,8 +54,8 @@ FocalFlow::FocalFlow(const MetaData &meta, Node *prev)
 	prev->addNext(this);
 }
 
-FocalFlow::FocalFlow(const FocalFlow *other, NodeList new_prev_list, NodeList new_back_list)
-	: Node(other,new_prev_list,new_back_list)
+FocalFlow::FocalFlow(const FocalFlow *other, std::unordered_map<Node*,Node*> other_to_this)
+	: Node(other,other_to_this)
 { }
 
 // Methods

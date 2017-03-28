@@ -43,8 +43,8 @@ Node* Access::Factory(Node *arg, const Coord &coord) {
 	return new Access(meta,arg,coord);
 }
 
-Node* Access::clone(NodeList new_prev_list, NodeList new_back_list) {
-	return new Access(this,new_prev_list,new_back_list);
+Node* Access::clone(std::unordered_map<Node*,Node*> other_to_this) {
+	return new Access(this,other_to_this);
 }
 
 // Constructors
@@ -57,8 +57,8 @@ Access::Access(const MetaData &meta, Node *prev, const Coord &coord) : Node(meta
 	prev->addNext(this);
 }
 
-Access::Access(const Access *other, NodeList new_prev_list, NodeList new_back_list)
-	: Node(other,new_prev_list,new_back_list)
+Access::Access(const Access *other, std::unordered_map<Node*,Node*> other_to_this)
+	: Node(other,other_to_this)
 {
 	this->cell_coord = other->cell_coord;
 }

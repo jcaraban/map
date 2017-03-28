@@ -29,11 +29,11 @@ struct SpreadNeighbor : public Node
 
 	// Factory
 	static Node* Factory(Node *prev, Node *dir, ReductionType type);
-	Node* clone(NodeList new_prev_list, NodeList new_back_list);
+	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
 
 	// Constructors
 	SpreadNeighbor(const MetaData &meta, Node *prev, Node *dir, ReductionType type);
-	SpreadNeighbor(const SpreadNeighbor *other, NodeList new_prev_list, NodeList new_back_list);
+	SpreadNeighbor(const SpreadNeighbor *other, std::unordered_map<Node*,Node*> other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);

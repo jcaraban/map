@@ -16,6 +16,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <unordered_map>
 
 
 namespace map { namespace detail {
@@ -37,8 +38,8 @@ struct Node {
 	Node(const MetaData &meta);
 	virtual ~Node();
   // Clone constructor
-	Node(const Node *old, NodeList new_prev_list, NodeList new_back_list);
-	virtual Node* clone(NodeList new_prev_list, NodeList new_back_list) = 0;
+	Node(const Node *other, std::unordered_map<Node*,Node*> other_to_this);
+	virtual Node* clone(std::unordered_map<Node*,Node*> other_to_this) = 0;
   // Visitor methods
 	virtual void accept(Visitor *visitor) = 0;
 	virtual void acceptPrev(Visitor *visitor);

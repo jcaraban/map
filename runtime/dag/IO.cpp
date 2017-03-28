@@ -24,8 +24,8 @@ IONode::IONode(SharedFile file, OutputNodeFlag not_used)
 	, io_file(file)
 { }
 
-IONode::IONode(const IONode *other, NodeList new_prev_list, NodeList new_back_list)
-	: Node(other,new_prev_list,new_back_list)
+IONode::IONode(const IONode *other, std::unordered_map<Node*,Node*> other_to_this)
+	: Node(other,other_to_this)
 	, io_file(other->io_file)
 { }
 

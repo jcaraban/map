@@ -27,11 +27,11 @@ struct Stats : public Node
 
 	// Factory
 	static Node* Factory(Node *prev);
-	Node* clone(NodeList new_prev_list, NodeList new_back_list);
+	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
 
 	// Constructors
 	Stats(const MetaData &meta, Node *prev);
-	Stats(const Stats *other, NodeList new_prev_list, NodeList new_back_list);
+	Stats(const Stats *other, std::unordered_map<Node*,Node*> other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);

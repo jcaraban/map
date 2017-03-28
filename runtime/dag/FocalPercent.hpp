@@ -32,11 +32,11 @@ struct FocalPercent : public Node
 
 	// Factory
 	static Node* Factory(Node *prev, const Mask &mask, PercentType type);
-	Node* clone(NodeList new_prev_list, NodeList new_back_list);
+	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
 
 	// Constructors
 	FocalPercent(const MetaData &meta, Node *prev, const Mask &mask, PercentType type);
-	FocalPercent(const FocalPercent *other, NodeList new_prev_list, NodeList new_back_list);
+	FocalPercent(const FocalPercent *other, std::unordered_map<Node*,Node*> other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);

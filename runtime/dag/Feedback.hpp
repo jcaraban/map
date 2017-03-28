@@ -29,12 +29,12 @@ struct Feedback : public Node
 	};
 
 	// Factory
-	Node* clone(NodeList new_prev_list, NodeList new_back_list);
+	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
 	
 	// Constructors
 	Feedback(Loop *loop, LoopHead *prev);
 	Feedback(Loop *loop, Feedback *feed_in, Node *prev);
-	Feedback(const Feedback *other, NodeList new_prev_list, NodeList new_back_list);
+	Feedback(const Feedback *other, std::unordered_map<Node*,Node*> other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);
@@ -45,7 +45,7 @@ struct Feedback : public Node
 	Node* prev() const;
 	bool feedIn() const;
 	bool feedOut() const;
-	Pattern pattern() const { return SPREAD; }
+	Pattern pattern() const; // HEAD or TAIL
 
 	//const NodeList& prevList() const;
 	//const NodeList& nextList() const;

@@ -62,8 +62,8 @@ Node* Binary::Factory(Node *lhs, Node *rhs, BinaryType type) {
 	return new Binary(meta,lhs,rhs,type);
 }
 
-Node* Binary::clone(NodeList new_prev_list, NodeList new_back_list) {
-	return new Binary(this,new_prev_list,new_back_list);
+Node* Binary::clone(std::unordered_map<Node*,Node*> other_to_this) {
+	return new Binary(this,other_to_this);
 }
 
 // Constructors
@@ -80,8 +80,8 @@ Binary::Binary(const MetaData &meta, Node *lprev, Node *rprev, BinaryType type)
 	rprev->addNext(this);
 }
 
-Binary::Binary(const Binary *other, NodeList new_prev_list, NodeList new_back_list)
-	: Node(other,new_prev_list,new_back_list)
+Binary::Binary(const Binary *other, std::unordered_map<Node*,Node*> other_to_this)
+	: Node(other,other_to_this)
 {
 	this->type = other->type;
 }

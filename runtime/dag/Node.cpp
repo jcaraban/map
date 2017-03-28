@@ -36,7 +36,7 @@ Node::Node(const MetaData &meta)
 	, value()
 { }
 
-Node::Node(const Node *other, NodeList new_prev_list, NodeList new_back_list)
+Node::Node(const Node *other, std::unordered_map<Node*,Node*> other_to_this)
 	: id(other->id)
 	, ref(0)
 	, prev_list()
@@ -47,14 +47,16 @@ Node::Node(const Node *other, NodeList new_prev_list, NodeList new_back_list)
 	, stats(other->stats)
 	, value(other->value)
 {
-	for (auto prev : new_prev_list) {
-		prev->addNext(this);
-		this->addPrev(prev);
+	for (auto other_prev : other->prevList()) {
+		Node *this_prev = other_to_this.find(other_prev)->second;
+		this_prev->addNext(this);
+		this->addPrev(this_prev);
 	}
 
-	for (auto back : new_back_list) {
-		back->addForw(this);
-		this->addBack(back);
+	for (auto other_back : other->backList()) {
+		Node *this_back = other_to_this.find(other_back)->second;
+		this_back->addForw(this);
+		this->addBack(this_back);
 	}
 }
 

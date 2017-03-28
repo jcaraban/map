@@ -28,11 +28,11 @@ struct LoopTail : public Node
 	};
 	
 	// Factory
-	Node* clone(NodeList new_prev_list, NodeList new_back_list);
+	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
 
 	// Constructors
 	LoopTail(Loop *loop, Node *prev);
-	LoopTail(const LoopTail *other, NodeList new_prev_list, NodeList new_back_list);
+	LoopTail(const LoopTail *other, std::unordered_map<Node*,Node*> other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);
@@ -41,7 +41,7 @@ struct LoopTail : public Node
 	char classSignature() const;
 	Loop* loop() const;
 	Node* prev() const;
-	Pattern pattern() const { return SPREAD; }
+	Pattern pattern() const { return TAIL; }
 
 	// Variables
 	Loop *owner_loop;

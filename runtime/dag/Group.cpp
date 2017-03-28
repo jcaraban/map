@@ -138,7 +138,7 @@ void Group::removeAutoNode(Node *node) {
 }
 
 void Group::addPrev(Group *group, Pattern pattern) {
-	assert(!isNext(group)); // acyclic
+	assert(group!=this && !isNext(group)); // acyclic
 
 	auto i = std::find(prev_list.begin(),prev_list.end(),group);
 	if (i != prev_list.end()) { // Already exists
@@ -170,7 +170,7 @@ bool Group::isPrev(const Group *group) const {
 }
 
 void Group::addNext(Group *group, Pattern pattern) {
-	assert(!isPrev(group)); // acyclic
+	assert(group!=this && !isPrev(group)); // acyclic
 	
 	auto i = std::find(next_list.begin(),next_list.end(),group);
 	if (i != next_list.end()) { // Already exists

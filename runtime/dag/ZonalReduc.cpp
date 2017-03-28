@@ -40,8 +40,8 @@ Node* ZonalReduc::Factory(Node *arg, ReductionType type) {
 	return new ZonalReduc(meta,arg,type);
 }
 
-Node* ZonalReduc::clone(NodeList new_prev_list, NodeList new_back_list) {
-	return new ZonalReduc(this,new_prev_list,new_back_list);
+Node* ZonalReduc::clone(std::unordered_map<Node*,Node*> other_to_this) {
+	return new ZonalReduc(this,other_to_this);
 }
 
 // Constructors
@@ -55,8 +55,8 @@ ZonalReduc::ZonalReduc(const MetaData &meta, Node *prev, ReductionType type) : N
 	prev->addNext(this);
 }
 
-ZonalReduc::ZonalReduc(const ZonalReduc *other, NodeList new_prev_list, NodeList new_back_list)
-	: Node(other,new_prev_list,new_back_list)
+ZonalReduc::ZonalReduc(const ZonalReduc *other, std::unordered_map<Node*,Node*> other_to_this)
+	: Node(other,other_to_this)
 {
 	this->type = other->type;
 	this->value = other->value;

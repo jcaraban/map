@@ -28,17 +28,18 @@ struct Constant : public Node
 
 	// Factory
 	static Node* Factory(VariantType arg, DataSize ds, DataType dt, MemOrder mo, BlockSize bs);
-	Node* clone(NodeList new_prev_list, NodeList new_back_list);
+	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
 
 	// Constructors
 	Constant(const MetaData &meta, VariantType val);
-	Constant(const Constant *other, NodeList new_prev_list, NodeList new_back_list);
+	Constant(const Constant *other, std::unordered_map<Node*,Node*> other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;
 	char classSignature() const;
+	Pattern pattern() const { return FREE; }
 
 	// Variables
 	VariantType cnst;

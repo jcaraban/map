@@ -27,8 +27,8 @@ std::size_t LoopHead::Hash::operator()(const Key& k) const {
 	return std::hash<Node*>()(k.prev) ^ std::hash<Loop*>()(k.loop);
 }
 
-Node* LoopHead::clone(NodeList new_prev_list, NodeList new_back_list) {
-	return new LoopHead(this,new_prev_list,new_back_list);
+Node* LoopHead::clone(std::unordered_map<Node*,Node*> other_to_this) {
+	return new LoopHead(this,other_to_this);
 }
 
 // Constructors
@@ -64,10 +64,10 @@ LoopHead::LoopHead(Loop *loop, Node *prev)
 	prev->addNext(this); // finally 'prev' points to 'head'
 }
 
-LoopHead::LoopHead(const LoopHead *other, NodeList new_prev_list, NodeList new_back_list)
-	: Node(other,new_prev_list,new_back_list)
+LoopHead::LoopHead(const LoopHead *other, std::unordered_map<Node*,Node*> other_to_this)
+	: Node(other,other_to_this)
 {
-	this->owner_loop = other->owner_loop;
+	this->owner_loop = nullptr; // filled later by 'loop', because it does not live yet
 }
 
 // Methods

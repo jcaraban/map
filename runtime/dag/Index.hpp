@@ -27,17 +27,18 @@ struct Index : public Node
 
 	// Factory
 	static Node* Factory(DataSize ds, NumDim dim, MemOrder mo, BlockSize bs);
-	Node* clone(NodeList new_prev_list, NodeList new_back_list);
+	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
 
 	// Constructors
 	Index(const MetaData &meta, NumDim dim);
-	Index(const Index *other, NodeList new_prev_list, NodeList new_back_list);
+	Index(const Index *other, std::unordered_map<Node*,Node*> other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;
 	char classSignature() const;
+	Pattern pattern() const { return FREE; }
 
 	// Variables
 	NumDim dim;

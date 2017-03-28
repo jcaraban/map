@@ -28,8 +28,8 @@ std::size_t Feedback::Hash::operator()(const Key& k) const {
 
 // Feedback
 
-Node* Feedback::clone(NodeList new_prev_list, NodeList new_back_list) {
-	return new Feedback(this,new_prev_list,new_back_list);
+Node* Feedback::clone(std::unordered_map<Node*,Node*> other_to_this) {
+	return new Feedback(this,other_to_this);
 }
 
 // Constructors
@@ -96,10 +96,10 @@ Feedback::Feedback(Loop *loop, Feedback *feed_in, Node *prev)
 	this->addBack(feed_in);
 }
 
-Feedback::Feedback(const Feedback *other, NodeList new_prev_list, NodeList new_back_list)
-	: Node(other,new_prev_list,new_back_list)
+Feedback::Feedback(const Feedback *other, std::unordered_map<Node*,Node*> other_to_this)
+	: Node(other,other_to_this)
 {
-	this->owner_loop = other->owner_loop;
+	this->owner_loop = nullptr; // nullptr because 'loop' does not live yet
 	this->in_or_out = other->in_or_out;
 	this->twin = other->twin;
 }
@@ -147,4 +147,8 @@ const NodeList& Feedback::nextList() const {
 	return next_both;
 }
 */
+Pattern Feedback::pattern() const {
+	return in_or_out ? HEAD : TAIL;
+}
+
 } } // namespace map::detail

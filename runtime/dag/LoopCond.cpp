@@ -29,8 +29,8 @@ std::size_t LoopCond::Hash::operator()(const Key& k) const {
 
 // Factory
 
-Node* LoopCond::clone(NodeList new_prev_list, NodeList new_back_list) {
-	return new LoopCond(this,new_prev_list,new_back_list);
+Node* LoopCond::clone(std::unordered_map<Node*,Node*> other_to_this) {
+	return new LoopCond(this,other_to_this);
 }
 
 // Constructors
@@ -50,10 +50,10 @@ LoopCond::LoopCond(Loop *loop, Node *prev)
 	// 'loop' will point to 'cond' in order to close the dependency chain
 }
 
-LoopCond::LoopCond(const LoopCond *other, NodeList new_prev_list, NodeList new_back_list)
-	: Node(other,new_prev_list,new_back_list)
+LoopCond::LoopCond(const LoopCond *other, std::unordered_map<Node*,Node*> other_to_this)
+	: Node(other,other_to_this)
 {
-	this->owner_loop = other->owner_loop;
+	this->owner_loop = nullptr; // filled later by 'loop', because it does not live yet
 }
 
 // Methods

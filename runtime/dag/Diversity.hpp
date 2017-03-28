@@ -28,11 +28,11 @@ struct Diversity : public Node
 
 	// Factory
 	static Node* Factory(NodeList prev_list, DiversityType type);
-	Node* clone(NodeList new_prev_list, NodeList new_back_list);
+	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
 
 	// Constructors
 	Diversity(const MetaData &meta, NodeList prev_list, DiversityType type);
-	Diversity(const Diversity *other, NodeList new_prev_list, NodeList new_back_list);
+	Diversity(const Diversity *other, std::unordered_map<Node*,Node*> other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);

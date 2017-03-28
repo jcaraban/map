@@ -39,11 +39,11 @@ struct Loop : public Node
 
 	// Factory
 	static Node* Factory(NodeList prev_list, Node *cond, NodeList body_list, NodeList feed_in_list, NodeList feed_out_list);
-	Node* clone(NodeList new_prev_list, NodeList new_back_list);
+	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
 
 	// Constructors
 	Loop(const MetaData &meta, NodeList prev_list, Node *cond, NodeList body_list, NodeList feed_in_list, NodeList feed_out_list);
-	Loop(const Loop *other, NodeList new_prev_list, NodeList new_back_list);
+	Loop(const Loop *other, std::unordered_map<Node*,Node*> other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);
@@ -55,7 +55,7 @@ struct Loop : public Node
 	const NodeList& bodyList() const;
 	const HeadList& headList() const;
 	const TailList& tailList() const;
-	Pattern pattern() const { return SPREAD; }
+	Pattern pattern() const { return TAIL; }
 
 	// Variables
 	LoopCond *cond_node; //!< Node representing the enter / exit condition

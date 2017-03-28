@@ -97,8 +97,8 @@ Node* Loop::Factory(NodeList prev_list, Node *cond_node, NodeList body_list, Nod
 	return new Loop(meta,prev_list,cond_node,body_list,feed_in_list,feed_out_list);
 }
 
-Node* Loop::clone(NodeList new_prev_list, NodeList new_back_list) {
-	return new Loop(this,new_prev_list,new_back_list);
+Node* Loop::clone(std::unordered_map<Node*,Node*> other_to_this) {
+	return new Loop(this,other_to_this);
 }
 
 // Constructors
@@ -137,7 +137,7 @@ Loop::Loop(const MetaData &meta, NodeList prev_list, Node *cond_node, NodeList b
 
 	// Creates a 'feedback-out' node per back-edge in the loop, and connect it to a 'feedback-in'
 	for (int i=0; i<feed_out_list.size(); i++)
-		this->feed_out_list.push_back( new Feedback(this,this->feed_in_list[i],feed_out_list[i]) );
+		this->feed_out_list.push_back( new Feedback(this,dynamic_cast<Feedback*>(this->feed_in_list[i]),feed_out_list[i]) ); // @
 
 	// Creates a 'tail' per node inside the loop 'body', nodes with 'feedback' are a special case
 	for (auto node : body_list) {
@@ -151,15 +151,42 @@ Loop::Loop(const MetaData &meta, NodeList prev_list, Node *cond_node, NodeList b
 	// assert ?
 }
 
-Loop::Loop(const Loop *other, NodeList new_prev_list, NodeList new_back_list)
-	: Node(other,new_prev_list,new_back_list)
+Loop::Loop(const Loop *other, std::unordered_map<Node*,Node*> other_to_this)
+	: Node(other,other_to_this)
 {
-	this->cond_node = other->cond_node;
-	this->body_list = other->body_list;
-	this->head_list = other->head_list;
-	this->tail_list = other->tail_list;
-	this->feed_in_list = other->feed_in_list;
-	this->feed_out_list = other->feed_out_list;
+	Node *this_cond = other_to_this.find(other->cond_node)->second;
+	this->cond_node = dynamic_cast<LoopCond*>(this_cond);
+	this->cond_node->owner_loop = this; // the 'cond' clone is completed now
+	
+	this->body_list.reserve(other->body_list.size());
+	for (auto other_body : other->body_list)
+		this->body_list.push_back( other_to_this.find(other_body)->second );
+
+	this->head_list.reserve(other->head_list.size());
+	for (auto other_head : other->head_list) {
+		Node *this_head = other_to_this.find(other_head)->second;
+		this->head_list.push_back( dynamic_cast<LoopHead*>(this_head) );
+		this->head_list.back()->owner_loop = this;  // the 'head' clone is completed now
+	}
+	
+	this->tail_list.reserve(other->tail_list.size()); /*
+	for (auto other_tail : other->tail_list)
+		this->tail_list.push_back( other_to_this.find(other_tail)->second ); */
+	
+	this->feed_in_list.reserve(other->feed_in_list.size());
+	for (auto other_fin : other->feed_in_list) {
+		Node *this_fin = other_to_this.find(other_fin)->second;
+		this->feed_in_list.push_back( dynamic_cast<Feedback*>(this_fin) );
+		this->feed_in_list.back()->owner_loop = this;  // the 'feed' clone is completed now
+	}
+	
+	this->feed_out_list.reserve(other->feed_out_list.size());
+	for (auto other_fout : other->feed_out_list) {
+		Node *this_fout = other_to_this.find(other_fout)->second;
+		this->feed_out_list.push_back( dynamic_cast<Feedback*>(this_fout) );
+		this->feed_out_list.back()->owner_loop = this;  // the 'feed' clone is completed now
+	}
+	
 	this->gen_num_dim = other->gen_num_dim;
 	this->gen_data_size = other->gen_data_size;
 	this->gen_block_size = other->gen_block_size;

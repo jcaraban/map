@@ -30,11 +30,11 @@ struct LhsAccess : public Node
 
 	// Factory
 	static Node* Factory(Node *lhs, Node *rhs, const Coord &coord);
-	Node* clone(NodeList new_prev_list, NodeList new_back_list);
+	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
 
 	// Constructors
 	LhsAccess(const MetaData &meta, Node *lprev, Node *rprev, const Coord &coord);
-	LhsAccess(const LhsAccess *other, NodeList new_prev_list, NodeList new_back_list);
+	LhsAccess(const LhsAccess *other, std::unordered_map<Node*,Node*> other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);

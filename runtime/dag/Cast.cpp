@@ -40,8 +40,8 @@ Node* Cast::Factory(Node *prev, DataType new_type) {
 	return new Cast(meta,prev);
 }
 
-Node* Cast::clone(NodeList new_prev_list, NodeList new_back_list) {
-	return new Cast(this,new_prev_list,new_back_list);
+Node* Cast::clone(std::unordered_map<Node*,Node*> other_to_this) {
+	return new Cast(this,other_to_this);
 }
 
 // Constructors
@@ -56,8 +56,8 @@ Cast::Cast(const MetaData &meta, Node *prev)
 	prev->addNext(this);
 }
 
-Cast::Cast(const Cast *other, NodeList new_prev_list, NodeList new_back_list)
-	: Node(other,new_prev_list,new_back_list)
+Cast::Cast(const Cast *other, std::unordered_map<Node*,Node*> other_to_this)
+	: Node(other,other_to_this)
 {
 	this->type = other->type;
 }

@@ -28,11 +28,11 @@ struct ZonalReduc : public Node
 
 	// Factory
 	static Node* Factory(Node *arg, ReductionType type);
-	Node* clone(NodeList new_prev_list, NodeList new_back_list);
+	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
 
 	// Constructors
 	ZonalReduc(const MetaData &meta, Node *prev, ReductionType type);
-	ZonalReduc(const ZonalReduc *other, NodeList new_prev_list, NodeList new_back_list);
+	ZonalReduc(const ZonalReduc *other, std::unordered_map<Node*,Node*> other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);

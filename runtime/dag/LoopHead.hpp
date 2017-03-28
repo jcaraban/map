@@ -28,11 +28,11 @@ struct LoopHead : public Node
 	};
 
 	// Factory
-	Node* clone(NodeList new_prev_list, NodeList new_back_list);
+	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
 	
 	// Constructors
 	LoopHead(Loop *loop, Node *prev);
-	LoopHead(const LoopHead *other, NodeList new_prev_list, NodeList new_back_list);
+	LoopHead(const LoopHead *other, std::unordered_map<Node*,Node*> other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);
@@ -41,7 +41,7 @@ struct LoopHead : public Node
 	char classSignature() const;
 	Loop* loop() const;
 	Node* prev() const;
-	Pattern pattern() const { return SPREAD; }
+	Pattern pattern() const { return HEAD; }
 
 	// Variables
 	Loop *owner_loop;

@@ -38,8 +38,8 @@ Node* Stats::Factory(Node *prev) {
 	return new Stats(meta,prev);
 }
 
-Node* Stats::clone(NodeList new_prev_list, NodeList new_back_list) {
-	return new Stats(this,new_prev_list,new_back_list);
+Node* Stats::clone(std::unordered_map<Node*,Node*> other_to_this) {
+	return new Stats(this,other_to_this);
 }
 
 // Constructors
@@ -67,8 +67,8 @@ Stats::Stats(const MetaData &meta, Node *prev) { //: Node(meta) {
 	this->min()->addNext(this);
 }
 
-Stats::Stats(const Stats *other, NodeList new_prev_list, NodeList new_back_list)
-	: Node(other,new_prev_list,new_back_list)
+Stats::Stats(const Stats *other, std::unordered_map<Node*,Node*> other_to_this)
+	: Node(other,other_to_this)
 { }
 
 // Methods

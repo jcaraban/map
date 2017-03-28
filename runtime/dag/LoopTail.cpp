@@ -29,8 +29,8 @@ std::size_t LoopTail::Hash::operator()(const Key& k) const {
 
 // Factory
 
-Node* LoopTail::clone(NodeList new_prev_list, NodeList new_back_list) {
-	return new LoopTail(this,new_prev_list,new_back_list);
+Node* LoopTail::clone(std::unordered_map<Node*,Node*> other_to_this) {
+	return new LoopTail(this,other_to_this);
 }
 
 // Constructors
@@ -62,10 +62,14 @@ LoopTail::LoopTail(Loop *loop, Node *prev)
 	prev->addNext(this); // 'prev' is a 'feedback' that points to 'tail'
 }
 
-LoopTail::LoopTail(const LoopTail *other, NodeList new_prev_list, NodeList new_back_list)
-	: Node(other,new_prev_list,new_back_list)
+LoopTail::LoopTail(const LoopTail *other, std::unordered_map<Node*,Node*> other_to_this)
+	: Node(other,other_to_this)
 {
-	this->owner_loop = other->owner_loop;
+	Node *this_loop = other_to_this.find(other->owner_loop)->second;
+	this->owner_loop = dynamic_cast<Loop*>(this_loop);
+	
+	/// Pushes itself into 'loop', because 'tail' did not live when 'loop' was created
+	this->owner_loop->tail_list.push_back(this);
 }
 
 // Methods

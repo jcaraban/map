@@ -28,11 +28,11 @@ struct Binary : public Node
 
 	// Factory
 	static Node* Factory(Node *lhs, Node *rhs, BinaryType type);
-	Node* clone(NodeList new_prev_list, NodeList new_back_list);
+	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
 
 	// Constructors
 	Binary(const MetaData &meta, Node *lprev, Node *rprev, BinaryType type);
-	Binary(const Binary *other, NodeList new_prev_list, NodeList new_back_list);
+	Binary(const Binary *other, std::unordered_map<Node*,Node*> other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);

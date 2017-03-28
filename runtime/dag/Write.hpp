@@ -31,11 +31,11 @@ struct Write : public OutputNode
 	
 	// Factory
 	static Node* Factory(Node *prev, std::string file_path);
-	Node* clone(NodeList new_prev_list, NodeList new_back_list);
+	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
 
 	// Constructors
 	Write(Node *prev, SharedFile out_file);
-	Write(const Write *other, NodeList new_prev_list, NodeList new_back_list);
+	Write(const Write *other, std::unordered_map<Node*,Node*> other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);

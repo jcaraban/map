@@ -70,8 +70,8 @@ Node* Rand::Factory(Node *seed, DataType type, MemOrder order) {
 	return new Rand(meta,seed);
 }
 
-Node* Rand::clone(NodeList new_prev_list, NodeList new_back_list) {
-	return new Rand(this,new_prev_list,new_back_list);
+Node* Rand::clone(std::unordered_map<Node*,Node*> other_to_this) {
+	return new Rand(this,other_to_this);
 }
 
 // Constructors
@@ -85,8 +85,8 @@ Rand::Rand(const MetaData &meta, Node *seed)
 	seed->addNext(this);
 }
 
-Rand::Rand(const Rand *other, NodeList new_prev_list, NodeList new_back_list)
-	: Node(other,new_prev_list,new_back_list)
+Rand::Rand(const Rand *other, std::unordered_map<Node*,Node*> other_to_this)
+	: Node(other,other_to_this)
 { }
 
 // Methods

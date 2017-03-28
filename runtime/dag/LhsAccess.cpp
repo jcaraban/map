@@ -46,8 +46,8 @@ Node* LhsAccess::Factory(Node *lhs, Node *rhs, const Coord &coord) {
 	return new LhsAccess(meta,lhs,rhs,coord);
 }
 
-Node* LhsAccess::clone(NodeList new_prev_list, NodeList new_back_list) {
-	return new LhsAccess(this,new_prev_list,new_back_list);
+Node* LhsAccess::clone(std::unordered_map<Node*,Node*> other_to_this) {
+	return new LhsAccess(this,other_to_this);
 }
 
 // Constructors
@@ -64,8 +64,8 @@ LhsAccess::LhsAccess(const MetaData &meta, Node *lprev, Node *rprev, const Coord
 	rprev->addNext(this);
 }
 
-LhsAccess::LhsAccess(const LhsAccess *other, NodeList new_prev_list, NodeList new_back_list)
-	: Node(other,new_prev_list,new_back_list)
+LhsAccess::LhsAccess(const LhsAccess *other, std::unordered_map<Node*,Node*> other_to_this)
+	: Node(other,other_to_this)
 {
 	this->cell_coord = other->cell_coord;
 }

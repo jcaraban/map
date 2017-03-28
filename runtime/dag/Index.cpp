@@ -32,8 +32,8 @@ Node* Index::Factory(DataSize ds, NumDim dim, MemOrder mo, BlockSize bs) {
 	return new Index(meta,dim);	
 }
 
-Node* Index::clone(NodeList new_prev_list, NodeList new_back_list) {
-	return new Index(this,new_prev_list,new_back_list);
+Node* Index::clone(std::unordered_map<Node*,Node*> other_to_this) {
+	return new Index(this,other_to_this);
 }
 
 // Constructors
@@ -44,8 +44,8 @@ Index::Index(const MetaData &meta, NumDim dim)
 	this->dim = dim;
 }
 
-Index::Index(const Index *other, NodeList new_prev_list, NodeList new_back_list)
-	: Node(other,new_prev_list,new_back_list)
+Index::Index(const Index *other, std::unordered_map<Node*,Node*> other_to_this)
+	: Node(other,other_to_this)
 {
 	this->dim = other->dim;
 }

@@ -44,8 +44,8 @@ Node* FocalFunc::Factory(Node *arg, const Mask &mask, ReductionType type) {
 	return new FocalFunc(meta,arg,mask,type);
 }
 
-Node* FocalFunc::clone(NodeList new_prev_list, NodeList new_back_list) {
-	return new FocalFunc(this,new_prev_list,new_back_list);
+Node* FocalFunc::clone(std::unordered_map<Node*,Node*> other_to_this) {
+	return new FocalFunc(this,other_to_this);
 }
 
 // Constructors
@@ -61,8 +61,8 @@ FocalFunc::FocalFunc(const MetaData &meta, Node *prev, const Mask &mask, Reducti
 	prev->addNext(this);
 }
 
-FocalFunc::FocalFunc(const FocalFunc *other, NodeList new_prev_list, NodeList new_back_list)
-	: Node(other,new_prev_list,new_back_list)
+FocalFunc::FocalFunc(const FocalFunc *other, std::unordered_map<Node*,Node*> other_to_this)
+	: Node(other,other_to_this)
 {
 	this->smask = other->smask;
 	this->type = other->type;

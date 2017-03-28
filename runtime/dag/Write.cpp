@@ -54,8 +54,8 @@ Node* Write::Factory(Node *prev, std::string file_path) {
 	return new Write(prev,out_file);
 }
 
-Node* Write::clone(NodeList new_prev_list, NodeList new_back_list) {
-	return new Write(this,new_prev_list,new_back_list);
+Node* Write::clone(std::unordered_map<Node*,Node*> other_to_this) {
+	return new Write(this,other_to_this);
 }
 
 // Constructors
@@ -65,9 +65,9 @@ Write::Write(Node *prev, SharedFile out_file) :
 	OutputNode(prev,out_file)
 { }
 
-Write::Write(const Write *other, NodeList new_prev_list, NodeList new_back_list)
-	: IONode(other,new_prev_list,new_back_list)
-	, OutputNode() // @@ InputNode(other) ?
+Write::Write(const Write *other, std::unordered_map<Node*,Node*> other_to_this)
+	: IONode(other,other_to_this)
+	, OutputNode() // @ InputNode(other) ?
 { }
 
 // Methods

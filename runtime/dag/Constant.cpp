@@ -32,8 +32,8 @@ Node* Constant::Factory(VariantType var, DataSize ds, DataType dt, MemOrder mo, 
 	return new Constant(meta,var);
 }
 
-Node* Constant::clone(NodeList new_prev_list, NodeList new_back_list) {
-	return new Constant(this,new_prev_list,new_back_list);
+Node* Constant::clone(std::unordered_map<Node*,Node*> other_to_this) {
+	return new Constant(this,other_to_this);
 }
 
 // Constructors
@@ -45,8 +45,8 @@ Constant::Constant(const MetaData &meta, VariantType val)
 	assert(val.datatype() == meta.getDataType());
 }
 
-Constant::Constant(const Constant *other, NodeList new_prev_list, NodeList new_back_list)
-	: Node(other,new_prev_list,new_back_list)
+Constant::Constant(const Constant *other, std::unordered_map<Node*,Node*> other_to_this)
+	: Node(other,other_to_this)
 {
 	this->cnst = other->cnst;
 	assert(cnst.datatype() == meta.getDataType());

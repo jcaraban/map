@@ -44,8 +44,8 @@ Node* Scalar::Factory(Node *prev) {
 	return new Scalar(prev,SharedFile(sca_file));
 }
 
-Node* Scalar::clone(NodeList new_prev_list, NodeList new_back_list) {
-	return new Scalar(this,new_prev_list,new_back_list);
+Node* Scalar::clone(std::unordered_map<Node*,Node*> other_to_this) {
+	return new Scalar(this,other_to_this);
 }
 
 // Constructors
@@ -55,9 +55,9 @@ Scalar::Scalar(Node *prev, SharedFile sca_file) :
 	OutputNode(prev,sca_file)
 { }
 
-Scalar::Scalar(const Scalar *other, NodeList new_prev_list, NodeList new_back_list)
-	: IONode(other,new_prev_list,new_back_list)
-	, OutputNode() // @@ InputNode(other) ?
+Scalar::Scalar(const Scalar *other, std::unordered_map<Node*,Node*> other_to_this)
+	: IONode(other,other_to_this)
+	, OutputNode() // @ InputNode(other) ?
 { }
 
 // Methods
