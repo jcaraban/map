@@ -95,6 +95,9 @@ def basinBorder(catch):
 dem = read(in_file_path)
 stream = zeros_like(dem,S32)
 pit = pitFill(dem,stream)
+#
+write( pit, out_file_path)
+#
 flow = flowDir(pit,stream)
 flow = flowDirFlat(flow)
 catch = catchAssign(flow,stream)

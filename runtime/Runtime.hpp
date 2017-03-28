@@ -91,9 +91,9 @@ class Runtime
 	std::vector<Worker> workers; //!< Vector of workers
 	std::vector<std::unique_ptr<std::thread>> threads; //!< Vector of threads
 
-	OwnerNodeList node_list; //!< Full list of nodes added to the runtime during the script execution (EDAG)
-	OwnerGroupList group_list; //!< 1 fused list is valid for 1 evaluation (GDAG)
-	OwnerTaskList task_list; //!< 1 task list is valid for 1 evaluation (TDAG)
+	OwnerNodeList node_list; //!< Full list of nodes added to the runtime during the script execution
+	OwnerGroupList group_list; //!< 1 fused list is valid for 1 evaluation
+	OwnerTaskList task_list; //!< 1 task list is valid for 1 evaluation
 	OwnerVersionList ver_list; //!< List of code versions required by the tasks
 
 	SimplifierOnline simplifier; //!<

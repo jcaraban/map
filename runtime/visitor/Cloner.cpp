@@ -20,17 +20,8 @@ void Cloner::clear() {
 }
 
 void Cloner::static_visit(Node *old) {
-	NodeList new_prev_list, new_back_list;
-	new_prev_list.reserve(old->prevList().size());
-	new_back_list.reserve(old->backList().size());
-	// Fills the list of 'prev' and 'back' nodes with the new clones
-	for (auto prev : old->prevList())
-		new_prev_list.push_back( old_hash.find(prev)->second );
-	for (auto back : old->backList())
-		new_back_list.push_back( old_hash.find(back)->second );
-
 	// Clones 'old' using 'virtual clone()' and the 'prev'/'back' clones
-	Node *node = old->clone(new_prev_list,new_back_list);
+	Node *node = old->clone(old_hash);
 
 	// Pushes the clone to the list and sets the relation old<->new
 	clone_list.push_back( std::unique_ptr<Node>(node) );

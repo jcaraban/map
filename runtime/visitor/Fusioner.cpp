@@ -26,7 +26,7 @@ Fusioner::Fusioner(OwnerGroupList& group_list)
 { }
 
 void Fusioner::clear() {
-	visited.clear(); // @
+	visited.clear();
 	group_list.clear();
 	group_list_of.clear();
 }
@@ -52,7 +52,13 @@ void Fusioner::fuse(NodeList list) {
 
 	for (auto it=list.rbegin(); it!=list.rend(); it++) {
 		assert(group_list_of[*it].size() == 1);
-		processBU(group_list_of[*it].front()); // Goes up group by group # 2nd fusion stage ##
+		processBU(group_list_of[*it].front()); // Goes up group by group ## 2nd fusion stage ##
+	}
+
+//print(); // @
+
+	for (auto node : list) {
+		processLoop(node); // Fuses the loop related nodes into a head and tail groups ##
 	}
 
 //print(); // @
@@ -60,7 +66,7 @@ void Fusioner::fuse(NodeList list) {
 	auto free = [](Node *n){ return n->pattern()==FREE; };
 	forwarding(free); // Replicates lonely free nodes ## 3rd fusion tage ##
 
-print(); // @
+//print(); // @
 
 	linking(); // Marks as input/output all those nodes in the group boundary
 
@@ -83,6 +89,8 @@ void Fusioner::removeGroup(Group *group) {
 bool Fusioner::canPipeFuse(Group *top, Group *bot) {
 	if (top == bot)
 		return false; // same node
+	if (not is_included(bot,top->nextList()))
+		assert(false); // no direct pipe-relation
 	for (auto next : top->nextList())
 		if (next != bot && next->isNext(bot))
 			return false; // found cycle
@@ -95,7 +103,7 @@ bool Fusioner::canFlatFuse(Group *left, Group *right) {
 	if (left == right)
 		return false; // same node
 	if (left->isNext(right) || right->isNext(left))
-		return false; // found cycle
+		return false; // found cycle or pipe-relation
 
 	return detail::canFlatFuse(left->pattern(),right->pattern());
 }
@@ -199,7 +207,7 @@ Group* Fusioner::flatFuseGroup(Group *&left, Group *&right) {
 	
 	// Moves 'right' prev-groups to 'left'
 	for (auto prev : right->prevList()) {
-		assert(prev != left);
+		assert(prev != left); // no pipe-relation
 
 		// Adds 'left' as next-group of 'prev'
 		prev->addNext(left,prev->nextPattern(right));
@@ -213,7 +221,7 @@ Group* Fusioner::flatFuseGroup(Group *&left, Group *&right) {
 
 	// Moves 'right' next-groups to 'left'
 	for (auto next : right->nextList()) {
-		assert(next != left);
+		assert(next != left); // no pipe-relation
 
 		// Adds 'left' as prev-group of 'next'
 		next->addPrev(left,next->prevPattern(right));
@@ -234,6 +242,92 @@ Group* Fusioner::flatFuseGroup(Group *&left, Group *&right) {
 	Group *ret = left;
 	left = nullptr;
 	right = nullptr;
+	return ret;
+}
+
+Group* Fusioner::freeFuseGroup(Group *&one, Group *&other) {
+	if (one == other)
+		return one;
+	for (auto next : other->nextList())
+		if (next->isNext(one))
+			assert(0); // found cycle
+	
+	// Moves 'other' nodes to 'one'
+	for (auto node : other->nodeList()) {
+		one->addNode(node);
+		remove_value(other,group_list_of[node]);
+		group_list_of[node].push_back(one);
+	}
+	// Moves 'other' input-nodes to 'one'
+	for (auto node : other->inputList()) {
+		one->addInputNode(node);
+		remove_value(other,group_list_of[node]);
+		group_list_of[node].push_back(one);
+	}
+	// Moves 'other' output-nodes to 'one'
+	for (auto node : other->outputList()) {
+		one->addOutputNode(node);
+		remove_value(other,group_list_of[node]);
+		group_list_of[node].push_back(one);
+	}
+	
+	// Moves 'other' prev-groups to 'one'
+	for (auto prev : other->prevList()) {
+		if (prev == one)
+			continue;
+
+		// Adds 'one' as next-group of 'prev'
+		prev->addNext(one,prev->nextPattern(other));
+
+		// Adds 'prev' as prev-group of 'one'
+		one->addPrev(prev,other->prevPattern(prev));
+
+		// 'prev' no longer points to 'other'
+		prev->removeNext(other);
+	}
+
+	// Moves 'other' next-groups to 'one'
+	for (auto next : other->nextList()) {
+		if (next == one)
+			continue;
+
+		// Adds 'one' as prev-group of 'next'
+		next->addPrev(one,next->prevPattern(other));
+
+		// Adds 'next' as next-group of 'one'
+		one->addNext(next,other->nextPattern(next));
+
+		// 'next' no longer points to 'other'
+		next->removePrev(other);
+	}
+
+	// Updates 'one' prev-groups with 'other' pattern
+	if (is_included(other,one->nextList())) {
+		for (auto prev : one->prevList()) {
+			prev->addNext(one,one->nextPattern(other));
+		}
+		// 'one' no longer points to 'other'
+		one->removeNext(other);
+	}
+	
+	// Updates 'one' next-groups with 'other' pattern
+	if (is_included(other,one->prevList())) {
+		for (auto next : one->nextList()) {
+			next->addPrev(one,one->prevPattern(other));
+		}
+		// 'one' no longer points to 'other'
+		one->removePrev(other);
+	}
+
+	// Fuses 'one' with 'other' pattern
+	one->pattern() += other->pattern();
+
+	// Finally erases 'other' from the main list of groups
+	removeGroup(other);
+	
+	Group *ret = one;
+	one = nullptr;
+	other = nullptr;
 	return ret;
 }
 
@@ -261,8 +355,9 @@ void Fusioner::pipeGently(Node *node) {
 		i++;
 		bool fuse_free = isFreeOrLocal(new_group) && isFreeOrLocal(prev_group);
 		bool fuse_dnd0 = not (new_group->numdim() != D0 && prev_group->numdim() == D0 && prev_group->pattern() != FREE);
+		bool fuse_next = prev_group->nextList().size() == 1;
 
-		if (fuse_free && fuse_dnd0 && prev_group->nextList().size() == 1 && canPipeFuse(prev_group,new_group)) {
+		if (fuse_free && fuse_dnd0 && fuse_next && canPipeFuse(prev_group,new_group)) {
 			new_group = pipeFuseGroup(prev_group,new_group);
 			i = 0; // rather than resetting, could be improved with a queue
 		}
@@ -366,26 +461,47 @@ void Fusioner::processBU(Group *group) { // @
 			i = 0;
 		}
 	}
-/*
-	//// Flat-fusion
-	i = 0;
-	while (i < group->nextList().size())
-	{
-		int j = i+1;
-		while (j < group->nextList().size())
-		{
-			Group *left = group->nextList()[i];
-			Group *right = group->nextList()[j];
-			if (canFlatFuse(left,right)) {
-				left = flatFuseGroup(left,right);
-				i = j = 0; // reset
-			} else {
-				j++;
-			}
+}
+
+void Fusioner::processLoop(Node *node) {
+	if (node->pattern().isNot(HEAD) && node->pattern().isNot(TAIL))
+		return; // Only spread nodes
+
+	bool head = false, tail = false;
+	Node *mark = nullptr; // marks the group to fuse with
+
+	if (auto cast = dynamic_cast<LoopHead*>(node)) {
+		head = true;
+		mark = cast->loop()->condition();
+	} else if (auto cast = dynamic_cast<LoopCond*>(node)) {
+		head = true;
+		mark = cast->loop()->condition();
+		assert(mark == cast);
+	} else if (auto cast = dynamic_cast<Feedback*>(node)) {
+		if (cast->in_or_out) { // feedback-in
+			head = true;
+			mark = cast->loop()->condition();
+		} else { // feedback-out
+			tail = true;
+			mark = cast->loop();
 		}
-		i++;
-	}
-*/
+	} else if (auto cast = dynamic_cast<Loop*>(node)) {
+		tail = true;
+		mark = cast;
+	} else if (auto cast = dynamic_cast<LoopTail*>(node)) {
+		tail = true;
+		mark = cast->loop();
+	} else {
+		assert(0);
+	}		
+		
+	assert(head xor tail);
+	assert(group_list_of.find(node)->second.size() == 1);
+	assert(group_list_of.find(mark)->second.size() == 1);
+
+	Group *node_group = group_list_of.find(node)->second.front();
+	Group *mark_group = group_list_of.find(mark)->second.front();
+	mark_group = freeFuseGroup(mark_group,node_group);
 }
 
 void Fusioner::forwarding(std::function<bool(Node*)> for_pred) {
@@ -454,7 +570,7 @@ void Fusioner::linking() {
 
 	for (auto &i : group_list) { // For every 'group' in group_list...
 		Group *group = i.get();
-		assert(!group->nodeList().empty());
+		//assert(!group->nodeList().empty());
 
 		for (auto &node : group->nodeList()) { // For every 'node' in 'group'
 			//assert(!node->nextList().empty());
@@ -463,7 +579,7 @@ void Fusioner::linking() {
 				//assert(!next_node->groupList().empty() || next_node->isOutput());
 
 				for (auto next_group : group_list_of[next_node]) { // For every group (aka 'next-group') of 'next-node'
-					assert(!next_group->nodeList().empty());
+					//assert(!next_group->nodeList().empty());
 					
 					if (!is_included(node,next_group->nodeList())) { // If 'node' is not included in 'next-group'
 						group->addOutputNode(node); // 'node' becomes an output of its 'group'

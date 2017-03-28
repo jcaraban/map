@@ -231,6 +231,20 @@ void Runtime::unlinkIsolated(const OwnerNodeList &node_list, bool drop) {
 	}
 }
 
+void print_nodes(const OwnerNodeList &list) {
+	std::cout << "----" << std::endl;
+	for (auto &node : list)
+		std::cout << node->id << "\t" << node->getName() << "\t " << node->ref << std::endl;
+	std::cout << "----" << std::endl;
+}
+
+void print_nodes(const NodeList &list) {
+	std::cout << "----" << std::endl;
+	for (auto &node : list)
+		std::cout << node->id << "\t" << node->getName() << "\t " << node->ref << std::endl;
+	std::cout << "----" << std::endl;
+}
+
 void Runtime::evaluate(NodeList list_to_eval) {
 	/****************************************/
 	/******** ENTRY POINT to Runtime ********/
@@ -241,11 +255,7 @@ void Runtime::evaluate(NodeList list_to_eval) {
 	clock.prepare();
 	clock.start(EVAL);
 
-// @ Prints nodes
-std::cout << "----" << std::endl;
-for (auto &node : node_list)
-	std::cout << node->id << "\t" << node->getName() << "\t " << node->ref << std::endl;
-std::cout << "----" << std::endl;
+//print_nodes(node_list); // @ Prints nodes
 
 	// Unlinks all unaccessible (i.e. isolated) nodes & removes them from simplifier 
 	unlinkIsolated(node_list,true);
@@ -270,20 +280,12 @@ std::cout << "----" << std::endl;
 		full_list = Lister().list(list_to_eval);
 	}
 
-// @ Prints nodes
-std::cout << "----" << std::endl;
-for (auto &node : full_list)
-	std::cout << node->id << "\t" << node->getName() << "\t " << node->ref << std::endl;
-std::cout << "----" << std::endl;
+//print_nodes(full_list); // @ Prints nodes
 
 	// Sorts the list by 'dependencies' 1st, and 'id' 2nd
 	auto sort_list = Sorter().sort(full_list);
 
-// @ Prints nodes
-std::cout << "----" << std::endl;
-for (auto &node : sort_list)
-	std::cout << node->id << "\t" << node->getName() << "\t " << node->ref << std::endl;
-std::cout << "----" << std::endl;
+//print_nodes(sort_list); // @ Prints nodes
 
 	// Clones the list of sorted nodes into new list of new nodes
 	OwnerNodeList priv_list; //!< Owned by this particular evaluation
@@ -291,11 +293,7 @@ std::cout << "----" << std::endl;
 	auto graph = cloner.clone(sort_list);
 	auto map_new_old = cloner.new_hash;
 
-// @ Prints nodes 5rd
-std::cout << "----" << std::endl;
-for (auto &node : priv_list)
-	std::cout << node->id << "\t" << node->getName() << "\t " << node->ref << std::endl;
-std::cout << "----" << std::endl;
+print_nodes(priv_list); // @ Prints nodes
 
 	/**/
 	workflow(graph);

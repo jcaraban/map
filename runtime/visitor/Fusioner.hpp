@@ -55,15 +55,24 @@ struct Fusioner
 
 	/*
 	 * The content of 'bot' is transferred to 'top' and it's erased
-	 * Links of all involved source and next nodes are updated
+	 * Links of all involved 'prev' and 'next' nodes are updated
+	 * Only valid for groups with producer-consumer data-flow relations
 	 */
 	Group* pipeFuseGroup(Group *&top, Group *&bot);	
 
 	/*
 	 * The content of 'right' is transferred to 'left' and it's erased
-	 * Links of all involved source and next nodes are updated
+	 * Links of all involved 'prev' and 'next' nodes are updated
+	 * Only valid for groups with consumer-consumer data-flow relations
 	 */
 	Group* flatFuseGroup(Group *&left, Group *&right);
+
+	/*
+	 * The content of 'other' is transferred to 'one' and it's erased
+	 * Valid for any type of data-flow relations and algorithmic pattern
+	 * NB: use carefully, fusing incompatible groups will result in errors
+	 */
+	Group* freeFuseGroup(Group *&one, Group *&other);
 
 	/*
 	 *
@@ -85,6 +94,8 @@ struct Fusioner
 	 */
 	void process(Group *group);
 	void processBU(Group *group); // @
+
+	void processLoop(Node *node); // @
 
 	/*
 	 * For every block with only input/free-nodes, their content is forwarded

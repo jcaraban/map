@@ -50,6 +50,14 @@ Task* Task::Factory(Group *group) {
 			assert(false);
 		}
 	}
+	else if ( pat.is(HEAD) )
+	{
+		assert(0);
+	}
+	else if ( pat.is(TAIL) )
+	{
+		assert(0);	
+	}
 	else if ( pat.is(SPREAD) )
 	{
 		return new SpreadingTask(group);
