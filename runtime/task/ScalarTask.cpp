@@ -50,7 +50,7 @@ void ScalarTask::nextJobs(Key done_block, std::vector<Job> &job_vec) {
 	assert(prev_jobs_count >= 0);
 }
 
-int ScalarTask::selfInterDepends(Node *node, Coord coord) const {
+int ScalarTask::prevInterDepends(Node *node, Coord coord) const {
 	return node->pattern() == FREE ? 0 : 1;
 }
 
@@ -58,7 +58,7 @@ int ScalarTask::nextInterDepends(Node *node, Coord coord) const {
 	return node->pattern() == FREE ? 0 : 1;
 }
 
-int ScalarTask::selfIntraDepends(Node *node, Coord coord) const {
+int ScalarTask::prevIntraDepends(Node *node, Coord coord) const {
 	return 0; // Scalar do not present intra dependencies
 }
 

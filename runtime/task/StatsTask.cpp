@@ -68,7 +68,7 @@ void StatsTask::nextJobs(Key done_block, std::vector<Job> &job_vec) {
 		notify(done_block.coord,job_vec);
 }
 
-int StatsTask::selfInterDepends(Node *node, Coord coord) const {
+int StatsTask::prevInterDepends(Node *node, Coord coord) const {
 	return node->pattern() == FREE ? 0 : 1;
 }
 
@@ -76,7 +76,7 @@ int StatsTask::nextInterDepends(Node *node, Coord coord) const {
 	return node->pattern() == FREE ? 0 : 1;
 }
 
-int StatsTask::selfIntraDepends(Node *node, Coord coord) const {
+int StatsTask::prevIntraDepends(Node *node, Coord coord) const {
 	return 0; // Stats do not present intra dependencies
 }
 

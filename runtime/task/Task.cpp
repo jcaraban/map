@@ -260,7 +260,7 @@ void Task::notify(Coord coord, std::vector<Job> &job_vec) {
 
 	auto it = dep_hash.find(coord);
 	if (it == dep_hash.end()) { // Inserts an entry with the number of dependencies if one was not found
-		int dep = selfDependencies(coord);
+		int dep = prevDependencies(coord);
 		auto pair = std::make_pair(coord,dep);
 		it = dep_hash.insert(pair).first;
 	}
@@ -282,12 +282,12 @@ void Task::notifyAll(std::vector<Job> &job_vec) {
 	}
 }
 
-int Task::selfDependencies(Coord coord) const {
+int Task::prevDependencies(Coord coord) const {
 	int dep = 0;
 	for (auto node : inputList())
-		dep += selfInterDepends(node,coord);
+		dep += prevInterDepends(node,coord);
 	for (auto node : outputList())
-		dep += selfIntraDepends(node,coord);
+		dep += prevIntraDepends(node,coord);
 	return dep;
 }
 

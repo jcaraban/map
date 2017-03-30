@@ -50,7 +50,7 @@ void LocalTask::nextJobs(Key done_block, std::vector<Job> &job_vec) {
 		notify(done_block.coord,job_vec);
 }
 
-int LocalTask::selfInterDepends(Node *node, Coord coord) const {
+int LocalTask::prevInterDepends(Node *node, Coord coord) const {
 	return node->pattern() == FREE ? 0 : 1;
 }
 
@@ -58,7 +58,7 @@ int LocalTask::nextInterDepends(Node *node, Coord coord) const {
 	return node->pattern() == FREE ? 0 : 1;
 }
 
-int LocalTask::selfIntraDepends(Node *node, Coord coord) const {
+int LocalTask::prevIntraDepends(Node *node, Coord coord) const {
 	return 0; // Local do not present intra dependencies
 }
 

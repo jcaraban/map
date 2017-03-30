@@ -83,11 +83,11 @@ struct Task
 	void notify(Coord coord, std::vector<Job> &job_vec);
 	void notifyAll(std::vector<Job> &job_vec);
 
-	int selfDependencies(Coord coord) const;
+	int prevDependencies(Coord coord) const;
 	int nextDependencies(Node *node, Coord coood) const;
-	virtual int selfInterDepends(Node *node, Coord coord) const = 0;
+	virtual int prevInterDepends(Node *node, Coord coord) const = 0;
 	virtual int nextInterDepends(Node *node, Coord coord) const = 0;
-	virtual int selfIntraDepends(Node *node, Coord coord) const = 0;
+	virtual int prevIntraDepends(Node *node, Coord coord) const = 0;
 	virtual int nextIntraDepends(Node *node, Coord coord) const = 0;
 
 	virtual void preLoad(Coord coord);

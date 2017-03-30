@@ -116,7 +116,7 @@ void RadiatingTask::nextJobs(Key done_block, std::vector<Job> &job_vec) {
 		notify(done_block.coord,job_vec);
 }
 
-int RadiatingTask::selfInterDepends(Node *node, Coord coord) const {
+int RadiatingTask::prevInterDepends(Node *node, Coord coord) const {
 	return node->pattern() == FREE ? 0 : 1;
 }
 
@@ -124,7 +124,7 @@ int RadiatingTask::nextInterDepends(Node *node, Coord coord) const {
 	return node->pattern() == FREE ? 0 : 1;
 }
 
-int RadiatingTask::selfIntraDepends(Node *node, Coord coord) const {
+int RadiatingTask::prevIntraDepends(Node *node, Coord coord) const {
 	if (node->pattern().is(RADIAL))
 		return all(coord == startb) ? 0 : any(coord == startb) ? 1 : 3;
 	else // non-radiating outputs dont add dependencies

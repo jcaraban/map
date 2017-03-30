@@ -53,7 +53,7 @@ void ZonalTask::nextJobs(Key done_block, std::vector<Job> &job_vec) {
 		notify(done_block.coord,job_vec);
 }
 
-int ZonalTask::selfInterDepends(Node *node, Coord coord) const {
+int ZonalTask::prevInterDepends(Node *node, Coord coord) const {
 	return node->pattern() == FREE ? 0 : 1;
 }
 
@@ -61,7 +61,7 @@ int ZonalTask::nextInterDepends(Node *node, Coord coord) const {
 	return node->pattern() == FREE ? 0 : 1;
 }
 
-int ZonalTask::selfIntraDepends(Node *node, Coord coord) const {
+int ZonalTask::prevIntraDepends(Node *node, Coord coord) const {
 	return 0; // Zonal do not present intra dependencies
 }
 

@@ -182,7 +182,7 @@ void SpreadingTask::nextJobs(Key done_block, std::vector<Job> &job_vec) {
 	}
 }
 
-int SpreadingTask::selfInterDepends(Node *node, Coord coord) const {
+int SpreadingTask::prevInterDepends(Node *node, Coord coord) const {
 	if (first_time.find(coord) != first_time.end())
 		return 0; // There are no inter-dependencies after the first initial job
 
@@ -203,10 +203,10 @@ int SpreadingTask::selfInterDepends(Node *node, Coord coord) const {
 }
 
 int SpreadingTask::nextInterDepends(Node *node, Coord coord) const {
-	return selfInterDepends(node,coord); // @ reusing selfInterDepends, but would need own code
+	return prevInterDepends(node,coord); // @ reusing prevInterDepends, but would need own code
 }
 
-int SpreadingTask::selfIntraDepends(Node *node, Coord coord) const {
+int SpreadingTask::prevIntraDepends(Node *node, Coord coord) const {
 	return (first_time.find(coord) == first_time.end()) ? 0 : 1;
 	// After the first initial job, even 1 self-job should be able to activate this job
 	// de cuantos self-blocks dependo yo?

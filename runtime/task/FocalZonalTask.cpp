@@ -78,7 +78,7 @@ void FocalZonalTask::nextJobs(Key done_block, std::vector<Job> &job_vec) {
 	}
 }
 
-int FocalZonalTask::selfInterDepends(Node *node, Coord coord) const {
+int FocalZonalTask::prevInterDepends(Node *node, Coord coord) const {
 	int pos = value_position(node,inputList());
 	if (!is_input_of[pos].is(FOCAL) || node->numdim() == D0)
 		return node->pattern() == FREE ? 0 : 1;
@@ -96,10 +96,10 @@ int FocalZonalTask::selfInterDepends(Node *node, Coord coord) const {
 }
 
 int FocalZonalTask::nextInterDepends(Node *node, Coord coord) const {
-	return selfInterDepends(node,coord); // @ reusing selfInterDepends, but would need own code
+	return prevInterDepends(node,coord); // @ reusing prevInterDepends, but would need own code
 }
 
-int FocalZonalTask::selfIntraDepends(Node *node, Coord coord) const {
+int FocalZonalTask::prevIntraDepends(Node *node, Coord coord) const {
 	return 0; // Focal-Zonal do not present intra dependencies
 }
 
