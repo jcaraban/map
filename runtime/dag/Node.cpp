@@ -144,6 +144,13 @@ void Node::removeNext(Node *node) {
 	decreaseRef();
 }
 
+void Node::removeBack(Node *node) {
+	auto it = std::find(back_list.begin(),back_list.end(),node);
+	assert(it != back_list.end());
+	back_list.erase(it);
+	decreaseRef();
+}
+
 Pattern Node::pattern() const {
 	return FREE;
 }

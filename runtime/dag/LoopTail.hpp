@@ -12,7 +12,8 @@
 
 namespace map { namespace detail {
 
-struct Loop; //!< Forward declaration
+struct LoopCond; //!< Forward declaration
+struct LoopHead; //!< Forward declaration
 
 struct LoopTail : public Node
 {
@@ -21,30 +22,35 @@ struct LoopTail : public Node
 		Key(LoopTail *node);
 		bool operator==(const Key& k) const;
 		Node *prev;
-		Loop *loop;
+		LoopCond *loop;
 	};
 	struct Hash {
 		std::size_t operator()(const Key& k) const;
 	};
 	
 	// Factory
+	//static Node* Factory(LoopCond *loop, Node *prev);
+	static Node* Factory(Node *prev);
 	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
 
 	// Constructors
-	LoopTail(Loop *loop, Node *prev);
+	//LoopTail(const MetaData &meta, LoopCond *loop, Node *prev);
+	LoopTail(const MetaData &meta, Node *prev);
 	LoopTail(const LoopTail *other, std::unordered_map<Node*,Node*> other_to_this);
+	~LoopTail();
 
 	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;
 	char classSignature() const;
-	Loop* loop() const;
+	LoopCond* loop() const;
 	Node* prev() const;
 	Pattern pattern() const { return TAIL; }
 
 	// Variables
-	Loop *owner_loop;
+	LoopCond *owner_loop;
+	LoopHead *twin_head;
 };
 
 } } // namespace map::detail

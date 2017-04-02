@@ -470,24 +470,18 @@ void Fusioner::processLoop(Node *node) {
 	bool head = false, tail = false;
 	Node *mark = nullptr; // marks the group to fuse with
 
-	if (auto cast = dynamic_cast<LoopHead*>(node)) {
+	if (auto cast = dynamic_cast<LoopCond*>(node)) {
 		head = true;
-		mark = cast->loop()->condition();
-	} else if (auto cast = dynamic_cast<LoopCond*>(node)) {
-		head = true;
-		mark = cast->loop()->condition();
-		assert(mark == cast);
-	} else if (auto cast = dynamic_cast<Feedback*>(node)) {
-		if (cast->in_or_out) { // feedback-in
-			head = true;
-			mark = cast->loop()->condition();
-		} else { // feedback-out
-			tail = true;
-			mark = cast->loop();
-		}
-	} else if (auto cast = dynamic_cast<Loop*>(node)) {
-		tail = true;
 		mark = cast;
+	} else if (auto cast = dynamic_cast<LoopHead*>(node)) {
+		head = true;
+		mark = cast->loop();
+	} else if (auto cast = dynamic_cast<Merge*>(node)) {	
+		head = true;
+		//mark = cast->cond();
+	} else if (auto cast = dynamic_cast<Switch*>(node)) {	
+		head = true;
+		//mark = cast->cond();
 	} else if (auto cast = dynamic_cast<LoopTail*>(node)) {
 		tail = true;
 		mark = cast->loop();

@@ -59,7 +59,7 @@ NodeList left_join(const NodeList &lhs, const NodeList &rhs) {
 			join.push_back(left);
 	return join;
 }
-
+/*
 void remove_value(const Node *node, NodeList &list) {
 	list.erase(std::remove(list.begin(),list.end(),node),list.end());
 }
@@ -67,7 +67,7 @@ void remove_value(const Node *node, NodeList &list) {
 void remove_value(const Group *group, GroupList &list) {
 	list.erase(std::remove(list.begin(),list.end(),group),list.end());
 }
-
+*/
 int value_position(const Node *node, const NodeList &list) {
 	auto it = std::find(list.begin(),list.end(),node);
 	assert(it != list.end());

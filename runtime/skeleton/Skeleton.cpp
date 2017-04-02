@@ -189,6 +189,24 @@ void Skeleton::visit(Constant *node) {
 	add_line( var_name(node) + " = " + node->cnst.toString() + ";" );
 }
 
+void Skeleton::visit(Index *node) {
+	string var = var_name(node);
+	if (node->dim == D1)
+		add_line( var + " = BC0*BS0+bc0;" );
+	else if (node->dim == D2)
+		add_line( var + " = BC1*BS1+bc1;" );
+	else if (node->dim == D3)
+		add_line( var + " = BC2*BS2+bc2;" );
+	else
+		assert(0);
+}
+
+void Skeleton::visit(Identity *node) {
+	string var = var_name(node);
+	string pvar = var_name(node->prev());
+	add_line( var + " = " + pvar+ + ";" );
+}
+
 void Skeleton::visit(Rand *node) {
 	std::array<std::string,N_DATATYPE> max_vec = {"/0","UCHAR_MAX","USHRT_MAX","/0","UINT_MAX","/0","/0","/0","ULONG_MAX"};
 	int N = node->numdim().toInt();
@@ -212,18 +230,6 @@ void Skeleton::visit(Rand *node) {
 
 	includes.push_back("<Random123/philox.h>");
 	rand.push_back(node);
-}
-
-void Skeleton::visit(Index *node) {
-	string var = var_name(node);
-	if (node->dim == D1)
-		add_line( var + " = BC0*BS0+bc0;" );
-	else if (node->dim == D2)
-		add_line( var + " = BC1*BS1+bc1;" );
-	else if (node->dim == D3)
-		add_line( var + " = BC2*BS2+bc2;" );
-	else
-		assert(0);
 }
 
 void Skeleton::visit(Cast *node) {

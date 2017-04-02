@@ -6,7 +6,7 @@
 
 #include "Runtime.hpp"
 #include "dag/util.hpp"
-#include "dag/Loop.hpp"
+#include "dag/LoopCond.hpp"
 #include "visitor/Lister.hpp"
 #include "visitor/Sorter.hpp"
 #include "visitor/Partitioner.hpp"
@@ -154,28 +154,26 @@ void Runtime::setupDevices(std::string plat_name, DeviceType dev, std::string de
 }
 
 Node* Runtime::loopAssemble() {
-	Node* node = assembler.assemble();
-	node_list.push_back( std::unique_ptr<Node>(node) );
+	const LoopStruct &stru = assembler.loop_struct[assembler.loop_level];
 
+	assembler.assemble();
+	
 	// TODO: how to simplify a loop?
-	Node *orig = node; // = simplifier.simplify(node);
 
-	// Ask 'loop' for its newly created 'head', 'tail' and 'feed' nodes
-	Loop *loop_node = dynamic_cast<Loop*>(orig);
-	assert(loop_node != nullptr);
-
-	// Inserts the 'cond' / 'head' / 'feed' in/out / 'tail' nodes into the node_list
-	node_list.push_back( std::unique_ptr<Node>(loop_node->cond_node) );
-	for (auto node : loop_node->head_list)
+	// Inserts 'head' / 'merge' / 'loop' / 'switch' / 'tail' / 'other' nodes into the node_list
+	for (auto node : stru.head)
 		node_list.push_back( std::unique_ptr<Node>(node) );
-	for (auto node : loop_node->feed_in_list)
+	for (auto node : stru.merge)
 		node_list.push_back( std::unique_ptr<Node>(node) );
-	for (auto node : loop_node->feed_out_list)
+	node_list.push_back( std::unique_ptr<Node>(stru.loop) );
+	for (auto node : stru.switc)
 		node_list.push_back( std::unique_ptr<Node>(node) );
-	for (auto node : loop_node->tail_list)
+	for (auto node : stru.tail)
+		node_list.push_back( std::unique_ptr<Node>(node) );
+	for (auto node : stru.other)
 		node_list.push_back( std::unique_ptr<Node>(node) );
 
-	return node;
+	return stru.loop;
 }
 
 Node* Runtime::addNode(Node *node) {
@@ -224,10 +222,14 @@ void Runtime::unlinkIsolated(const OwnerNodeList &node_list, bool drop) {
 		// Drop from Simplifier
 		if (drop)
 			simplifier.drop(node);
-		// Inform prev nodes
+		// Inform 'prev' nodes
 		for (auto &prev : node->prevList())
 			prev->removeNext(node);
 		node->prev_list.clear();
+		// Inform 'forw' nodes
+		for (auto &forw : node->forwList())
+			forw->removeBack(node);
+		node->forw_list.clear();
 	}
 }
 
@@ -242,7 +244,7 @@ void print_nodes(const NodeList &list) {
 	std::cout << "----" << std::endl;
 	for (auto &node : list)
 		std::cout << node->id << "\t" << node->getName() << "\t " << node->ref << std::endl;
-	std::cout << "----" << std::endl;
+	std::cout << "---- id_count " << Node::id_count << std::endl;
 }
 
 void Runtime::evaluate(NodeList list_to_eval) {
@@ -255,7 +257,7 @@ void Runtime::evaluate(NodeList list_to_eval) {
 	clock.prepare();
 	clock.start(EVAL);
 
-//print_nodes(node_list); // @ Prints nodes
+print_nodes(node_list); // @ Prints nodes
 
 	// Unlinks all unaccessible (i.e. isolated) nodes & removes them from simplifier 
 	unlinkIsolated(node_list,true);
@@ -263,6 +265,8 @@ void Runtime::evaluate(NodeList list_to_eval) {
 	// Cleaning of old unaccessible nodes
 	auto pred = [](std::unique_ptr<Node> &node){ return node->ref==0; };
 	node_list.erase(std::remove_if(node_list.begin(),node_list.end(),pred),node_list.end());
+
+print_nodes(node_list); // @ Prints nodes
 
 	NodeList full_list;
 	if (list_to_eval.size() == 0) // eval all nodes
@@ -280,12 +284,12 @@ void Runtime::evaluate(NodeList list_to_eval) {
 		full_list = Lister().list(list_to_eval);
 	}
 
-//print_nodes(full_list); // @ Prints nodes
+print_nodes(full_list); // @ Prints nodes
 
 	// Sorts the list by 'dependencies' 1st, and 'id' 2nd
 	auto sort_list = Sorter().sort(full_list);
 
-//print_nodes(sort_list); // @ Prints nodes
+print_nodes(sort_list); // @ Prints nodes
 
 	// Clones the list of sorted nodes into new list of new nodes
 	OwnerNodeList priv_list; //!< Owned by this particular evaluation

@@ -267,6 +267,7 @@ class Raster:
 
 	def _symloop_execution(self,tree):
 		# Note: the Python AST nodes are different from our IR Nodes
+		# jesus: calling eval() twice is not re-entrant, recursion not possible!
 		(frame, filename, lineno, _, _, _) = inspect.stack()[2]
 		wile = ast.walk(tree).next().body[0] # while node
 		test = wile.test # while's condition node

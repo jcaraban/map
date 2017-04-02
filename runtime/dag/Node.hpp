@@ -64,6 +64,7 @@ struct Node {
   // 
 	void addBack(Node *node);
 	void addForw(Node *node);
+	void removeBack(Node *node);
   // Virtual const methods
 	virtual Pattern pattern() const; // FREE by default
 	virtual bool isInput() const; // False by default

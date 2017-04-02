@@ -34,8 +34,10 @@ NodeList inner_join(const NodeList &lhs, const NodeList &rhs);
 NodeList full_join(const NodeList &lhs, const NodeList &rhs);
 NodeList left_join(const NodeList &lhs, const NodeList &rhs);
 
-void remove_value(const Node *node, NodeList &list);
-void remove_value(const Group *group, GroupList &list);
+template <typename T>
+void remove_value(const T *value, std::vector<T*> &list) {
+	list.erase(std::remove(list.begin(),list.end(),value),list.end());
+}
 
 int value_position(const Node *node, const NodeList &list);
 

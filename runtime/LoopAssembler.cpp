@@ -2,11 +2,13 @@
  * @file    LoopAssembler.cpp 
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
+ * TODO: instead of injecting the Head, Merge, Switch nodes; create them in the right order
+ *       - For that the Python While would need to be parsed first, dag or bytecode
  * TODO: is_included is "expensive", it can be avoided by tagging the nodes during insertion
  */
 
 #include "LoopAssembler.hpp"
-#include "dag/Loop.hpp"
+#include "dag/LoopCond.hpp"
 #include <queue>
 #include <set>
 
@@ -86,7 +88,7 @@ void LoopAssembler::addNode(Node *node, Node *orig) {
 	{
 		if (mode() == LOOP_START)
 		{
-			assert(0); //stru.cond.push_back(node);
+			assert(0); // nothing to add
 		}
 		else if (mode() == LOOP_BODY)
 		{
@@ -97,7 +99,7 @@ void LoopAssembler::addNode(Node *node, Node *orig) {
 			stru.again.push_back(orig);
 		}
 		else {
-			assert(0);
+			assert(0); // nothing to add
 		}
 	}
 }
@@ -106,7 +108,12 @@ void LoopAssembler::condition(Node *node) {
 	loop_struct[loop_level].cond.push_back(node);
 }
 
-Node* LoopAssembler::assemble() {
+void LoopAssembler::assemble() {
+	extract();
+	compose();
+}
+
+void LoopAssembler::extract() {
 	assert(loop_mode == LOOP_AGAIN);
 	LoopStruct &stru = loop_struct[loop_level];
 	int i;
@@ -192,12 +199,12 @@ Node* LoopAssembler::assemble() {
 		// The 'again' nodes are not deleted just yet, Python still points to them.
 		// With loopUpdateVars() Python updates the loop variables to 'tail' nodes
 		// which lets the garbage collector delete the 'again' nodes, sometime later
-		Node::id_count--; // @ I'd be fired for this
+		Node::id_count--; // @ a more elegant way of restoring the counter ?
 	}
 
 	// Unreachable 'body' nodes when going up from 'feed_out' are out-loop-invariants
 	std::queue<Node*> queue;
-	std::set<Node*> unr_set;
+	std::set<Node*> reachable;
 	for (auto out : stru.feed_out)
 		queue.push(out);
 	while (not queue.empty()) {
@@ -206,48 +213,187 @@ Node* LoopAssembler::assemble() {
 		for (auto prev : node->prevList())
 			if (is_included(prev,stru.body))
 				queue.push(prev);
-		unr_set.insert(node);
+		reachable.insert(node);
 	}
 
-	// Gets the out-loop-invariants as the left_join of 'body' with the 'unreachable'
-	NodeList out_invar = left_join(stru.body, NodeList(unr_set.begin(),unr_set.end()) );
+	// Gets the 'unreachable' out-loop-invariants as the left_join of 'body' with the 'reachable'
+	NodeList out_invar = left_join(stru.body, NodeList(reachable.begin(),reachable.end()) );
 	
 	// Removes the out-loop-invariants from 'body' and 'again' (NB: they share the same index)
 	assert(stru.body.size() == stru.again.size());
 	i = 0;
 	while (i < stru.body.size()) {
 		if (is_included(stru.body[i],out_invar)) {
-			//
+			// First stores the unique pointer value, for python
 			stru.oldpy.push_back(stru.again[i]);
 			stru.newpy.push_back(stru.body[i]);
-			//
+			// Then erases them from the list
 			stru.body.erase(stru.body.begin()+i);
 			stru.again.erase(stru.again.begin()+i);
 		} else {
 			i++;
 		}
 	}
+}
 
-	// The 'loop' node is returned to runtime for the insertion and simplification
-	Node *node = Loop::Factory(stru.prev,cond_node,stru.body,stru.feed_in,stru.feed_out);
-	return node;
+void LoopAssembler::compose() {
+	LoopStruct &stru = loop_struct[loop_level];
+	NodeList empty_list, empty_body, iden_list, back_list;
+
+	auto swap_next_nodes = [&](Node *prev, Node *dest, bool neg=false) {
+		// 'next' of 'prev' inside 'body' now hang from 'dest'
+		int i = 0;
+		while (i < prev->nextList().size()) {
+			Node *next = prev->nextList()[i++];
+			if ((is_included(next,stru.body) && next!=dest) ^ neg) {
+				dest->addNext(next);
+				next->updatePrev(prev,dest);
+				prev->removeNext(next);
+				i--;
+			}
+		}
+	};
+
+	int fix = stru.feed_out.size(); // feed-in/out
+	int num_elem = stru.prev.size() + stru.body.size() - fix;
+
+	// Re-adjusting ssa ids with these offsets
+	int jmp_empty = stru.body.size() - fix; // empty nodes
+	int jmp_loop = num_elem * 3 + 1; // head + merge + switch + cond nodes
+	int jmp_iden = stru.prev.size() - fix; // identity nodes
+	int jmp_body = stru.body.size(); // body nodes
+	int jmp_tail = stru.body.size(); // tail nodes
+
+	// The nodes created below are owned by Runtime::node_list later
+
+	// Re-adjust ssa ids
+	Node::id_count -= jmp_body; // @
+
+	// Completes the 'prev' list with auxiliar 'empty' input nodes
+	for (auto node : left_join(stru.body,stru.feed_out)) {
+		// This should be an Empty node, not a Const // @
+		auto *empty = new Constant(node->metadata(),VariantType(0,node->datatype()));
+		stru.prev.push_back(empty);
+		stru.other.push_back(empty);
+
+		empty_list.push_back(empty);
+		empty_body.push_back(node);
+	}
+
+	// Finds the feed-back 'body' node per 'prev'
+	for (int i=0; i<stru.prev.size(); i++) {
+		Node *prev = stru.prev[i];
+		Node *back = nullptr;
+
+		if (is_included(prev,stru.feed_in))
+		{	// This is a feed-in 'prev', so a 'body' node exists in 'feed-out'
+			int i = value_position(prev,stru.feed_in);
+			back = stru.feed_out[i];
+		}
+		else if (is_included(prev,empty_list))
+		{	// This is a 'tmp' node in body, an 'empty' node was created
+			int i = value_position(prev,empty_list);
+			back = empty_body[i];
+		}
+		else
+		{	// is a const-input-node
+			auto *iden = Identity::Factory(prev);
+			stru.body.push_back(iden);
+			iden_list.push_back(iden);
+			stru.other.push_back(iden);
+			swap_next_nodes(prev,iden);
+			back = iden;
+
+			back->id += jmp_loop;
+			Node::id_count--; // @
+		}
+		back_list.push_back(back);
+	}
+
+	// Re-adjust 'body' ids
+	for (auto node : stru.body)
+		if (not is_included(node,iden_list))
+			node->id += jmp_empty + jmp_loop + jmp_iden;
+
+	// Creates a 'head' node per 'prev' node outside 'loop'
+	for (int i=0; i<stru.prev.size(); i++) {
+		Node *prev = stru.prev[i];
+
+		auto *head = dynamic_cast<LoopHead*>( LoopHead::Factory(prev) );
+		stru.head.push_back(head);
+	}
+
+	// Creates a 'merge' node from the 'head' and its respective 'body'
+	for (int i=0; i<stru.head.size(); i++) {
+		Node *head = stru.head[i];
+		Node *back = back_list[i];
+
+		auto *merge = dynamic_cast<Merge*>( Merge::Factory(head,back) );
+		stru.merge.push_back(merge);
+	}
+
+	// Makes this 'LoopCond' node depend on the 'merge' of the 'condition'
+	for (int i=0; i<stru.merge.size(); i++) {
+		Node *prev = stru.prev[i];
+		Node *merge = stru.merge[i];
+
+		if (prev == stru.cond[0]) {
+			stru.loop = dynamic_cast<LoopCond*>( LoopCond::Factory(merge) );
+		}
+	}
+
+	// Creates a 'switch' per 'merge', with this 'loop' as condition
+	for (int i=0; i<stru.merge.size(); i++) {
+		Node *prev = stru.prev[i];
+		Node *merge = stru.merge[i];
+
+		auto *swit = dynamic_cast<Switch*>( Switch::Factory(stru.loop,merge) );
+		stru.switc.push_back(swit);
+	}
+
+	// Re-link 'body' nodes to the 'switch' according to their 'prev'
+	for (int i=0; i<stru.prev.size(); i++) {
+		Node *prev = stru.prev[i];
+		Switch *swit = stru.switc[i];
+		swap_next_nodes(prev,swit);
+		// @ how to move 'next' to the true side of 'switch'?
+	}
+
+	Node::id_count += jmp_body; // @
+
+	// Creates a 'tail' node hanging from the 'false' side of 'switch'
+	for (int i=0; i<stru.switc.size(); i++) {
+		Node *node = back_list[i];
+		Node *swit = stru.switc[i];
+
+		if (not is_included(node,iden_list)) {
+			auto tail = dynamic_cast<LoopTail*>( LoopTail::Factory(swit) );
+			stru.tail.push_back(tail);
+			swap_next_nodes(node,tail,true);
+			// Links the twin 'head' and 'tail' nodes
+			LoopHead *head = stru.head[i];
+			head->twin_tail = tail;
+			tail->twin_head = head;
+			// @ how to move tail to the false_side ?
+		}		
+	}
+	
+	// Link 'head' and 'tail' nodes with their owner 'loop'
+	stru.loop->head_list = stru.head;
+	stru.loop->tail_list = stru.tail;
+	for (auto head : stru.head)
+		head->owner_loop = stru.loop;
+	for (auto tail : stru.tail)
+		tail->owner_loop = stru.loop;
+
+	// Notify 'switch' of its 'false_next' and 'true_next' nodes
+
+	// assert ?
 }
 
 void LoopAssembler::updateVars(Node *node, Node ***oldpy, Node ***newpy, int *num) {
 	LoopStruct &stru = loop_struct[loop_level];
-
-	Loop *loop_node = dynamic_cast<Loop*>(node);
-	assert(loop_node != nullptr);
-	stru.loop = loop_node;
-
-	// 'head' nodes are not used at the moment, maybe in the future?
-	stru.head.reserve(loop_node->headList().size());
-	for (auto head : loop_node->headList())
-		stru.head.push_back(head);
-	// 'tail' nodes are sent back to Python to update its variables
-	stru.tail.reserve(loop_node->tailList().size());
-	for (auto tail : loop_node->tailList())
-		stru.tail.push_back(tail);
+	assert(stru.loop == node);
 
 	// These structures store what nodes the python variables should point to
 	stru.oldpy.insert(stru.oldpy.end(),stru.again.begin(),stru.again.end());

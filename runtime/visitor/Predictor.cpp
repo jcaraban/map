@@ -86,11 +86,19 @@ void Predictor::visit(Constant *node) {
 	hash[{node,coord}] = {node->cnst,true};
 }
 
-void Predictor::visit(Rand *node) {
+void Predictor::visit(Index *node) {
 	hash[{node,coord}] = {{},false};
 }
 
-void Predictor::visit(Index *node) {
+void Predictor::visit(Identity *node) {
+	auto prev = hash[{node->prev(),coord}];
+	ValFix vf = {{},false};
+	if (prev.fixed)
+		vf = {prev.value,true};
+	hash[{node,coord}] = vf;
+}
+
+void Predictor::visit(Rand *node) {
 	hash[{node,coord}] = {{},false};
 }
 

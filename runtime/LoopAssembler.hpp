@@ -5,10 +5,12 @@
  * Class in charge of assembling a Loop as it executes in Python
  */
 
-#ifndef LOOPASSEMBLER_HPP_
-#define LOOPASSEMBLER_HPP_
+#ifndef MAP_RUNTIME_LOOPASSEMBLER_HPP_
+#define MAP_RUNTIME_LOOPASSEMBLER_HPP_
 
 #include "dag/Node.hpp"
+#include "dag/Constant.hpp"
+#include "dag/LoopCond.hpp"
 
 
 namespace map { namespace detail {
@@ -22,9 +24,14 @@ struct LoopStruct {
 	NodeList again; //!< Again the body, to find feedbacks
 	NodeList feed_in; //!< Nodes that feedback into body (input side)
 	NodeList feed_out; //!< (output side), repeteadly swap with (feed_in)
-	Node *loop;
-	NodeList head; //!< Head nodes created by Loop
-	NodeList tail; //!< Tail nodes created by Loop
+	
+	LoopCond *loop;
+	HeadList head; //!< Head nodes created by Loop
+	TailList tail; //!< Tail nodes created by Loop
+	MergeList merge; //!< Merge nodes created by Loop
+	SwitchList switc; //!< Switch nodes created by Loop
+	NodeList other; //!< Empry, Identity, etc
+
 	NodeList oldpy;
 	NodeList newpy;
 };
@@ -40,8 +47,12 @@ struct LoopAssembler {
 	void addNode(Node *node, Node *orig);
 	void digestion(bool start, bool body, bool again, bool end);
 	void condition(Node *cond);
-	Node* assemble();
+	void assemble();
 	void updateVars(Node *node, Node ***agains, Node ***tails, int *num);
+
+  //
+	void extract();
+	void compose();
 
   // Vars
 	LoopMode loop_mode; //!< Indicates if we are inside a (possibly nested) loop

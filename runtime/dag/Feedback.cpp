@@ -23,7 +23,7 @@ bool Feedback::Key::operator==(const Key& k) const {
 }
 
 std::size_t Feedback::Hash::operator()(const Key& k) const {
-	return std::hash<Node*>()(k.prev) ^ std::hash<Loop*>()(k.loop);
+	return std::hash<Node*>()(k.prev) ^ std::hash<LoopCond*>()(k.loop);
 }
 
 // Feedback
@@ -34,7 +34,7 @@ Node* Feedback::clone(std::unordered_map<Node*,Node*> other_to_this) {
 
 // Constructors
 
-Feedback::Feedback(Loop *loop, LoopHead *prev)
+Feedback::Feedback(LoopCond *loop, LoopHead *prev)
 	: Node()
 {
 	id = prev->id;
@@ -49,7 +49,7 @@ Feedback::Feedback(Loop *loop, LoopHead *prev)
 
 	// 'next' of 'prev' (which must be inside 'cond'+'body') now link to 'feed'
 	for (auto next : prev->nextList()) {
-		assert( is_included(next,loop->bodyList()) || next==loop->condition() );
+		assert( is_included(next,loop->bodyList())); // || next==loop->condition() );
 		this->addNext(next);
 		next->updatePrev(prev,this);
 	}
@@ -61,7 +61,7 @@ Feedback::Feedback(Loop *loop, LoopHead *prev)
 	prev->addNext(this); // 'prev' is a 'head' that ONLY points to 'feed'
 }
 
-Feedback::Feedback(Loop *loop, Feedback *feed_in, Node *prev)
+Feedback::Feedback(LoopCond *loop, Feedback *feed_in, Node *prev)
 	: Node()
 {
 	id = prev->id;
@@ -122,7 +122,7 @@ std::string Feedback::signature() const {
 	return sign;
 }
 
-Loop* Feedback::loop() const {
+LoopCond* Feedback::loop() const {
 	return owner_loop;
 }
 

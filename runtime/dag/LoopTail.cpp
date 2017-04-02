@@ -4,7 +4,7 @@
  */
 
 #include "LoopTail.hpp"
-#include "Loop.hpp"
+#include "LoopCond.hpp"
 #include "../Runtime.hpp"
 #include "../visitor/Visitor.hpp"
 #include <functional>
@@ -24,10 +24,16 @@ bool LoopTail::Key::operator==(const Key& k) const {
 }
 
 std::size_t LoopTail::Hash::operator()(const Key& k) const {
-	return std::hash<Node*>()(k.prev) ^ std::hash<Loop*>()(k.loop);
+	return std::hash<Node*>()(k.prev) ^ std::hash<LoopCond*>()(k.loop);
 }
 
 // Factory
+
+//Node* LoopTail::Factory(LoopCond *loop, Node *prev) {
+Node* LoopTail::Factory(Node *prev) {
+	MetaData meta = prev->metadata();
+	return new LoopTail(meta,prev);
+}
 
 Node* LoopTail::clone(std::unordered_map<Node*,Node*> other_to_this) {
 	return new LoopTail(this,other_to_this);
@@ -35,41 +41,32 @@ Node* LoopTail::clone(std::unordered_map<Node*,Node*> other_to_this) {
 
 // Constructors
 
-LoopTail::LoopTail(Loop *loop, Node *prev)
-	: Node()
+//LoopTail::LoopTail(const MetaData &meta, LoopCond *loop, Node *prev)
+LoopTail::LoopTail(const MetaData &meta, Node *prev)
+	: Node(meta)
 {
-	id = prev->id;
-	meta = prev->metadata();
+	owner_loop = nullptr; // 'head' knows who its 'loop' is
+	twin_head = nullptr; // 'head' might have a twin 'tail'
 
-	owner_loop = loop;
-	prev_list.resize(2);
-	prev_list[0] = prev;
-	prev_list[1] = loop; // @ first 'loop' or 'prev' ?
-	
-	// the 'next' of 'prev' outside 'body' are moved down
-	int i = 0; // this are the out-loop-invariants
-	while (i < prev->nextList().size()) {
-		Node *next = prev->nextList()[i++];
-		if (not is_included(next,loop->bodyList())) {
-			this->addNext(next);
-			next->updatePrev(prev,this);
-			prev->removeNext(next);
-			i--;
-		}
-	}
+	prev_list.reserve(1);
+	this->addPrev(prev);
 
-	loop->addNext(this); // 'loop' is reached through its 'tail' nodes
-	prev->addNext(this); // 'prev' is a 'feedback' that points to 'tail'
+	prev->addNext(this); // 'prev' is a 'switch' that points to 'tail'
 }
 
 LoopTail::LoopTail(const LoopTail *other, std::unordered_map<Node*,Node*> other_to_this)
 	: Node(other,other_to_this)
 {
 	Node *this_loop = other_to_this.find(other->owner_loop)->second;
-	this->owner_loop = dynamic_cast<Loop*>(this_loop);
+	this->owner_loop = dynamic_cast<LoopCond*>(this_loop);
 	
 	/// Pushes itself into 'loop', because 'tail' did not live when 'loop' was created
 	this->owner_loop->tail_list.push_back(this);
+}
+
+LoopTail::~LoopTail() {
+	// Notifies its 'loop' about the deletion
+	remove_value(this,owner_loop->tail_list);
 }
 
 // Methods
@@ -87,7 +84,7 @@ std::string LoopTail::signature() const {
 	return "";
 }
 
-Loop* LoopTail::loop() const {
+LoopCond* LoopTail::loop() const {
 	return owner_loop;
 }
 

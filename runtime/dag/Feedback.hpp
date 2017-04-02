@@ -12,7 +12,7 @@
 
 namespace map { namespace detail {
 
-struct Loop; //!< Forward declaration
+struct LoopCond; //!< Forward declaration
 struct LoopHead; //!< Forward declaration
 
 struct Feedback : public Node
@@ -22,7 +22,7 @@ struct Feedback : public Node
 		Key(Feedback *node);
 		bool operator==(const Key& k) const;
 		Node *prev;
-		Loop *loop;
+		LoopCond *loop;
 	};
 	struct Hash {
 		std::size_t operator()(const Key& k) const;
@@ -32,8 +32,8 @@ struct Feedback : public Node
 	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
 	
 	// Constructors
-	Feedback(Loop *loop, LoopHead *prev);
-	Feedback(Loop *loop, Feedback *feed_in, Node *prev);
+	Feedback(LoopCond *loop, LoopHead *prev);
+	Feedback(LoopCond *loop, Feedback *feed_in, Node *prev);
 	Feedback(const Feedback *other, std::unordered_map<Node*,Node*> other_to_this);
 
 	// Methods
@@ -41,7 +41,7 @@ struct Feedback : public Node
 	std::string getName() const;
 	std::string signature() const;
 	char classSignature() const;
-	Loop* loop() const;
+	LoopCond* loop() const;
 	Node* prev() const;
 	bool feedIn() const;
 	bool feedOut() const;
@@ -51,7 +51,7 @@ struct Feedback : public Node
 	//const NodeList& nextList() const;
 
 	// Variables
-	Loop *owner_loop;
+	LoopCond *owner_loop;
 	bool in_or_out; //!< true / false --> FeedIn / FeedOut type
 	Feedback *twin; // linked feedback (i.e. feed_in <--> feed_out)
 };

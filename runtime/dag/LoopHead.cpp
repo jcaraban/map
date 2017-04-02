@@ -4,7 +4,7 @@
  */
 
 #include "LoopHead.hpp"
-#include "Loop.hpp"
+#include "LoopCond.hpp"
 #include "../Runtime.hpp"
 #include "../visitor/Visitor.hpp"
 #include <functional>
@@ -24,7 +24,15 @@ bool LoopHead::Key::operator==(const Key& k) const {
 }
 
 std::size_t LoopHead::Hash::operator()(const Key& k) const {
-	return std::hash<Node*>()(k.prev) ^ std::hash<Loop*>()(k.loop);
+	return std::hash<Node*>()(k.prev) ^ std::hash<LoopCond*>()(k.loop);
+}
+
+// LoopHead
+
+//Node* LoopHead::Factory(LoopCond *loop, Node *prev) {
+Node* LoopHead::Factory(Node *prev) {
+	MetaData meta = prev->metadata();
+	return new LoopHead(meta,prev);
 }
 
 Node* LoopHead::clone(std::unordered_map<Node*,Node*> other_to_this) {
@@ -33,35 +41,17 @@ Node* LoopHead::clone(std::unordered_map<Node*,Node*> other_to_this) {
 
 // Constructors
 
-LoopHead::LoopHead(Loop *loop, Node *prev)
-	: Node()
+//LoopHead::LoopHead(const MetaData &meta, LoopCond *loop, Node *prev)
+LoopHead::LoopHead(const MetaData &meta, Node *prev)
+	: Node(meta)
 {
-	id = prev->id;
-	meta = prev->metadata();
+	owner_loop = nullptr; // 'head' knows who its 'loop' is
+	twin_tail = nullptr; // 'head' might have a twin 'tail'
 	
-	owner_loop = loop; // 'head' knows who its 'loop' is
 	prev_list.reserve(1);
 	this->addPrev(prev);
-	
-	// 'next' of 'prev' inside 'cond'+'body' now link to 'head'
-	for (auto next : prev->nextList()) {
-		if (is_included(next,loop->bodyList()) || next==loop->condition()) {
-			this->addNext(next);
-			next->updatePrev(prev,this);
-		}
-	}
-	
-	// 'prev' looses the links into 'cond'+'body'
-	int i = 0;
-	while (i < prev->nextList().size()) {
-		Node *next = prev->nextList()[i++];
-		if (is_included(next,loop->bodyList()) || next==loop->condition()) {
-			prev->removeNext(next);
-			i--;
-		}
-	}
 
-	prev->addNext(this); // finally 'prev' points to 'head'
+	prev->addNext(this);
 }
 
 LoopHead::LoopHead(const LoopHead *other, std::unordered_map<Node*,Node*> other_to_this)
@@ -69,6 +59,12 @@ LoopHead::LoopHead(const LoopHead *other, std::unordered_map<Node*,Node*> other_
 {
 	this->owner_loop = nullptr; // filled later by 'loop', because it does not live yet
 }
+
+LoopHead::~LoopHead() {
+	// Notifies its 'loop' about the deletion
+	remove_value(this,owner_loop->head_list);
+}
+
 
 // Methods
 
@@ -85,7 +81,7 @@ std::string LoopHead::signature() const {
 	return "";
 }
 
-Loop* LoopHead::loop() const {
+LoopCond* LoopHead::loop() const {
 	return owner_loop;
 }
 
