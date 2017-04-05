@@ -2,8 +2,8 @@
  * @file	Lister.cpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * Note: there might be some more performant alternatives to isoprev/next,
- *       but this is the easiest way of handling the cycles caused by Feedback
+ * Note: Im sure there must be some more performant alternatives to isoprev/next,
+ *       but this was the easiest way of handling the cycles caused by back-edges
  */
 
 #include "Lister.hpp"
@@ -51,21 +51,32 @@ void Lister::static_visit(Node *node) {
 		static_visit(forw); // forward nodes depending on this, due to cycles
 	}
 
-	if (all_visited)
+	if (all_visited) // all 'node' dependencies are met and it is added to 'list'
 	{
 		node_list.push_back(node);
 		setVisited(node);
-
+		
 		for (auto iso : isonext[node]) {
-			remove_value(node,isoprev[iso]);
+			//remove_value(node,isoprev[iso]);
+			auto &list = isoprev[iso];
+			assert( std::find(list.begin(),list.end(),node) != list.end() );
+			list.erase(std::remove(list.begin(),list.end(),node),list.end());
+			// @@
 			if (isoprev[iso].empty())
 				static_visit(iso);
 		}
+		isonext.erase(node);
 	}
-	else
+	else // marks 'prev' nodes isolating 'node'
 	{
 		for (auto prev : node->prevList()) {
 			if (not wasVisited(prev)) {
+				// @@
+				auto &list = isonext[prev];
+				if (std::find(list.begin(),list.end(),node) != list.end())
+					continue;
+				assert( std::find(list.begin(),list.end(),node) == list.end() );
+				//
 				isonext[prev].push_back(node);
 				isoprev[node].push_back(prev);
 			}
