@@ -16,15 +16,22 @@ Entry::Entry(cl_mem dev_mem)
 	, block(nullptr)
 	, used(0)
 	, dirty(false)
-	, loading(false)
-	, writing(false)
 { }
 
+void Entry::reset() {
+	host_mem = nullptr;
+	block = nullptr;
+	used = 0;
+	dirty = false;
+}
+
 void Entry::setDirty() {
+	assert(not dirty);
 	dirty = true;
 }
 
 void Entry::unsetDirty() {
+	assert(dirty);
 	dirty = false;	
 }
 
@@ -37,35 +44,12 @@ void Entry::setUsed() {
 }
 
 void Entry::unsetUsed() {
+	assert(used > 0);
 	used--;
 }
 
 bool Entry::isUsed() {
 	return used > 0;
-}
-
-void Entry::setLoading() {
-	loading = true;
-}
-
-void Entry::unsetLoading() {
-	loading = false;
-}
-
-bool Entry::isLoading() {
-	return loading;
-}
-
-void Entry::setWriting() {
-	writing = true;
-}
-
-void Entry::unsetWriting() {
-	writing = false;
-}
-
-bool Entry::isWriting() {
-	return writing;
 }
 
 } } // namespace map::detail

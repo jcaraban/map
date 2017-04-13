@@ -4,12 +4,13 @@
  *
  * TODO: signature() is not really working smooth. A binary+ task could have 4 signatures
  *       depending on the order of nodes. However the kernel does the same in all 4 cases
- * TODO: the constructor of Nodes should be private, so that only Factory calls it
+ * TODO: is 'back'/'forw'List necessary, can we use 'next'/'prev'List only with 'ssa_id' ?
  */
 
 #ifndef MAP_RUNTIME_DAG_NODE_HPP_
 #define MAP_RUNTIME_DAG_NODE_HPP_
 
+#include "../Key.hpp"
 #include "../Pattern.hpp"
 #include "../../file/MetaData.hpp"
 #include "../../file/DataStats.hpp"
@@ -38,8 +39,8 @@ struct Node {
 	Node(const MetaData &meta);
 	virtual ~Node();
   // Clone constructor
-	Node(const Node *other, std::unordered_map<Node*,Node*> other_to_this);
-	virtual Node* clone(std::unordered_map<Node*,Node*> other_to_this) = 0;
+	Node(const Node *other, const std::unordered_map<Node*,Node*> &other_to_this);
+	virtual Node* clone(const std::unordered_map<Node*,Node*> &other_to_this) = 0;
   // Visitor methods
 	virtual void accept(Visitor *visitor) = 0;
 	virtual void acceptPrev(Visitor *visitor);
@@ -80,16 +81,19 @@ struct Node {
 	const BlockSize& blocksize() const;
 	const NumBlock& numblock() const;
 	const DataStats& datastats() const;
+  // Compute
+	virtual void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
+	virtual void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
 
   // Variables
 	static int id_count; // Static counter to give unique ids
 	int id; //!< Unique id of the node
 	int ref; //!< References count
 
-	NodeList prev_list; //!< Prev nodes on which this one depends (data flow)
-	NodeList next_list; //!< Next nodes depending on this one (data flow)
-	NodeList back_list; //!< Back nodes: next nodes looping back (control flow)
-	NodeList forw_list; //!< Forward " : opposite of back nodes (control flow)
+	NodeList prev_list; //!< Prev nodes on which this one depends
+	NodeList next_list; //!< Next nodes depending on this one
+	NodeList back_list; //!< Back nodes: next nodes with lower id (due to a loop)
+	NodeList forw_list; //!< Forward " : prev nodes with higher id (see Merge nodes)
 	MetaData meta; //!< MetaData
 	DataStats stats; //!< DataStats
 	VariantType value; //!< Value of D0 nodes

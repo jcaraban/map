@@ -13,16 +13,16 @@ namespace map { namespace detail {
 
 // Internal declarations
 
-Switch::Key::Key(Switch *node) {
+Switch::Content::Content(Switch *node) {
 	cond = node->cond();
 	prev = node->prev();
 }
 
-bool Switch::Key::operator==(const Key& k) const {
+bool Switch::Content::operator==(const Content& k) const {
 	return (cond==k.cond && prev==k.prev);
 }
 
-std::size_t Switch::Hash::operator()(const Key& k) const {
+std::size_t Switch::Hash::operator()(const Content& k) const {
 	return std::hash<Node*>()(k.cond) ^ std::hash<Node*>()(k.prev);
 }
 
@@ -42,7 +42,7 @@ Node* Switch::Factory(Node *cond, Node *prev) {
 	return new Switch(meta,cond,prev);
 }
 
-Node* Switch::clone(std::unordered_map<Node*,Node*> other_to_this) {
+Node* Switch::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 	return new Switch(this,other_to_this);
 }
 
@@ -52,18 +52,18 @@ Switch::Switch(const MetaData &meta, Node *cond, Node *prev)
 	: Node(meta)
 {
 	prev_list.reserve(2);
-	this->addPrev(cond);
+	this->addPrev(cond); // condition first, closes the loop before moving up
 	this->addPrev(prev);
 	
 	cond->addNext(this);
 	prev->addNext(this);
 }
 
-Switch::Switch(const Switch *other, std::unordered_map<Node*,Node*> other_to_this)
+Switch::Switch(const Switch *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 {
-	//this-next_true =  ? ;
-	//this-next_false =  ? ;
+	this->next_true = other->next_true;
+	this->next_false = other->next_false;
 }
 
 // Methods
@@ -92,12 +92,54 @@ Node* Switch::prev() const {
 	return prev_list[1];
 }
 
-const NodeList& Switch::nextList(bool true_false) const {
-	return true_false ? next_true : next_false;
+const NodeList& Switch::trueList() const {
+	assert(next_true.size() + next_false.size() == next_list.size());
+	return next_true;
+}
+
+const NodeList& Switch::falseList() const {
+	assert(next_true.size() + next_false.size() == next_list.size());
+	return next_false;
+}
+
+void Switch::addTrue(Node *node) {
+	auto it = std::find(next_list.begin(),next_list.end(),node);
+	assert(it != next_list.end());
+	it = std::find(next_false.begin(),next_false.end(),node);
+	assert(it == next_false.end());
+
+	next_true.push_back(node);
+}
+
+void Switch::addFalse(Node *node) {
+	auto it = std::find(next_list.begin(),next_list.end(),node);
+	assert(it != next_list.end());
+	it = std::find(next_true.begin(),next_true.end(),node);
+	assert(it == next_true.end());
+
+	next_false.push_back(node);
 }
 
 Pattern Switch::pattern() const {
 	return SWITCH;
+}
+
+// Compute 
+
+void Switch::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
+	assert(numdim() == D0);
+	Coord coord = {0,0};
+	auto *node = this;
+
+	auto pval = hash.find({node->prev(),coord})->second;
+	hash[{node,coord}] = pval;
+}
+
+void Switch::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
+	auto *node = this;
+
+	auto prev = hash.find({node->prev(),coord})->second;
+	hash[{node,coord}] = {prev.value,prev.fixed};
 }
 
 } } // namespace map::detail

@@ -36,6 +36,7 @@ NodeList left_join(const NodeList &lhs, const NodeList &rhs);
 
 template <typename T>
 void remove_value(const T *value, std::vector<T*> &list) {
+	assert( std::find(list.begin(),list.end(),value) != list.end() );
 	list.erase(std::remove(list.begin(),list.end(),value),list.end());
 }
 

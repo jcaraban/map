@@ -10,13 +10,13 @@
 namespace map { namespace detail {
 
 template <typename T>
-void SimplifierOnline::helper(T *node, std::unordered_map<typename T::Key,T*,typename T::Hash> &map) {
-	typename T::Key key(node);
+void SimplifierOnline::helper(T *node, std::unordered_map<typename T::Content,T*,typename T::Hash> &map) {
+	typename T::Content key(node);
 	auto i = map.find(key);
 	if (i == map.end()) // No other similar Node found
 	{
 		// Keeps track of the node in a std:map structure
-		map.insert( std::pair<typename T::Key,T*>(key,node) );
+		map.insert( std::pair<typename T::Content,T*>(key,node) );
 
 		// This is the first node, therefore the original
 		orig = node;
@@ -39,8 +39,8 @@ void SimplifierOnline::helper(T *node, std::unordered_map<typename T::Key,T*,typ
 }
 
 template <typename T>
-void SimplifierOnline::drop_helper(T *node, std::unordered_map<typename T::Key,T*,typename T::Hash> &map) {
-	typename T::Key key(node);
+void SimplifierOnline::drop_helper(T *node, std::unordered_map<typename T::Content,T*,typename T::Hash> &map) {
+	typename T::Content key(node);
 	map.erase(key); // @ reconsider the whole 'drop' idea
 }
 

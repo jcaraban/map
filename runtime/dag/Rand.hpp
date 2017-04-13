@@ -16,32 +16,35 @@ namespace map { namespace detail {
 struct Rand : public Node
 {
 	// Internal declarations
-	struct Key {
-		Key(Rand *node);
-		bool operator==(const Key& k) const;
+	struct Content {
+		Content(Rand *node);
+		bool operator==(const Content& k) const;
 		Node *seed;
-		// Should Key be defined by more things? e.g. num dim, mem order, data size
+		// Should Content be defined by more things? e.g. num dim, mem order, data size
 	};
 	struct Hash {
-		std::size_t operator()(const Key& k) const;
+		std::size_t operator()(const Content& k) const;
 	};
 
 	// Factory
 	static Node* Factory(Node *seed, DataType dt, MemOrder mo);
-	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
+	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
 	Rand(const MetaData &meta, Node *seed);
-	Rand(const Rand *other, std::unordered_map<Node*,Node*> other_to_this);
+	Rand(const Rand *other, const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;
 	char classSignature() const;
-	//Node*& seed();
 	Node* seed() const;
 	Pattern pattern() const { return LOCAL; }
+	
+	// Compute
+	void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
+	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
 
 	// Variables
 };

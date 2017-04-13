@@ -12,17 +12,17 @@ namespace map { namespace detail {
 
 // Internal declarations
 
-SpreadScan::Key::Key(SpreadScan *node) {
+SpreadScan::Content::Content(SpreadScan *node) {
 	prev = node->prev();
 	dir = node->dir();
 	type = node->type;
 }
 
-bool SpreadScan::Key::operator==(const Key& k) const {
+bool SpreadScan::Content::operator==(const Content& k) const {
 	return (prev==k.prev && dir==k.dir && type==k.type);
 }
 
-std::size_t SpreadScan::Hash::operator()(const Key& k) const {
+std::size_t SpreadScan::Hash::operator()(const Content& k) const {
 	return std::hash<Node*>()(k.prev) ^ std::hash<Node*>()(k.dir) ^ std::hash<int>()(k.type.get());
 }
 
@@ -44,7 +44,7 @@ Node* SpreadScan::Factory(Node *prev, Node *dir, ReductionType type) {
 	return new SpreadScan(meta,prev,dir,type);
 }
 
-Node* SpreadScan::clone(std::unordered_map<Node*,Node*> other_to_this) {
+Node* SpreadScan::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 	return new SpreadScan(this,other_to_this);
 }
 
@@ -77,7 +77,7 @@ SpreadScan::SpreadScan(const MetaData &meta, Node *prev, Node *dir, ReductionTyp
 	stable->addNext(this);
 }
 
-SpreadScan::SpreadScan(const SpreadScan *other, std::unordered_map<Node*,Node*> other_to_this)
+SpreadScan::SpreadScan(const SpreadScan *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 {
 	this->type = other->type;
@@ -103,45 +103,27 @@ std::string SpreadScan::signature() const {
 	sign += type.toString();
 	return sign;
 }
-/*
-Node*& SpreadScan::prev() {
-	return prev_list[0];
-}
-*/
+
 Node* SpreadScan::prev() const {
 	return prev_list[0];
 }
-/*
-Node*& SpreadScan::dir() {
-	return prev_list[1]; // second element
-}
-*/
+
 Node* SpreadScan::dir() const {
 	return prev_list[1]; // second element
 }
-/*
-Node*& SpreadScan::spread() {
-	return prev_list[2]; // third element
-}
-*/
+
 Node* SpreadScan::spread() const {
 	return prev_list[2]; // third element
 }
-/*
-Node*& SpreadScan::buffer() {
-	return prev_list[3]; // 4th element
-}
-*/
+
 Node* SpreadScan::buffer() const {
 	return prev_list[3]; // 4th element
 }
-/*
-Node*& SpreadScan::stable() {
-	return prev_list[4]; // 5th element
-}
-*/
+
 Node* SpreadScan::stable() const {
 	return prev_list[4]; // 5th element
 }
+
+// Compute
 
 } } // namespace map::detail

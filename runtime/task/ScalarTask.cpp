@@ -14,6 +14,11 @@ namespace map { namespace detail {
 ScalarTask::ScalarTask(Group *group)
 	: Task(group)
 {
+	for (auto in : inputList())
+		assert(in->numdim() == D0);
+	for (auto out : outputList())
+		assert(out->numdim() == D0);
+
 	createVersions();
 }
 
@@ -22,21 +27,25 @@ void ScalarTask::createVersions() {
 }
 
 void ScalarTask::blocksToLoad(Coord coord, InKeyList &in_keys) const {
-	// @ Does the same than Task::
+	Task::blocksToLoad(coord,in_keys);
+	/* // @ Does the same than Task::
 	in_keys.clear();
 	for (auto in_node : inputList())
 		in_keys.push_back( std::make_tuple(Key(in_node,coord),HOLD_1) );
+	*/
 }
 
 void ScalarTask::blocksToStore(Coord coord, OutKeyList &out_keys) const {
-	// @ Only difference with Task:: is the 0 dependencies
+	Task::blocksToStore(coord,out_keys);
+	/* // @ Only difference with Task:: is the 0 dependencies
 	out_keys.clear();
 	for (auto out_node : outputList())
 		out_keys.push_back( std::make_tuple(Key(out_node,coord),HOLD_1,0) );
+	*/
 }
 
 void ScalarTask::initialJobs(std::vector<Job> &job_vec) {
-	job_vec.push_back( Job(this,Coord{0,0}) ); // Pushes 1 single job
+	job_vec.push_back( Job(this,Coord()) ); // Pushes 1 single job
 }
 
 void ScalarTask::selfJobs(Job done_job, std::vector<Job> &job_vec) {
@@ -44,10 +53,8 @@ void ScalarTask::selfJobs(Job done_job, std::vector<Job> &job_vec) {
 }
 
 void ScalarTask::nextJobs(Key done_block, std::vector<Job> &job_vec) {
-	std::lock_guard<std::mutex> lock(mtx); // thread-safe
-	if (--prev_jobs_count == 0)
-		job_vec.push_back( Job(this,Coord{0,0}) ); // Pushes 1 single job
-	assert(prev_jobs_count >= 0);
+	assert(done_block.node->numdim() == D0); // prev must be D0
+	notify(Coord(),job_vec);
 }
 
 int ScalarTask::prevInterDepends(Node *node, Coord coord) const {
@@ -67,127 +74,42 @@ int ScalarTask::nextIntraDepends(Node *node, Coord coord) const {
 }
 
 void ScalarTask::compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
-	assert(out_blk.size() == 1);
+	assert(in_blk.size() == inputList().size());
+	assert(out_blk.size() == outputList().size());
+	
+	coord = {0,0};
 
-	this->in_blk = in_blk;
-	this->out_blk = out_blk;
+	// Checking inputs, @ not necesary ?
+	for (int i=0; i<in_blk.size(); i++) {
+		Node *node = inputList()[i];
+		Block *blk = in_blk[i];
 
-	// Goes up, node by node, starting backward, computing the scalar values
-	for (auto i=outputList().rbegin(); i!=outputList().rend(); i++)
-		(*i)->accept(this);
-}
+		assert(node == blk->key.node);		
+		//assert(node->value.datatype() != NONE_DATATYPE);
+		//assert(node->value == blk->value);
 
-/*********
-   Visit
- *********/
-// @
-bool ScalarTask::is_input(Node *node) {
-	if (is_included(node,group()->inputList())) {
-		// Visited as INPUT
-		auto it = std::find_if(in_blk.begin(),in_blk.end(),[&](Block *blk){ return blk->key.node == node; });
-		assert(it != in_blk.end());
-		variant = (*it)->value;
-		return true;
+		//node->value = blk->value;
+		hash[{node,coord}] = blk->value;
 	}
-	return false;
-}
-// @
-bool ScalarTask::is_output(Node *node) {
-	if (is_included(node,group()->outputList())) {
-		// Visited as OUTPUT
-		auto it = std::find_if(out_blk.begin(),out_blk.end(),[&](Block *blk){ return blk->key.node == node; });
-		assert(it != out_blk.end());
-		(*it)->value = variant;
-		return true;
+	
+	// Actual scalar computation, in forward order
+	for (auto node : nodeList()) {
+		node->computeScalar(hash);
+		node->value = hash.find({node,coord})->second;
 	}
-	return false;
-}
+	
+	// Checking outputs, @ not necesary ?
+	for (int i=0; i<out_blk.size(); i++) {
+		Node *node = outputList()[i];
+		Block *blk = out_blk[i];
 
-void ScalarTask::visit(Constant *node) {
-	if (is_input(node)) return;
+		assert(node == blk->key.node);
+		//assert(node->value.datatype() != NONE_DATATYPE);
+		//assert(blk->value.datatype() == NONE_DATATYPE);
 
-	variant = node->cnst;
-
-	node->value = variant;
-	is_output(node);
-}
-
-void ScalarTask::visit(Cast *node) {
-	if (is_input(node)) return;
-
-	node->prev()->accept(this);
-	auto prev = variant;
-	variant = prev.convert(node->type);
-
-	node->value = variant;
-	is_output(node);
-}
-
-void ScalarTask::visit(Unary *node) {
-	if (is_input(node)) return;
-
-	node->prev()->accept(this);
-	auto prev = variant;
-	variant = node->type.apply(prev);
-
-	node->value = variant;
-	is_output(node);
-}
-
-void ScalarTask::visit(Binary *node) {
-	if (is_input(node)) return;
-
-	node->left()->accept(this);
-	auto left = variant;
-	node->right()->accept(this);
-	auto right = variant;
-	variant = node->type.apply(left,right);
-
-	node->value = variant;
-	is_output(node);
-}
-
-void ScalarTask::visit(Conditional *node) {
-	if (is_input(node)) return;
-
-	node->cond()->accept(this);
-	auto cond = variant;
-	node->left()->accept(this);
-	auto left = variant;
-	node->right()->accept(this);
-	auto right = variant;
-	variant = ( cond.convert(B8).get<B8>() ) ? left : right;
-
-	node->value = variant;
-	is_output(node);
-}
-
-void ScalarTask::visit(Diversity *node) {
-	if (is_input(node)) return;
-
-	std::vector<VariantType> varvec;
-	for (auto prev : node->prevList()) {
-		prev->accept(this);
-		varvec.push_back(variant);
+		//blk->value = node->value;
+		blk->value = hash.find({node,coord})->second;
 	}
-	variant = node->type.apply(varvec);
-
-	node->value = variant;
-	is_output(node);
-}
-
-void ScalarTask::visit(Scalar *node) {
-	if (is_input(node)) return;
-
-	node->prev()->accept(this);
-
-	node->Node::value = variant;
-	is_output(node);
-}
-
-void ScalarTask::visit(ZonalReduc *node) {
-	if (is_input(node)) return;
-	assert(0);
 }
 
 } } // namespace map::detail

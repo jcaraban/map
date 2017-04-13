@@ -16,23 +16,23 @@ namespace map { namespace detail {
 struct Diversity : public Node
 {
 	// Internal declarations
-	struct Key {
-		Key(Diversity *node);
-		bool operator==(const Key& k) const;
+	struct Content {
+		Content(Diversity *node);
+		bool operator==(const Content& k) const;
 		NodeList prev_list;
 		DiversityType type;
 	};
 	struct Hash {
-		std::size_t operator()(const Key& k) const;
+		std::size_t operator()(const Content& k) const;
 	};
 
 	// Factory
 	static Node* Factory(NodeList prev_list, DiversityType type);
-	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
+	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
 	Diversity(const MetaData &meta, NodeList prev_list, DiversityType type);
-	Diversity(const Diversity *other, std::unordered_map<Node*,Node*> other_to_this);
+	Diversity(const Diversity *other, const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);
@@ -42,6 +42,9 @@ struct Diversity : public Node
 	Node*& prev(int i);
 	const Node* prev(int i) const;
 	Pattern pattern() const { return LOCAL; }
+
+	void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
+	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
 
 	// Variables
 	DiversityType type; //!< Enum corresponding to the diversity type (Variety, Majority, Minority)

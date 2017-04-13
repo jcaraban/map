@@ -20,7 +20,7 @@ struct Config {
 	const bool code_fusion = true; // Activates fusion
 	const bool inmem_cache = true; // Activates in-memory caching
 	const bool compil_cache = true; // Activates compilation cache
-	const bool prediction = true; // Activates predicton
+	const bool prediction = false; // Activates predicton
 
 	// Max
 	const int max_num_machines = 1;

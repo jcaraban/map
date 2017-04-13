@@ -3,8 +3,6 @@
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  * Bridge functions for Python to interact with C++
- *
- * TODO: VariantType / Array4 are passed as pointers while they don't meet the POD / Aggregate constrains
  */
 
 #ifndef MAP_FRONT_BINDINGS_HPP_

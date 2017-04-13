@@ -4,7 +4,8 @@
  *
  * Task base class
  *
- * TODO: GPU shared memory should be dynamically allocated
+ * TODO: TASK UNIFICATION
+ * TODO: selfJobs() should take a 'Key done_block', but atm it is only used for Radial and is ok
  */
 
 #ifndef MAP_RUNTIME_TASK_HPP_
@@ -61,6 +62,8 @@ struct Task
 	const NodeList& outputList() const;
 	const TaskList& prevList() const;
 	const TaskList& nextList() const;
+	const TaskList& backList() const;
+	const TaskList& forwList() const;
 	bool isPrev(const Task *task) const; // @ unnecessary?
 	bool isNext(const Task *task) const; // @ unnecessary?
 
@@ -105,6 +108,8 @@ struct Task
 	
 	TaskList prev_list; //!< Prev tasks on which this one depends
 	TaskList next_list; //!< Next tasks depending on this one
+	TaskList back_list; //!< Back tasks 
+	TaskList forw_list; //!< Forward tasks 
 
 	VersionList ver_list; //!< List of versions required by the task
 	

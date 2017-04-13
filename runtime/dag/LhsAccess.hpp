@@ -18,32 +18,30 @@ namespace map { namespace detail {
 struct LhsAccess : public Node
 {
 	// Internal declarations
-	struct Key {
-		Key(LhsAccess *node);
-		bool operator==(const Key& k) const;
+	struct Content {
+		Content(LhsAccess *node);
+		bool operator==(const Content& k) const;
 		Node *lprev, *rprev;
 		Coord coord;
 	};
 	struct Hash {
-		std::size_t operator()(const Key& k) const;
+		std::size_t operator()(const Content& k) const;
 	};
 
 	// Factory
 	static Node* Factory(Node *lhs, Node *rhs, const Coord &coord);
-	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
+	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
 	LhsAccess(const MetaData &meta, Node *lprev, Node *rprev, const Coord &coord);
-	LhsAccess(const LhsAccess *other, std::unordered_map<Node*,Node*> other_to_this);
+	LhsAccess(const LhsAccess *other, const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;
 	char classSignature() const;
-	//Node*& left();
 	Node* left() const;
-	//Node*& right();
 	Node* right() const;
 	Coord coord() const;
 	Pattern pattern() const { return LOCAL; }

@@ -19,11 +19,11 @@ enum LoopMode { NORMAL_MODE, LOOP_START, LOOP_BODY, LOOP_AGAIN };
 
 struct LoopStruct {
 	NodeList prev; //!< Previous existing nodes used in the loop
-	NodeList cond; //!< Nodes expressing the halt condition
+	NodeList cond; //!< Nodes computing the halt condition
 	NodeList body; //!< Nodes composing the main loop body
-	NodeList again; //!< Again the body, to find feedbacks
-	NodeList feed_in; //!< Nodes that feedback into body (input side)
-	NodeList feed_out; //!< (output side), repeteadly swap with (feed_in)
+	NodeList again; //!< Again the body, to find circulating nodes
+	NodeList circ_in; //!< Nodes whose data circulates in the loop (input side, € 'prev'),
+	NodeList circ_out; //!< (output side, € 'body'), the 'circ' lists match in size and order
 	
 	LoopCond *loop;
 	HeadList head; //!< Head nodes created by Loop

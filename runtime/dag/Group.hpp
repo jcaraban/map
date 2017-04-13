@@ -37,6 +37,8 @@ struct Group {
 	const NodeList& outputList() const;
 	const GroupList& prevList() const;
 	const GroupList& nextList() const;
+	const GroupList& backList() const;
+	const GroupList& forwList() const;
 
 	NumDim numdim() const;
 	const DataSize& datasize() const;
@@ -63,6 +65,11 @@ struct Group {
 	void removeNext(Group *group);
 	bool isNext(const Group *group) const;
 
+	void addBack(Group *group, Pattern pattern=NONE_PAT); // @
+	void removeBack(Group *group);
+	void addForw(Group *group, Pattern pattern=NONE_PAT); // @
+	void removeForw(Group *group);
+
 	void updateAttributes() const;
 	void updatePrevious() const;
 
@@ -88,6 +95,8 @@ struct Group {
 	
 	GroupList prev_list; //!< List of prev groups, whose nodes the nodes on this group depends on
 	GroupList next_list; //!< List of next groups, whose nodes depend on the nodes of this group
+	GroupList back_list; //!< List of back groups
+	GroupList forw_list; //!< List of forward groups
 	
 	PatternList prev_pat; //!< Patterns of the respective prev groups as this group sees them (i.e. only considering the related nodes)
 	PatternList next_pat; //!< 	"		"		"		" next groups 	"		"		"		"		"		"	

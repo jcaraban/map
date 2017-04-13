@@ -5,6 +5,8 @@
 
 #include "VariantType.hpp"
 #include <functional>
+#include <limits>
+#include <cmath>
 #include <cassert>
 
 
@@ -12,17 +14,17 @@ namespace map { namespace detail {
 
 VariantType::VariantType() : type() { var.f64 = 0.0; }
 VariantType::VariantType(VariantUnion var, DataType type) : var(var), type(type) { }
-VariantType::VariantType( Ctype<F32> val ) : type(F32) { get<F32>() = val; }
-VariantType::VariantType( Ctype<F64> val ) : type(F64) { get<F64>() = val; }
-VariantType::VariantType( Ctype<B8 > val ) : type(B8 ) { get<B8 >() = val; }
-VariantType::VariantType( Ctype<U8 > val ) : type(U8 ) { get<U8 >() = val; }
-VariantType::VariantType( Ctype<U16> val ) : type(U16) { get<U16>() = val; }
-VariantType::VariantType( Ctype<U32> val ) : type(U32) { get<U32>() = val; }
-VariantType::VariantType( Ctype<U64> val ) : type(U64) { get<U64>() = val; }
-VariantType::VariantType( Ctype<S8 > val ) : type(S8 ) { get<S8 >() = val; }
-VariantType::VariantType( Ctype<S16> val ) : type(S16) { get<S16>() = val; }
-VariantType::VariantType( Ctype<S32> val ) : type(S32) { get<S32>() = val; }
-VariantType::VariantType( Ctype<S64> val ) : type(S64) { get<S64>() = val; }
+VariantType::VariantType( Ctype<F32> val ) : type(F32) { ref<F32>() = val; }
+VariantType::VariantType( Ctype<F64> val ) : type(F64) { ref<F64>() = val; }
+VariantType::VariantType( Ctype<B8 > val ) : type(B8 ) { ref<B8 >() = val; }
+VariantType::VariantType( Ctype<U8 > val ) : type(U8 ) { ref<U8 >() = val; }
+VariantType::VariantType( Ctype<U16> val ) : type(U16) { ref<U16>() = val; }
+VariantType::VariantType( Ctype<U32> val ) : type(U32) { ref<U32>() = val; }
+VariantType::VariantType( Ctype<U64> val ) : type(U64) { ref<U64>() = val; }
+VariantType::VariantType( Ctype<S8 > val ) : type(S8 ) { ref<S8 >() = val; }
+VariantType::VariantType( Ctype<S16> val ) : type(S16) { ref<S16>() = val; }
+VariantType::VariantType( Ctype<S32> val ) : type(S32) { ref<S32>() = val; }
+VariantType::VariantType( Ctype<S64> val ) : type(S64) { ref<S64>() = val; }
 VariantType::VariantType( Ctype<F32> val, DataType dt) { set(val,dt); }
 VariantType::VariantType( Ctype<F64> val, DataType dt) { set(val,dt); }
 VariantType::VariantType( Ctype<B8 > val, DataType dt) { set(val,dt); }
@@ -45,8 +47,20 @@ bool VariantType::isEqual(VariantType other) const {
 	if (this->type != other.type)
 		return false;
 	switch (type.get()) {
-		case F32 : return get<F32>() == other.get<F32>();
-		case F64 : return get<F64>() == other.get<F64>();
+		case F32 :
+		{
+			Ctype<F32> a = this->get<F32>();
+			Ctype<F32> b = other.get<F32>();
+			Ctype<F32> eps = std::numeric_limits<Ctype<F32>>::epsilon() * 2;
+			return (std::abs(a - b) <= eps * std::max(std::abs(a),std::abs(b)));
+		}
+		case F64 :
+		{
+			Ctype<F64> a = this->get<F64>();
+			Ctype<F64> b = other.get<F64>();
+			Ctype<F64> eps = std::numeric_limits<Ctype<F64>>::epsilon() * 2;
+			return (std::abs(a - b) <= eps * std::max(std::abs(a),std::abs(b)));
+		}
 		case B8  : return get<B8 >() == other.get<B8 >();
 		case U8  : return get<U8 >() == other.get<U8 >();
 		case U16 : return get<U16>() == other.get<U16>();
@@ -103,29 +117,39 @@ std::string VariantType::toString() const {
 	}
 }
 
-VariantType& VariantType::convert(DataType dt) {
+VariantType VariantType::convert(DataType dt) {
 	switch (type.get()) {
-		case F32 : return set(get<F32>(),dt);
-		case F64 : return set(get<F64>(),dt);
-		case B8  : return set(get<B8 >(),dt);
-		case U8  : return set(get<U8 >(),dt);
-		case U16 : return set(get<U16>(),dt);
-		case U32 : return set(get<U32>(),dt);
-		case U64 : return set(get<U64>(),dt);
-		case S8  : return set(get<S8 >(),dt);
-		case S16 : return set(get<S16>(),dt);
-		case S32 : return set(get<S32>(),dt);
-		case S64 : return set(get<S64>(),dt);
+		case F32 : set(get<F32>(),dt); return *this;
+		case F64 : set(get<F64>(),dt); return *this;
+		case B8  : set(get<B8 >(),dt); return *this;
+		case U8  : set(get<U8 >(),dt); return *this;
+		case U16 : set(get<U16>(),dt); return *this;
+		case U32 : set(get<U32>(),dt); return *this;
+		case U64 : set(get<U64>(),dt); return *this;
+		case S8  : set(get<S8 >(),dt); return *this;
+		case S16 : set(get<S16>(),dt); return *this;
+		case S32 : set(get<S32>(),dt); return *this;
+		case S64 : set(get<S64>(),dt); return *this;
 		default: assert(0);
 	}
 }
 
-VariantUnion& VariantType::get() {
+VariantUnion& VariantType::ref() {
 	return var;
 }
 
-const VariantUnion& VariantType::get() const {
+VariantUnion VariantType::get() const {
 	return var;
+}
+
+void VariantType::set(VariantUnion var, DataType dt) {
+	//this->var = var;
+	//return *this;
+	assert(0); // not sure about this function
+}
+
+bool VariantType::isNone() const {
+	return type == NONE_DATATYPE;
 }
 
 bool VariantType::isZero() const {

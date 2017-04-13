@@ -16,22 +16,22 @@ namespace map { namespace detail {
 struct Index : public Node
 {
 	// Internal declarations
-	struct Key {
-		Key(Index *node);
-		bool operator==(const Key& k) const;
+	struct Content {
+		Content(Index *node);
+		bool operator==(const Content& k) const;
 		NumDim dim;
 	};
 	struct Hash {
-		std::size_t operator()(const Key& k) const;
+		std::size_t operator()(const Content& k) const;
 	};
 
 	// Factory
 	static Node* Factory(DataSize ds, NumDim dim, MemOrder mo, BlockSize bs);
-	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
+	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
 	Index(const MetaData &meta, NumDim dim);
-	Index(const Index *other, std::unordered_map<Node*,Node*> other_to_this);
+	Index(const Index *other, const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);
@@ -39,6 +39,10 @@ struct Index : public Node
 	std::string signature() const;
 	char classSignature() const;
 	Pattern pattern() const { return FREE; }
+	
+	// Compute
+	void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
+	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
 
 	// Variables
 	NumDim dim;

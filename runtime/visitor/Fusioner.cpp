@@ -6,7 +6,7 @@
  * Note: pipeFusing groups does not accurately reflect the pattern than one group sees of another (notebook)
  * Note: sorting has to go after linking or will break Radiating (out cl_mem arguments are moved if sorted)
  *
- * TODO: what about going bottom-up in inversed id order?
+ * TODO: revise Bottom-Up approach. What about overlapping groups?
  */
 
 #include "Fusioner.hpp"
@@ -35,20 +35,28 @@ void Fusioner::fuse(NodeList list) {
 	TimedRegion region(Runtime::getClock(),FUSION);
 	clear();
 
-	// Goes down, creating groups and fusing nodes
+	// ## 1st fusion stage ## fuse gently, w/o compromises
 
-	for (auto node : list) { // Creates groups and pipe-fuses gently ## 1st fusion stage ##
+	for (auto node : list) { // Creates groups and pipe-fuses gently 
 		process(node);
 		pipeGently(node);
 	}
 
 //print(); // @
 
-	for (auto node : list) { // Flat-fuses gently ## still 1st stage ##
+	for (auto node : list) { // Flat-fuses gently
 		flatGently(node);
 	}
 
 //print(); // @
+
+	for (auto node : list) {
+		processLoop(node); // Fuses loop head and tail nodes
+	}
+
+//print(); // @
+
+	// ## 2nd fusion stage ## fuse greedy, more aggresively
 
 	for (auto it=list.rbegin(); it!=list.rend(); it++) {
 		assert(group_list_of[*it].size() == 1);
@@ -57,11 +65,13 @@ void Fusioner::fuse(NodeList list) {
 
 //print(); // @
 
-	for (auto node : list) {
-		processLoop(node); // Fuses the loop related nodes into a head and tail groups ##
+	for (auto it=list.rbegin(); it!=list.rend(); it++) {		
+		process(group_list_of[*it].front()); // flat-fuse
 	}
 
 //print(); // @
+
+	// ## 3rd fusion stage ## forwards D0-FREE, links dependent groups, sorts
 
 	auto free = [](Node *n){ return n->pattern()==FREE; };
 	forwarding(free); // Replicates lonely free nodes ## 3rd fusion tage ##
@@ -160,6 +170,18 @@ Group* Fusioner::pipeFuseGroup(Group *&top, Group *&bot) {
 		next->removePrev(bot);
 	}
 
+	for (auto back : bot->backList()) { // @@
+		back->addForw(top);
+		top->addBack(back);
+		back->removeForw(bot);
+	}
+
+	for (auto forw : bot->forwList()) { // @@
+		forw->addBack(top);
+		top->addForw(forw);
+		forw->removeBack(bot);
+	}
+
 	// No need to touch 'top' next-groups
 
 	// Updates 'top' prev-groups with 'bot' pattern
@@ -233,6 +255,18 @@ Group* Fusioner::flatFuseGroup(Group *&left, Group *&right) {
 		next->removePrev(right);
 	}
 
+	for (auto back : right->backList()) { // @@
+		back->addForw(left);
+		left->addBack(back);
+		back->removeForw(right);
+	}
+
+	for (auto forw : right->forwList()) { // @@
+		forw->addBack(left);
+		left->addForw(forw);
+		forw->removeBack(right);
+	}
+
 	// flat-fuses 'left' with 'right' pattern
 	left->pattern() += right->pattern();
 
@@ -301,6 +335,18 @@ Group* Fusioner::freeFuseGroup(Group *&one, Group *&other) {
 		next->removePrev(other);
 	}
 
+	for (auto back : other->backList()) { // @@
+		back->addForw(one);
+		one->addBack(back);
+		back->removeForw(other);
+	}
+
+	for (auto forw : other->forwList()) { // @@
+		forw->addBack(one);
+		one->addForw(forw);
+		forw->removeBack(other);
+	}
+
 	// Updates 'one' prev-groups with 'other' pattern
 	if (is_included(other,one->nextList())) {
 		for (auto prev : one->prevList()) {
@@ -340,6 +386,12 @@ void Fusioner::process(Node *node) {
 		Group *prev_group = group_list_of[prev].front(); // Nodes have max. 1 group at this point
 		prev_group->addNext(new_group,new_group->pattern()); // Giving the pattern this way works because
 		new_group->addPrev(prev_group,prev_group->pattern()); // only LOCAL / FREE patters are fused now
+	}
+
+	for (auto back : node->backList()) { // @@
+		Group *back_group = group_list_of[back].front();
+		back_group->addForw(new_group);
+		new_group->addBack(back_group);
 	}
 }
 
@@ -400,6 +452,9 @@ void Fusioner::process(Group *group) {
 	if (!Runtime::getConfig().code_fusion)
 		return;
 
+	if (group->pattern().is(MERGE))
+		return; // 'next' of merge must not flat-fuse
+
 	//// Flat-fusion
 	int i = 0;
 	while (i < group->nextList().size())
@@ -443,7 +498,7 @@ void Fusioner::processBU(Group *group) { // @
 	{
 		Group *bot = group;
 		Group *top = group->prevList()[i++];
-		bool d0dn = not (top->pattern() != FREE && top->numdim() == D0 && bot->numdim() != D0);
+		bool d0dn = not (top->pattern().isNot(MERGE) && top->pattern() != FREE && top->numdim() == D0 && bot->numdim() != D0);
 
 		if (d0dn && canPipeFuse(top,bot)) {
 			group = pipeFuseGroup(top,bot);
@@ -467,29 +522,16 @@ void Fusioner::processLoop(Node *node) {
 	if (node->pattern().isNot(HEAD) && node->pattern().isNot(TAIL))
 		return; // Only spread nodes
 
-	bool head = false, tail = false;
 	Node *mark = nullptr; // marks the group to fuse with
 
-	if (auto cast = dynamic_cast<LoopCond*>(node)) {
-		head = true;
-		mark = cast;
-	} else if (auto cast = dynamic_cast<LoopHead*>(node)) {
-		head = true;
-		mark = cast->loop();
-	} else if (auto cast = dynamic_cast<Merge*>(node)) {	
-		head = true;
-		//mark = cast->cond();
-	} else if (auto cast = dynamic_cast<Switch*>(node)) {	
-		head = true;
-		//mark = cast->cond();
+	if (auto cast = dynamic_cast<LoopHead*>(node)) {
+		mark = cast->loop()->headList()[0];
 	} else if (auto cast = dynamic_cast<LoopTail*>(node)) {
-		tail = true;
-		mark = cast->loop();
+		mark = cast->loop()->tailList()[0];
 	} else {
 		assert(0);
 	}		
 		
-	assert(head xor tail);
 	assert(group_list_of.find(node)->second.size() == 1);
 	assert(group_list_of.find(mark)->second.size() == 1);
 
@@ -561,21 +603,20 @@ void Fusioner::forwarding(std::function<bool(Node*)> for_pred) {
 
 void Fusioner::linking() {
 	// For group, node, next-node, next-group: if node !€ in next-group, node becomes in/out-node
+	auto next_back_list_of = [&](Node *node) { return full_join(node->nextList(),node->backList()); };
 
 	for (auto &i : group_list) { // For every 'group' in group_list...
 		Group *group = i.get();
 		//assert(!group->nodeList().empty());
 
-		for (auto &node : group->nodeList()) { // For every 'node' in 'group'
-			//assert(!node->nextList().empty());
-
-			for (auto next_node : node->nextList()) { // For every 'next-node' of 'node'
-				//assert(!next_node->groupList().empty() || next_node->isOutput());
-
-				for (auto next_group : group_list_of[next_node]) { // For every group (aka 'next-group') of 'next-node'
-					//assert(!next_group->nodeList().empty());
-					
-					if (!is_included(node,next_group->nodeList())) { // If 'node' is not included in 'next-group'
+		for (auto &node : group->nodeList()) // For every 'node' in 'group'
+		{
+			for (auto next_node : next_back_list_of(node)) // For every 'next'/'back' of 'node'
+			{
+				for (auto next_group : group_list_of[next_node]) // For every group (aka 'next-group') of 'next-node'
+				{
+					if (!is_included(node,next_group->nodeList())) // If 'node' is not included in 'next-group'
+					{
 						group->addOutputNode(node); // 'node' becomes an output of its 'group'
 						next_group->addInputNode(node); // 'next_group's accept 'node' as an input
 					}
@@ -628,7 +669,7 @@ void Fusioner::sorting() {
 
 	// Topological sort of group_list, in order of dependencies and last-node id
 	auto less = [](const std::unique_ptr<Group> &a, const std::unique_ptr<Group> &b){
-		return a->isNext(b.get()) ? true : a->isPrev(b.get()) ? false : a->nodeList().back()->id < b->nodeList().back()->id;
+		return a->isNext(b.get()) ? true : a->isPrev(b.get()) ? false : a->nodeList().front()->id < b->nodeList().front()->id;
 	};
 	std::sort(group_list.begin(),group_list.end(),less);
 	
@@ -639,31 +680,6 @@ void Fusioner::sorting() {
 
 	// @ It would be good to sort the group prev_list and next_list,
 	// but prev_pat and next_pat must be ordered accordingly
-	
-	/*
-	sorted_group_list.clear();
-	visited.clear();
-	for (auto &g : group_list)
-		toposort(g.get());
-	std::reverse(sorted_group_list.begin(),sorted_group_list.end());
-	*/
-	
-	/*
-	// Sorts the original 'group_list' by id
-	auto cmp = [](const std::unique_ptr<Group> &a, const std::unique_ptr<Group> &b){ return a->id < b->id; };
-	std::sort(group_list.begin(),group_list.end(),cmp);
-	*/
-}
-
-void Fusioner::toposort(Group *group) {
-	if (visited.find(group) != visited.end())
-		return;
-	visited.insert(group);
-
-	for (auto next : group->nextList())
-		toposort(next);
-
-	sorted_group_list.push_back(group);
 }
 
 void Fusioner::print() {
@@ -683,6 +699,12 @@ void Fusioner::print() {
 		std::cout << "  next:" << std::endl;
 		for (auto j=i->nextList().begin(); j!=i->nextList().end(); j++)
 			std::cout << "    " << (*j) << " " << i->nextPattern(j) << std::endl;
+		std::cout << "  back:" << std::endl;
+		for (auto j=i->backList().begin(); j!=i->backList().end(); j++)
+			std::cout << "    " << (*j) << " " << Pattern(NONE_PAT) << std::endl;
+		std::cout << "  forw:" << std::endl;
+		for (auto j=i->forwList().begin(); j!=i->forwList().end(); j++)
+			std::cout << "    " << (*j) << " " << Pattern(NONE_PAT) << std::endl;
 		std::cout << std::endl;
 	}
 	std::cout << "--------------------" << std::endl;

@@ -12,17 +12,17 @@ namespace map { namespace detail {
 
 // Internal declarations
 
-RadialScan::Key::Key(RadialScan *node) {
+RadialScan::Content::Content(RadialScan *node) {
 	prev = node->prev();
 	type = node->type;
 	start = node->start;
 }
 
-bool RadialScan::Key::operator==(const Key& k) const {
+bool RadialScan::Content::operator==(const Content& k) const {
 	return (prev==k.prev && type==k.type && all(start==k.start));
 }
 
-std::size_t RadialScan::Hash::operator()(const Key& k) const {
+std::size_t RadialScan::Hash::operator()(const Content& k) const {
 	size_t hash = std::hash<Node*>()(k.prev) ^ std::hash<int>()(k.type.get());
 	for (int i=0; i<k.start.size(); i++)
 		hash ^= std::hash<int>()(k.start[i]);
@@ -44,7 +44,7 @@ Node* RadialScan::Factory(Node *arg, ReductionType type, Coord start) {
 	return new RadialScan(meta,arg,type,start);
 }
 
-Node* RadialScan::clone(std::unordered_map<Node*,Node*> other_to_this) {
+Node* RadialScan::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 	return new RadialScan(this,other_to_this);
 }
 
@@ -61,7 +61,7 @@ RadialScan::RadialScan(const MetaData &meta, Node *prev, ReductionType type, Coo
 	prev->addNext(this);
 }
 
-RadialScan::RadialScan(const RadialScan *other, std::unordered_map<Node*,Node*> other_to_this)
+RadialScan::RadialScan(const RadialScan *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 {
 	this->type = other->type;
@@ -87,13 +87,17 @@ std::string RadialScan::signature() const {
 	sign += to_string(start);
 	return sign;
 }
-/*
-Node*& RadialScan::prev() {
-	return prev_list[0];
-}
-*/
+
 Node* RadialScan::prev() const {
 	return prev_list[0];
+}
+
+// Compute
+
+void RadialScan::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
+	auto *node = this;
+	hash[{node,coord}] = {{},false};
+	// @ if max summary value of the block is lower than the accumulated, then fix it!
 }
 
 } } // namespace map::detail

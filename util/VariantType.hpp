@@ -3,7 +3,6 @@
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  * TODO: study if some constructors could be moved into the Union, w/o drawbacks
- * TODO: shouldn't convert() return a new object?
  */
 
 #ifndef MAP_UTIL_VARIANT_HPP_
@@ -70,13 +69,16 @@ class VariantType {
   	size_t hash() const;
   	std::string toString() const;
 
-  	VariantUnion& get();
-  	const VariantUnion& get() const;
-	template <DataTypeEnum T> Ctype<T>& get();
-	template <DataTypeEnum T> const Ctype<T>& get() const;
-  	template <typename T> VariantType& set(T val, DataType dt);
-  	VariantType& convert(DataType dt);
+  	VariantUnion& ref();
+  	VariantUnion get() const;
+	void set(VariantUnion var, DataType dt);
+	template <DataTypeEnum T> Ctype<T>& ref();
+	template <DataTypeEnum T> Ctype<T> get() const;
+  	template <typename T> void set(T val, DataType dt);
+  	
+  	VariantType convert(DataType dt);
 
+  	bool isNone() const;
   	bool isZero() const;
   	bool isOne() const;
 
@@ -84,6 +86,14 @@ class VariantType {
 };
 
 static_assert( std::is_standard_layout< VariantType >::value , "VariantType must be C compatible");
+
+/*
+ *
+ */
+struct ValFix {
+	VariantType value;
+	bool fixed;
+};
 
 } } // namespace map::detail
 

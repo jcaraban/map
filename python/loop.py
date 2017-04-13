@@ -18,16 +18,16 @@ dire = [0, 1, 2, 4, 8,16,32,64,128]
 
 def border(raster):
 	ds = raster.datasize()
-	idx0,idx1 = index(raster,D0), index(raster,D1)
-	brd0 = (idx0 == 0) + (idx0 == ds[0]-1)
-	brd1 = (idx1 == 0) + (idx1 == ds[1]-1)
+	idx1,idx2 = index(raster,D1), index(raster,D2)
+	brd0 = (idx1 == 0) + (idx1 == ds[0]-1)
+	brd1 = (idx2 == 0) + (idx2 == ds[1]-1)
 	return brd0 + brd1
 
 def outside(raster,ngb):
 	ds = raster.datasize()
-	idx0,idx1 = index(raster,D0), index(raster,D1)
-	out0 = (idx0+ngb[0] < 0) + (idx0+ngb[0] >= ds[0])
-	out1 = (idx1+ngb[1] < 0) + (idx1+ngb[1] >= ds[1])
+	idx1,idx2 = index(raster,D1), index(raster,D2)
+	out0 = (idx1+ngb[0] < 0) + (idx1+ngb[0] >= ds[0])
+	out1 = (idx2+ngb[1] < 0) + (idx2+ngb[1] >= ds[1])
 	return out0 + out1
 
 def pitFill(orig, stream):

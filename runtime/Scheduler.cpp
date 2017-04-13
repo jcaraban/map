@@ -29,7 +29,7 @@ void Scheduler::clear() {
 	end = false;
 }
 
-void Scheduler::addInitialJobs() {
+void Scheduler::initialJobs() {
 	TimedRegion region(clock,ADD_JOB);
 	std::vector<Job> job_vec;
 
@@ -50,7 +50,7 @@ void Scheduler::addInitialJobs() {
 	job_vec_vec.resize( conf.num_machines*conf.num_devices*conf.num_ranks );
 }
 
-Job Scheduler::getJob() {
+Job Scheduler::requestJob() {
 	TimedRegion region(clock,GET_JOB);
 	Job job;
 
@@ -72,7 +72,7 @@ Job Scheduler::getJob() {
 	}
 }
 
-void Scheduler::notifyEnd(Job job) {
+void Scheduler::returnJob(Job job) {
 	TimedRegion region(clock,NOTIFY);
 	// Prepares the 'job_vec' to be filled with new 'jobs'
 	std::vector<Job> &job_vec = job_vec_vec[Tid.proj()];

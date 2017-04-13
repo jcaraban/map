@@ -11,7 +11,7 @@
  * Based on "Global value numbering", Cliff Click, PLDI '95
  *
  * TODO: simplify the code by using a single more dynamic hash that cover all nodes
- *       this will require rethinking Node:Key, as the hash depends on the specific node
+ *       this will require rethinking Node:Content, as the hash depends on the specific node
  *       special attention too with associative operations, like ADD and MUL
  */
 
@@ -26,7 +26,7 @@
 namespace map { namespace detail {
 
 #define DECLARE_VISIT(class) virtual void visit(class *node);
-#define DECLARE_MAP(class) std::unordered_map<class::Key,class*,class::Hash> class##Map;
+#define DECLARE_MAP(class) std::unordered_map<class::Content,class*,class::Hash> class##Map;
 
 /*
  * Simplifies the DAG by eliminating duplicated nodes
@@ -42,8 +42,8 @@ struct SimplifierOnline : public Visitor
 	void clear();
 
   // helper
-	template <typename T> void helper(T *node, std::unordered_map<typename T::Key,T*,typename T::Hash> &map);
-	template <typename T> void drop_helper(T *node, std::unordered_map<typename T::Key,T*,typename T::Hash> &map);
+	template <typename T> void helper(T *node, std::unordered_map<typename T::Content,T*,typename T::Hash> &map);
+	template <typename T> void drop_helper(T *node, std::unordered_map<typename T::Content,T*,typename T::Hash> &map);
 
   // declarations
 	DECLARE_MAP(Constant)
@@ -61,7 +61,6 @@ struct SimplifierOnline : public Visitor
 	DECLARE_MAP(Convolution)
 	DECLARE_MAP(FocalFunc)
 	DECLARE_MAP(FocalPercent)
-	DECLARE_MAP(FocalFlow)
 	DECLARE_MAP(ZonalReduc)
 	DECLARE_MAP(RadialScan)
 	DECLARE_MAP(SpreadScan)
@@ -96,7 +95,6 @@ struct SimplifierOnline : public Visitor
 	DECLARE_VISIT(Convolution)
 	DECLARE_VISIT(FocalFunc)
 	DECLARE_VISIT(FocalPercent)
-	DECLARE_VISIT(FocalFlow)
 	DECLARE_VISIT(ZonalReduc)
 	DECLARE_VISIT(RadialScan)
 	DECLARE_VISIT(SpreadScan)

@@ -33,7 +33,7 @@ namespace { // anonymous namespace
 Skeleton* Skeleton::Factory(Version *ver) {
 	Pattern pat = ver->task->pattern();
 
-	/**/ if ( pat.is(SPECIAL) )
+	/**/ if ( pat.is(STATS) )
 	{
 		if ( pat.is(ZONAL) )
 		{
@@ -41,7 +41,7 @@ Skeleton* Skeleton::Factory(Version *ver) {
 		}
 		else
 		{
-			//return new SpecialSkeleton(ver);
+			//return new StatsSkeleton(ver);
 			assert(false);
 		}
 	}
@@ -300,6 +300,19 @@ void Skeleton::visit(Diversity *node) {
 		assert(0);
 
 	diver.push_back(node);
+}
+
+void Skeleton::visit(LoopHead *node) {
+	string var = var_name(node);
+	string pvar = var_name(node->prev());
+	add_line( var + " = " + pvar+ + ";" );
+}
+
+
+void Skeleton::visit(LoopTail *node) {
+	string var = var_name(node);
+	string pvar = var_name(node->prev());
+	add_line( var + " = " + pvar+ + ";" );
 }
 
 void Skeleton::visit(LhsAccess *node) {

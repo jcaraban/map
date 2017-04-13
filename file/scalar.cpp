@@ -63,8 +63,7 @@ scalar::~scalar() { }
 
 Ferr scalar::readBlock(Block &block) const {
 	assert(block.holdtype() == HOLD_1);
-	block.value = val;
-	block.fixed = true;
+	block.fixValue(val);
 	return 0;
 }
 

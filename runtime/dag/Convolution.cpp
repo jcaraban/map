@@ -12,16 +12,16 @@ namespace map { namespace detail {
 
 // Internal declarations
 
-Convolution::Key::Key(Convolution *node) {
+Convolution::Content::Content(Convolution *node) {
 	prev = node->prev();
 	smask = node->mask();
 }
 
-bool Convolution::Key::operator==(const Key& k) const {
+bool Convolution::Content::operator==(const Content& k) const {
 	return (prev==k.prev && smask==k.smask);
 }
 
-std::size_t Convolution::Hash::operator()(const Key& k) const {
+std::size_t Convolution::Hash::operator()(const Content& k) const {
 	return std::hash<Node*>()(k.prev) ^ k.smask.hash();
 }
 
@@ -42,7 +42,7 @@ Node* Convolution::Factory(Node *arg, const Mask &mask) {
 	return new Convolution(meta,arg,mask);
 }
 
-Node* Convolution::clone(std::unordered_map<Node*,Node*> other_to_this) {
+Node* Convolution::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 	return new Convolution(this,other_to_this);
 }
 
@@ -58,7 +58,7 @@ Convolution::Convolution(const MetaData &meta, Node *prev, const Mask &mask)
 	prev->addNext(this);
 }
 
-Convolution::Convolution(const Convolution *other, std::unordered_map<Node*,Node*> other_to_this)
+Convolution::Convolution(const Convolution *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 {
 	this->smask = other->smask;
@@ -82,11 +82,7 @@ std::string Convolution::signature() const {
 	sign += mask().signature();
 	return sign;
 }
-/*
-Node*& Convolution::prev() {
-	return prev_list[0];
-}
-*/
+
 Node* Convolution::prev() const {
 	return prev_list[0];
 }
@@ -97,6 +93,36 @@ Mask Convolution::mask() const {
 
 BlockSize Convolution::halo() const {
 	return smask.datasize() / 2;
+}
+
+// Compute
+
+void Convolution::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
+	auto *node = this;
+
+	auto prev = hash[{node->prev(),coord}];
+	auto bt = BinaryType(MUL);
+	auto rt = ReductionType(SUM);
+	auto acu = rt.neutral(node->datatype());
+
+	if (not prev.fixed) {
+		hash[{node,coord}] = {{},false};
+		return;
+	}
+	for (int y=-halo()[1]; y<=halo()[1]; y++) {
+		for (int x=-halo()[0]; x<=halo()[0]; x++)
+		{
+			auto neig = hash.find({node->prev(),coord+Coord{x,y}})->second;
+			if (not neig.fixed || prev.value != neig.value) {
+				hash[{node,coord}] = {{},false};
+				return;
+			}
+			int proj = (y + halo()[1]) * (2*halo()[0]+1) + (x + halo()[0]);
+			auto aux = bt.apply(neig.value,node->mask()[proj]);
+			acu = rt.apply(acu,aux);
+		}
+	}
+	hash[{node,coord}] = {acu,true};
 }
 
 } } // namespace map::detail

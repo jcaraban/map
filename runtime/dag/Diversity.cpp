@@ -12,12 +12,12 @@ namespace map { namespace detail {
 
 // Internal declarations
 
-Diversity::Key::Key(Diversity *node) {
+Diversity::Content::Content(Diversity *node) {
 	prev_list = node->prev_list;
 	type = node->type;
 }
 
-bool Diversity::Key::operator==(const Key& k) const {
+bool Diversity::Content::operator==(const Content& k) const {
 	if (prev_list.size() != k.prev_list.size())
 		return false;
 	bool b = true;
@@ -27,7 +27,7 @@ bool Diversity::Key::operator==(const Key& k) const {
 	return b;
 }
 
-std::size_t Diversity::Hash::operator()(const Key& k) const {
+std::size_t Diversity::Hash::operator()(const Content& k) const {
 	size_t h = 0;
 	for (auto &prev : k.prev_list)
 		h ^= std::hash<Node*>()(prev);
@@ -35,7 +35,7 @@ std::size_t Diversity::Hash::operator()(const Key& k) const {
 	return h;
 }
 
-Node* Diversity::clone(std::unordered_map<Node*,Node*> other_to_this) {
+Node* Diversity::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 	return new Diversity(this,other_to_this);
 }
 
@@ -78,7 +78,7 @@ Diversity::Diversity(const MetaData &meta, NodeList prev_list, DiversityType typ
 		prev->addNext(this);
 }
 
-Diversity::Diversity(const Diversity *other, std::unordered_map<Node*,Node*> other_to_this)
+Diversity::Diversity(const Diversity *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 {
 	this->type = other->type;
@@ -111,6 +111,34 @@ Node*& Diversity::prev(int i) {
 
 const Node* Diversity::prev(int i) const {
 	return prev_list[i];
+}
+
+void Diversity::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
+	assert(numdim() == D0);
+	Coord coord = {0,0};
+	std::vector<VariantType> varvec;
+	for (auto prev : prevList())
+		varvec.push_back( hash.find({prev,coord})->second );
+	hash[{this,coord}] = type.apply(varvec);
+}
+
+void Diversity::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
+	ValFix vf = {{},false};
+	ValFix vf0 = {VariantType(0,datatype()),true};
+	
+	for (auto prev : prevList()) {
+		auto p = hash[{prev,coord}];
+		if (!p.fixed) {
+			hash[{this,coord}] = {{},false};
+			return;
+		}
+	}
+	std::vector<VariantType> vec;
+	for (auto prev : prevList()) {
+		auto p = hash[{prev,coord}];
+		vec.push_back(p.value);
+	}
+	hash[{this,coord}] = {type.apply(vec),true};
 }
 
 } } // namespace map::detail

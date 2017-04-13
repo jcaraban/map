@@ -13,15 +13,15 @@ namespace map { namespace detail {
 
 // Internal declarations
 
-Scalar::Key::Key(Scalar *node) {
+Scalar::Content::Content(Scalar *node) {
 	prev = node->prev();
 }
 
-bool Scalar::Key::operator==(const Key& k) const {
+bool Scalar::Content::operator==(const Content& k) const {
 	return (prev==k.prev);
 }
 
-std::size_t Scalar::Hash::operator()(const Key& k) const {
+std::size_t Scalar::Hash::operator()(const Content& k) const {
 	return std::hash<Node*>()(k.prev);
 }
 
@@ -44,7 +44,7 @@ Node* Scalar::Factory(Node *prev) {
 	return new Scalar(prev,SharedFile(sca_file));
 }
 
-Node* Scalar::clone(std::unordered_map<Node*,Node*> other_to_this) {
+Node* Scalar::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 	return new Scalar(this,other_to_this);
 }
 
@@ -55,7 +55,7 @@ Scalar::Scalar(Node *prev, SharedFile sca_file) :
 	OutputNode(prev,sca_file)
 { }
 
-Scalar::Scalar(const Scalar *other, std::unordered_map<Node*,Node*> other_to_this)
+Scalar::Scalar(const Scalar *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: IONode(other,other_to_this)
 	, OutputNode() // @ InputNode(other) ?
 { }
@@ -83,6 +83,15 @@ VariantType Scalar::value() {
 	auto *sca_file = dynamic_cast<File<scalar>*>(file());
 	assert(sca_file != nullptr);
 	return sca_file->value();
+}
+
+// Compute
+
+void Scalar::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
+	auto *node = this;
+
+	auto prev = hash.find({node->prev(),coord})->second;
+	hash[{node,coord}] = {prev.value,prev.fixed};
 }
 
 } } // namespace map::detail

@@ -52,7 +52,8 @@ void SpreadingTask::blocksToLoad(Coord coord, InKeyList &in_keys) const {
 			for (int x=-N; x<=N; x++) {
 				auto nbc = coord + Coord{x,y};
 				HoldType hold_nbc = (any(nbc < 0) || any(nbc >= numblock())) ? HOLD_0 : hold;
-				in_keys.push_back( std::make_tuple(Key(node,nbc),hold_nbc) );
+				int depend = node->isInput() ? nextInterDepends(node,nbc) : -1; // @
+				in_keys.push_back( std::make_tuple(Key(node,nbc),hold_nbc,depend) );
 			}
 		}
 	}
@@ -261,7 +262,7 @@ void SpreadingTask::fillScanBuffer(Coord coord, const BlockList &in_blk, const B
 		blk = (b->key.node == scan && all(b->key.coord == coord)) ? b : blk;
 	assert(blk != nullptr);
 
-	cl_int err = clEnqueueFillBuffer(*que,blk->entry->dev_mem,&neutral.get(),neutral.datatype().sizeOf(),0,blk->total_size,0,nullptr,nullptr);
+	cl_int err = clEnqueueFillBuffer(*que,blk->entry->dev_mem,&neutral.ref(),neutral.datatype().sizeOf(),0,blk->total_size,0,nullptr,nullptr);
 	cle::clCheckError(err);
 }
 
@@ -289,7 +290,7 @@ void SpreadingTask::fillSpreadBuffer(Coord coord, const BlockList &in_blk, const
 		assert(constant != nullptr); // @ Only constant is accepted as D0 for the moment
 		VariantType cnst = constant->cnst;
 
-		cl_int err = clEnqueueFillBuffer(*que,dst->entry->dev_mem,&cnst.get(),cnst.datatype().sizeOf(),0,dst->total_size,0,nullptr,nullptr);
+		cl_int err = clEnqueueFillBuffer(*que,dst->entry->dev_mem,&cnst.ref(),cnst.datatype().sizeOf(),0,dst->total_size,0,nullptr,nullptr);
 		cle::clCheckError(err);
 	}
 }
@@ -304,7 +305,7 @@ void SpreadingTask::fillStableBuffer(Coord coord, const BlockList &in_blk, const
 		blk = (b->key.node == scan->stable() && all(b->key.coord == coord)) ? b : blk;
 	assert(blk != nullptr);
 
-	cl_int err = clEnqueueFillBuffer(*que,blk->entry->dev_mem,&neutral.get(),neutral.datatype().sizeOf(),0,blk->total_size,0,nullptr,nullptr);
+	cl_int err = clEnqueueFillBuffer(*que,blk->entry->dev_mem,&neutral.ref(),neutral.datatype().sizeOf(),0,blk->total_size,0,nullptr,nullptr);
 	cle::clCheckError(err);
 }
 

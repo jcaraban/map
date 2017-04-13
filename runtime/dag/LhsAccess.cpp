@@ -12,17 +12,17 @@ namespace map { namespace detail {
 
 // Internal declarations
 
-LhsAccess::Key::Key(LhsAccess *node) {
+LhsAccess::Content::Content(LhsAccess *node) {
 	lprev = node->left();
 	rprev = node->right();
 	coord = node->coord();
 }
 
-bool LhsAccess::Key::operator==(const Key& k) const {
+bool LhsAccess::Content::operator==(const Content& k) const {
 	return (lprev==k.lprev && rprev==k.rprev && all(coord==k.coord));
 }
 
-std::size_t LhsAccess::Hash::operator()(const Key& k) const {
+std::size_t LhsAccess::Hash::operator()(const Content& k) const {
 	size_t hash = std::hash<Node*>()(k.lprev) ^ std::hash<Node*>()(k.rprev);
 	for (int i=0; i<k.coord.size(); i++)
 		hash ^= std::hash<int>()(k.coord[i]);
@@ -34,6 +34,7 @@ std::size_t LhsAccess::Hash::operator()(const Key& k) const {
 Node* LhsAccess::Factory(Node *lhs, Node *rhs, const Coord &coord) {
 	assert(lhs != nullptr && rhs != nullptr);
 	assert(lhs->datatype() == rhs->datatype());
+	assert(rhs->numdim() != D0);
 	assert(rhs->numdim() == D0);
 	assert(lhs->numdim().toInt() == coord.size());
 
@@ -46,7 +47,7 @@ Node* LhsAccess::Factory(Node *lhs, Node *rhs, const Coord &coord) {
 	return new LhsAccess(meta,lhs,rhs,coord);
 }
 
-Node* LhsAccess::clone(std::unordered_map<Node*,Node*> other_to_this) {
+Node* LhsAccess::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 	return new LhsAccess(this,other_to_this);
 }
 
@@ -64,7 +65,7 @@ LhsAccess::LhsAccess(const MetaData &meta, Node *lprev, Node *rprev, const Coord
 	rprev->addNext(this);
 }
 
-LhsAccess::LhsAccess(const LhsAccess *other, std::unordered_map<Node*,Node*> other_to_this)
+LhsAccess::LhsAccess(const LhsAccess *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 {
 	this->cell_coord = other->cell_coord;
@@ -90,19 +91,11 @@ std::string LhsAccess::signature() const {
 	sign += to_string(coord());
 	return sign;
 }
-/*
-Node*& LhsAccess::left() {
-	return prev_list[0]; // first element
-}
-*/
+
 Node* LhsAccess::left() const {
 	return prev_list[0]; // first element
 }
-/*
-Node*& LhsAccess::right() {
-	return prev_list[1]; // second element
-}
-*/
+
 Node* LhsAccess::right() const {
 	return prev_list[1]; // second element
 }

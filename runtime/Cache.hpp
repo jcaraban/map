@@ -2,8 +2,6 @@
  * @file    Cache.hpp 
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * Note: depend=-1 means the block wont be discarded, useful when its future use is unknown (eg Spreading)
- *
  * TODO: There should be 1 cache per physical memory (Dev mem, Host mem, SSD mem, HDD mem)
  */
 
@@ -16,7 +14,6 @@
 #include <vector>
 #include <list>
 #include <unordered_map>
-#include <unordered_set>
 #include <memory>
 #include <mutex>
 #include <condition_variable>
@@ -44,15 +41,13 @@ class Cache
 	std::vector<cl_mem> pinned_mem;
 	std::vector<void*> pinned_ptr;
 
-	std::mutex mtx, mtx_blk; //, mtx_lru, mtx_load, mtx_write;
-	std::condition_variable cv_load, cv_write; //cv_evict
+	std::mutex mtx_blk, mtx_lru, mtx_file; //, mtx_load, mtx_write;
 
 	size_t unit_mem_size;
 	BlockSize unit_block_size;
 	int unit_dimension;
 
-	std::unordered_map<Node*,IFile*> file_hash; // @
-	std::unordered_set<Key,key_hash> first_time; // @ avoids partial-writes to load the 'first time'
+	std::unordered_map<Node*,IFile*> file_hash;
 
   public:
 	Cache(Program &prog, Clock &clock, Config &conf);
@@ -67,34 +62,39 @@ class Cache
 	void allocEntries();
 	void freeEntries();
 
-	void retainInputBlocks(const InKeyList &in_key, BlockList &in_blk);
-	void retainOutputBlocks(const OutKeyList &out_key, BlockList &out_blk);
-	void releaseInputBlocks(BlockList &in_blk);
-	void releaseOutputBlocks(BlockList &out_blk, const OutKeyList &out_key);
+	void requestInputBlocks(const InKeyList &in_key, BlockList &in_blk);
+	void requestOutputBlocks(const OutKeyList &out_key, BlockList &out_blk);
+
+	void retainInputEntries(BlockList &in_blk);
+	void retainOutputEntries(BlockList &out_blk);
+
+	void readInputBlocks(BlockList &in_blk);
+	void writeOutputBlocks(BlockList &out_blk);
+
+	void returnInputBlocks(BlockList &in_blk);
+	void returnOutputBlocks(BlockList &out_blk);
 
   private:
-  	Block* retainEntryForInput(const Key &k);
-	Block* retainEntryForOutput(const Key &k, int depend);
-	void releaseEntryFromInput(Block *blk);
-	void releaseEntryFromOutput(Block *blk);
+  	Block* retainBlock(const Key &k, int depend);
+	void retainEntry(Block *blk);
 
-	Entry* getLRU();
-	void makeLRU(Entry *entry);
+	void readInBlk(Block *blk);
+	void writeOutBlk(Block *blk);
+
+	void releaseInEntry(Block *blk);
+	void releaseOutEntry(Block *blk);
+
+	Entry* getEntry();
+	void touchEntry(Entry *entry);
+	void dropEntry(Entry *entry);
 	void evict(Block *block);
-	IFile* getFile(Node *node); // @
+	IFile* getFile(Node *node);
 
 	void load(Block *block);
 	void loadScalar(Block *block);
-	void loadOut(Block *block); // @
 
 	void store(Block *block);
 	void storeScalar(Block *block);
-
-	void waitForLoader(Entry *entry);
-	void notifyLoaders();
-
-	void waitForWriter(Entry *entry);
-	void notifyWriters();
 };
 
 } } // namespace map::detail

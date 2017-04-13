@@ -2,8 +2,6 @@
  * @file    Task.cpp 
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * TODO: find how to unify all xxx-Task classes in one simple class
- * TODO: consider moving self/nextDependencies to the Node level 
  */
 
 #include "Task.hpp"
@@ -14,7 +12,9 @@
 #include "FocalZonalTask.hpp"
 #include "RadiatingTask.hpp"
 #include "SpreadingTask.hpp"
+#include "LoopTask.hpp"
 #include "StatsTask.hpp"
+#include "IdentityTask.hpp"
 #include "../ThreadId.hpp"
 #include "../Runtime.hpp"
 #include <memory>
@@ -38,7 +38,7 @@ std::size_t task_hash::operator()(const Task *t) const {
 Task* Task::Factory(Group *group) {
 	Pattern pat = group->pattern();
 
-	/**/ if ( pat.is(SPECIAL) )
+	/**/ if ( pat.is(STATS) )
 	{
 		if ( pat.is(ZONAL) )
 		{
@@ -50,13 +50,9 @@ Task* Task::Factory(Group *group) {
 			assert(false);
 		}
 	}
-	else if ( pat.is(HEAD) )
+	else if ( pat.is(LOOP) )
 	{
-		assert(0);
-	}
-	else if ( pat.is(TAIL) )
-	{
-		assert(0);	
+		return new LoopTask(group);
 	}
 	else if ( pat.is(SPREAD) )
 	{
@@ -82,9 +78,12 @@ Task* Task::Factory(Group *group) {
 	{
 		return new ScalarTask(group);
 	}
-	else if ( pat.is(LOCAL) || pat.is(FREE) || pat.is(BARRIER))
+	else if ( pat.is(LOCAL) || pat.is(FREE) || pat.is(GLOBAL))
 	{
 		return new LocalTask(group);
+	}
+	else if ( pat.is(HEAD) || pat.is(TAIL)) {
+		return new IdentityTask(group);
 	}
 	else {
 		assert(0);
@@ -112,9 +111,15 @@ Task::Task(Group *group)
 		this->prev_list.push_back(prev_task);
 		prev_task->next_list.push_back(this);
 	}
+
+	// Links 'task' to its back-tasks, and makes the back-tasks link forward to 'this'
+	for (auto back_group : group->backList()) {
+		Task *back_task = back_group->task;
+		this->back_list.push_back(back_task);
+		back_task->forw_list.push_back(this);
+	}
 	
-	// Number of previous jobs that will notify this task (1 notif x job x output block)
-	// @ revise this, draw some examples (what about spreading?)
+	// Number of previous jobs that will notify this task
 	for (auto prev_task : prevList()) {
 		for (auto node : inner_join(inputList(),prev_task->outputList())) {
 			if (node->numdim() == D0) {
@@ -171,6 +176,14 @@ const TaskList& Task::nextList() const {
 	return next_list;
 }
 
+const TaskList& Task::backList() const {
+	return back_list;
+}
+
+const TaskList& Task::forwList() const {
+	return forw_list;
+}
+
 bool Task::isPrev(const Task *task) const {
 	return this->group()->isPrev(task->group());
 }
@@ -214,7 +227,8 @@ void Task::blocksToLoad(Coord coord, InKeyList &in_keys) const {
 
 	for (auto node : inputList()) {
 		HoldType hold = (node->numdim() == D0) ? HOLD_1 : HOLD_N;
-		in_keys.push_back( std::make_tuple(Key(node,coord),hold) );
+		int depend = node->isInput() ? nextInterDepends(node,coord) : -1; // @
+		in_keys.push_back( std::make_tuple(Key(node,coord),hold,depend) );
 	}
 }
 
@@ -354,13 +368,13 @@ void Task::computeVersion(Coord coord, const BlockList &in_blk, const BlockList 
 		void *dev_mem = (b->entry != nullptr) ? b->entry->dev_mem : nullptr;
 		/****/ if (b->holdtype() == HOLD_0) { // If HOLD_0, a null argument is given to the kernel
 			clSetKernelArg(*krn, arg++, sizeof(cl_mem), &dev_mem);
-			clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &b->value.get());
+			clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &b->value.ref());
 			clSetKernelArg(*krn, arg++, sizeof(b->fixed), &b->fixed);
 		} else if (b->holdtype() == HOLD_1) { // If HOLD_1, a scalar argument is given
-			clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &b->value.get());
+			clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &b->value.ref());
 		} else if (b->holdtype() == HOLD_N) { // In the normal case a valid cl_mem with memory is given
 			clSetKernelArg(*krn, arg++, sizeof(cl_mem), &dev_mem);
-			clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &b->value.get());
+			clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &b->value.ref());
 			clSetKernelArg(*krn, arg++, sizeof(b->fixed), &b->fixed);
 		} else {
 			assert(0);

@@ -24,7 +24,7 @@ IONode::IONode(SharedFile file, OutputNodeFlag not_used)
 	, io_file(file)
 { }
 
-IONode::IONode(const IONode *other, std::unordered_map<Node*,Node*> other_to_this)
+IONode::IONode(const IONode *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 	, io_file(other->io_file)
 { }
@@ -50,15 +50,7 @@ InputNode::InputNode(SharedFile file)
 bool InputNode::isInput() const {
 	return true;
 }
-/*
-std::string InputNode::signature() const {
-	std::string sign = "";
-	sign += classSignature();
-	sign += file()->getNumDim().toString();
-	sign += file()->getDataType().toString();
-	return sign;
-}
-*/
+
 /*******
    Out
  *******/
@@ -81,19 +73,7 @@ OutputNode::OutputNode(Node *prev, SharedFile file)
 bool OutputNode::isOutput() const {
 	return true;
 }
-/*
-std::string OutputNode::signature() const {
-	std::string sign = "";
-	sign += classSignature();
-	sign += prev()->numdim().toString();
-	sign += prev()->datatype().toString();
-	return sign;
-}
-*//*
-Node*& OutputNode::prev() {
-	return prev_list[0];
-}
-*/
+
 Node* OutputNode::prev() const {
 	return prev_list[0];
 }

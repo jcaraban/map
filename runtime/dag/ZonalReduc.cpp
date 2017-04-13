@@ -12,16 +12,16 @@ namespace map { namespace detail {
 
 // Internal declarations
 
-ZonalReduc::Key::Key(ZonalReduc *node) {
+ZonalReduc::Content::Content(ZonalReduc *node) {
 	prev = node->prev();
 	type = node->type;
 }
 
-bool ZonalReduc::Key::operator==(const Key& k) const {
+bool ZonalReduc::Content::operator==(const Content& k) const {
 	return (prev==k.prev && type==k.type);
 }
 
-std::size_t ZonalReduc::Hash::operator()(const Key& k) const {
+std::size_t ZonalReduc::Hash::operator()(const Content& k) const {
 	return std::hash<Node*>()(k.prev) ^ std::hash<int>()(k.type.get());
 }
 
@@ -40,7 +40,7 @@ Node* ZonalReduc::Factory(Node *arg, ReductionType type) {
 	return new ZonalReduc(meta,arg,type);
 }
 
-Node* ZonalReduc::clone(std::unordered_map<Node*,Node*> other_to_this) {
+Node* ZonalReduc::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 	return new ZonalReduc(this,other_to_this);
 }
 
@@ -55,7 +55,7 @@ ZonalReduc::ZonalReduc(const MetaData &meta, Node *prev, ReductionType type) : N
 	prev->addNext(this);
 }
 
-ZonalReduc::ZonalReduc(const ZonalReduc *other, std::unordered_map<Node*,Node*> other_to_this)
+ZonalReduc::ZonalReduc(const ZonalReduc *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 {
 	this->type = other->type;
@@ -80,13 +80,26 @@ std::string ZonalReduc::signature() const {
 	sign += type.toString();
 	return sign;
 }
-/*
-Node*& ZonalReduc::prev() {
-	return prev_list[0];
-}
-*/
+
 Node* ZonalReduc::prev() const {
 	return prev_list[0];
+}
+
+// Compute
+
+void ZonalReduc::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
+	auto *node = this;
+	ValFix vf = {{},false};
+
+	auto prev = hash.find({node->prev(),coord})->second;
+	if (prev.fixed) {
+		if (node->type == MAX || node->type == MIN) {
+			vf = {prev.value,true};
+		}
+		// @ SUM could be implemented as a multiplication by the block_size
+		// @ PROD could be implemented as a exponentiation by the block_size
+	}
+	hash[{node,coord}] = vf;
 }
 
 } } // namespace map::detail

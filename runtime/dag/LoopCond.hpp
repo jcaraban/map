@@ -3,6 +3,8 @@
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  * Node representing a Symbolic Loop construction
+ *
+ * TODO: add a scope() function that walks back/forward to find the 'body' nodes
  */
 
 #ifndef MAP_RUNTIME_DAG_LOOP_HPP_
@@ -26,29 +28,24 @@ typedef std::vector<Switch*> SwitchList;
 struct LoopCond : public Node
 {
 	// Internal declarations
-	struct Key {
-		Key(LoopCond *node);
-		bool operator==(const Key& k) const;
-		//NodeList prev_list, body_list;
+	struct Content {
+		Content(LoopCond *node);
+		bool operator==(const Content& k) const;
 		Node *prev;
 		HeadList head_list;
 		TailList tail_list;
-		//MergeList merge_list;
-		//SwitchList switch_list;
 	};
 	struct Hash {
-		std::size_t operator()(const Key& k) const;
+		std::size_t operator()(const Content& k) const;
 	};
 
 	// Factory
-	//static Node* Factory(NodeList prev_list, Node *cond, NodeList body_list, NodeList feed_in_list, NodeList feed_out_list);
 	static Node* Factory(Node *prev);
-	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
+	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
-	//LoopCond(const MetaData &meta, NodeList prev_list, Node *cond, NodeList body_list, NodeList feed_in_list, NodeList feed_out_list);
 	LoopCond(const MetaData &meta, Node *prev);
-	LoopCond(const LoopCond *other, std::unordered_map<Node*,Node*> other_to_this);
+	LoopCond(const LoopCond *other, const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);
@@ -56,21 +53,14 @@ struct LoopCond : public Node
 	std::string signature() const;
 	char classSignature() const;
 	
-	//const NodeList& bodyList() const;
 	const HeadList& headList() const;
 	const TailList& tailList() const;
-	//const MergeList& mergeList() const;
-	//const SwitchList& switchList() const;
 	Node* prev() const;
-	Pattern pattern() const { return FREE; }
+	Pattern pattern() const { return LOOP; }
 
 	// Variables
-	//NodeList body_list; //!< Nodes forming the body of the Symbolic Loop
 	HeadList head_list; //!< Head nodes acting as inputs for the body
 	TailList tail_list; //!< Tail nodes acting as outputs of the loop
-	//MergeList merge_list; //!< Merge nodes acting as phi functions
-	//SwitchList switch_list; //!< Switch nodes acting as branches
-	//int cond_index; //!< Marks the Merge node feeding the condition
 };
 
 } } // namespace map::detail

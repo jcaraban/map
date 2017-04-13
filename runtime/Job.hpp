@@ -10,8 +10,7 @@
 #ifndef MAP_RUNTIME_JOB_HPP_
 #define MAP_RUNTIME_JOB_HPP_
 
-#include "../util/Array.hpp"
-#include "../util/Array4.hpp"
+#include "../util/util.hpp"
 
 
 namespace map { namespace detail {

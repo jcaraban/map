@@ -12,16 +12,16 @@ namespace map { namespace detail {
 
 // Internal declarations
 
-SpreadNeighbor::Key::Key(SpreadNeighbor *node) {
+SpreadNeighbor::Content::Content(SpreadNeighbor *node) {
 	prev = node->prev();
 	dir = node->dir();
 }
 
-bool SpreadNeighbor::Key::operator==(const Key& k) const {
+bool SpreadNeighbor::Content::operator==(const Content& k) const {
 	return (prev==k.prev && dir==k.dir);
 }
 
-std::size_t SpreadNeighbor::Hash::operator()(const Key& k) const {
+std::size_t SpreadNeighbor::Hash::operator()(const Content& k) const {
 	return std::hash<Node*>()(k.prev) ^ std::hash<Node*>()(k.dir) ^ std::hash<int>()(k.type.get());
 }
 
@@ -44,7 +44,7 @@ Node* SpreadNeighbor::Factory(Node *arg, Node *dir, ReductionType type) {
 	return new SpreadNeighbor(meta,arg,dir,type);
 }
 
-Node* SpreadNeighbor::clone(std::unordered_map<Node*,Node*> other_to_this) {
+Node* SpreadNeighbor::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 	return new SpreadNeighbor(this,other_to_this);
 }
 
@@ -62,7 +62,7 @@ SpreadNeighbor::SpreadNeighbor(const MetaData &meta, Node *prev, Node *dir, Redu
 	dir->addNext(this);
 }
 
-SpreadNeighbor::SpreadNeighbor(const SpreadNeighbor *other, std::unordered_map<Node*,Node*> other_to_this)
+SpreadNeighbor::SpreadNeighbor(const SpreadNeighbor *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 {
 	this->type = other->type;
@@ -88,11 +88,7 @@ std::string SpreadNeighbor::signature() const {
 	sign += type.toString();
 	return sign;
 }
-/*
-Node*& SpreadNeighbor::prev() {
-	return prev_list[0];
-}
-*/
+
 Node* SpreadNeighbor::prev() const {
 	return prev_list[0];
 }
@@ -104,5 +100,7 @@ Node* SpreadNeighbor::dir() const {
 BlockSize SpreadNeighbor::halo() const {
 	return {1,1}; // @ depends on the 'direction' type
 }
+
+// Compute
 
 } } // namespace map::detail

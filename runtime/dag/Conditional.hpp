@@ -21,35 +21,35 @@ namespace map { namespace detail {
 struct Conditional : public Node
 {
 	// Internal declarations
-	struct Key {
-		Key(Conditional *node);
-		bool operator==(const Key& k) const;
+	struct Content {
+		Content(Conditional *node);
+		bool operator==(const Content& k) const;
 		Node *cond, *lprev, *rprev;
 	};
 	struct Hash {
-		std::size_t operator()(const Key& k) const;
+		std::size_t operator()(const Content& k) const;
 	};
 
 	// Factory
 	static Node* Factory(Node *cond, Node *lhs, Node *rhs);
-	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
+	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
 	Conditional(const MetaData &meta, Node *cond, Node *lprev, Node *rprev);
-	Conditional(const Conditional *other, std::unordered_map<Node*,Node*> other_to_this);
+	Conditional(const Conditional *other, const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;
 	char classSignature() const;
-	//Node*& cond(); // Condition node
 	Node* cond() const;
-	//Node*& left(); // Left node
 	Node* left() const;
-	//Node*& right(); // Right node
 	Node* right() const;
 	Pattern pattern() const { return LOCAL; }
+
+	void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
+	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
 
 	// Variables
 };

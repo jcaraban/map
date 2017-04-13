@@ -25,7 +25,6 @@
 #include "Convolution.hpp"
 #include "FocalFunc.hpp"
 #include "FocalPercent.hpp"
-#include "FocalFlow.hpp"
 #include "ZonalReduc.hpp"
 #include "RadialScan.hpp"
 #include "SpreadScan.hpp"

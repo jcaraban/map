@@ -18,25 +18,23 @@ struct LoopHead; //!< Forward declaration
 struct LoopTail : public Node
 {
 	// Internal declarations
-	struct Key {
-		Key(LoopTail *node);
-		bool operator==(const Key& k) const;
+	struct Content {
+		Content(LoopTail *node);
+		bool operator==(const Content& k) const;
 		Node *prev;
 		LoopCond *loop;
 	};
 	struct Hash {
-		std::size_t operator()(const Key& k) const;
+		std::size_t operator()(const Content& k) const;
 	};
 	
 	// Factory
-	//static Node* Factory(LoopCond *loop, Node *prev);
 	static Node* Factory(Node *prev);
-	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
+	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
-	//LoopTail(const MetaData &meta, LoopCond *loop, Node *prev);
 	LoopTail(const MetaData &meta, Node *prev);
-	LoopTail(const LoopTail *other, std::unordered_map<Node*,Node*> other_to_this);
+	LoopTail(const LoopTail *other, const std::unordered_map<Node*,Node*> &other_to_this);
 	~LoopTail();
 
 	// Methods

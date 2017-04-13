@@ -12,15 +12,15 @@ namespace map { namespace detail {
 
 // Internal declarations
 
-Barrier::Key::Key(Barrier *node) {
+Barrier::Content::Content(Barrier *node) {
 	prev = node->prev();
 }
 
-bool Barrier::Key::operator==(const Key& k) const {
+bool Barrier::Content::operator==(const Content& k) const {
 	return (prev==k.prev);
 }
 
-std::size_t Barrier::Hash::operator()(const Key& k) const {
+std::size_t Barrier::Hash::operator()(const Content& k) const {
 	return std::hash<Node*>()(k.prev);
 }
 
@@ -38,7 +38,7 @@ Node* Barrier::Factory(Node *arg) {
 	return new Barrier(meta,arg);
 }
 
-Node* Barrier::clone(std::unordered_map<Node*,Node*> other_to_this) {
+Node* Barrier::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 	return new Barrier(this,other_to_this);
 }
 
@@ -51,7 +51,7 @@ Barrier::Barrier(const MetaData &meta, Node *prev) : Node(meta) {
 	this->prev()->addNext(this);
 }
 
-Barrier::Barrier(const Barrier *other, std::unordered_map<Node*,Node*> other_to_this)
+Barrier::Barrier(const Barrier *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 { }
 
@@ -72,13 +72,18 @@ std::string Barrier::signature() const {
 	sign += prev()->datatype().toString();
 	return sign;
 }
-/*
-Node*& Barrier::prev() {
-	return prev_list[0];
-}
-*/
+
 Node* Barrier::prev() const {
 	return prev_list[0];
+}
+
+// Compute
+
+void Barrier::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
+	auto *node = this;
+
+	auto prev = hash.find({node->prev(),coord})->second;
+	hash[{node,coord}] = {prev.value,prev.fixed};
 }
 
 } } // namespace map::detail

@@ -12,17 +12,17 @@ namespace map { namespace detail {
 
 // Internal declarations
 
-BoundedNbh::Key::Key(BoundedNbh *node) {
+BoundedNbh::Content::Content(BoundedNbh *node) {
 	prev = node->prev();
 	cx = node->prev_list[1];
 	cy = node->prev_list[2];
 }
 
-bool BoundedNbh::Key::operator==(const Key& k) const {
+bool BoundedNbh::Content::operator==(const Content& k) const {
 	return (prev==k.prev && cx==k.cx && cy==k.cy);
 }
 
-std::size_t BoundedNbh::Hash::operator()(const Key& k) const {
+std::size_t BoundedNbh::Hash::operator()(const Content& k) const {
 	return std::hash<Node*>()(k.prev) ^ std::hash<Node*>()(k.cx) ^ std::hash<Node*>()(k.cy);
 }
 
@@ -45,7 +45,7 @@ Node* BoundedNbh::Factory(Node *prev, Node *cx, Node* cy) {
 	return new BoundedNbh(meta,prev,cx,cy);
 }
 
-Node* BoundedNbh::clone(std::unordered_map<Node*,Node*> other_to_this) {
+Node* BoundedNbh::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 	return new BoundedNbh(this,other_to_this);
 }
 
@@ -64,7 +64,7 @@ BoundedNbh::BoundedNbh(const MetaData &meta, Node *prev, Node *cx, Node* cy)
 	cy->addNext(this);
 }
 
-BoundedNbh::BoundedNbh(const BoundedNbh *other, std::unordered_map<Node*,Node*> other_to_this)
+BoundedNbh::BoundedNbh(const BoundedNbh *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 {
 	// ??
@@ -91,21 +91,44 @@ std::string BoundedNbh::signature() const {
 	sign += prev_list[2]->datatype().toString();
 	return sign;
 }
-/*
-Node*& BoundedNbh::prev() {
-	return prev_list[0];
-}
-*/
+
 Node* BoundedNbh::prev() const {
 	return prev_list[0];
 }
 
-//Node* BoundedNbh::coord() const {
-//	return prev_list[1];
-//}
+Node* BoundedNbh::coordx() const {
+	return prev_list[1];
+}
+
+Node* BoundedNbh::coordy() const {
+	return prev_list[2];
+}
 
 BlockSize BoundedNbh::halo() const {
-	return BlockSize{1,1};//,1,1}; // @@
+	return BlockSize{1,1};//,1,1}; // @
+}
+
+// Compute
+
+void BoundedNbh::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
+	auto *node = this;
+
+	ValFix vf = {{},false};
+	auto prev = hash.find({node->prev(),coord})->second;
+	auto cx = hash.find({node->coordx(),coord})->second;
+	auto cy = hash.find({node->coordy(),coord})->second;
+
+	if (cx.fixed && cy.fixed) {
+		auto xint = cx.value.convert(S32).get<S32>();
+		auto yint = cy.value.convert(S32).get<S32>();
+		auto neig_coord = coord + Coord{xint,yint};
+		auto neig = hash.find({node->prev(),neig_coord})->second;
+
+		if (prev.fixed && neig.fixed && prev.value == neig.value) {
+			vf = {prev.value,true};
+		}
+	}
+	hash[{node,coord}] = vf;
 }
 
 } } // namespace map::detail

@@ -519,7 +519,7 @@ def empty_like(raster,dt=NONE_DATATYPE,mo=NONE_MEMORDER):
 	return True # no_value_like?
 
 def index(raster,dim):
-	assert(raster.datasize() > D0)
+	assert(raster.numdim() > D0)
 	ds = Array( raster.datasize() )
 	bs = Array( raster.blocksize() )
 	mo = raster.memorder()

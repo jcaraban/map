@@ -52,7 +52,7 @@ void ma_eval(Node **vec, int num) {
 VariantType ma_value(Node *node) {
 	assert(node->numdim() == D0);
 	if (node->value.datatype() == NONE_DATATYPE)
-		assert(0);//ma_eval(&node,1);
+		assert(0); // @ ma_eval(&node,1);
 	return node->value;
 }
 

@@ -110,7 +110,7 @@ void StatsTask::preCompute(Coord coord, const BlockList &in_blk, const BlockList
 		VariantType neutral = rtype.neutral(stats->datatype());
 		b->value = neutral;
 
-		cl_int clerr = clEnqueueFillBuffer(*que,b->scalar_page,&neutral.get(),neutral.datatype().sizeOf(),index,b->datatype().sizeOf(),0,nullptr,nullptr);
+		cl_int clerr = clEnqueueFillBuffer(*que,b->scalar_page,&neutral.ref(),neutral.datatype().sizeOf(),index,b->datatype().sizeOf(),0,nullptr,nullptr);
 		cle::clCheckError(clerr);
 	}
 }
@@ -131,7 +131,7 @@ void StatsTask::postCompute(Coord coord, const BlockList &in_blk, const BlockLis
 		Block *b = out_blk[i+1];
 
 		int index = sizeof(double)*(conf.max_out_block*Tid.rnk() + sidx++);
-		cl_int clerr = clEnqueueReadBuffer(*que,b->scalar_page,CL_TRUE,index,b->datatype().sizeOf(),&b->value.get(),0,nullptr,nullptr);
+		cl_int clerr = clEnqueueReadBuffer(*que,b->scalar_page,CL_TRUE,index,b->datatype().sizeOf(),&b->value.ref(),0,nullptr,nullptr);
 		cle::clCheckError(clerr);
 	}
 
@@ -142,9 +142,8 @@ void StatsTask::postCompute(Coord coord, const BlockList &in_blk, const BlockLis
 	out_blk[0]->stats.active = true;
 	out_blk[0]->stats.max = max.get();
 	out_blk[0]->stats.min = min.get();
-	out_blk[0]->fixed = (max == min);
-	if (out_blk[0]->fixed) {
-		out_blk[0]->value = max;
+	if (max == min) {
+		out_blk[0]->fixValue(max);
 	}
 
 	// Fills 'node' stats

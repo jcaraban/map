@@ -4,7 +4,7 @@
  *
  * Node representing a Focal Convolution operation with static mask
  *
- * TODO: add another prev_node for when the mask is dynamic (i.e. the mask is another raster) 
+ * TODO: either add another node for dynamic masks or create a new Dyn-Conv-OP
  */
 
 #ifndef MAP_RUNTIME_DAG_CONVOLUTION_HPP_
@@ -19,34 +19,37 @@ namespace map { namespace detail {
 struct Convolution : public Node
 {
 	// Internal declarations
-	struct Key {
-		Key(Convolution *node);
-		bool operator==(const Key& k) const;
+	struct Content {
+		Content(Convolution *node);
+		bool operator==(const Content& k) const;
 		Node *prev;
 		Mask smask;
 	};
 	struct Hash {
-		std::size_t operator()(const Key& k) const;
+		std::size_t operator()(const Content& k) const;
 	};
 
 	// Factory
 	static Node* Factory(Node *prev, const Mask &mask);
-	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
+	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
 	Convolution(const MetaData &meta, Node *prev, const Mask &mask);
-	Convolution(const Convolution *other, std::unordered_map<Node*,Node*> other_to_this);
+	Convolution(const Convolution *other, const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;
 	char classSignature() const;
-	//Node*& prev();
 	Node* prev() const;
 	Mask mask() const;
 	Pattern pattern() const { return FOCAL; }
 	BlockSize halo() const;
+
+	// Compute
+	//void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
+	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
 
 	// Variables
 	Mask smask; //!< Static mask

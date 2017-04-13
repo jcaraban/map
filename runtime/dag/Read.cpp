@@ -4,7 +4,6 @@
  */
 
 #include "Read.hpp"
-#include "../Runtime.hpp"
 #include "../visitor/Visitor.hpp"
 #include <functional>
 
@@ -13,15 +12,15 @@ namespace map { namespace detail {
 
 // Internal declarations
 
-Read::Key::Key(Read *node) {
+Read::Content::Content(Read *node) {
 	path = node->file()->getFilePath();
 }
 
-bool Read::Key::operator==(const Key& k) const {
+bool Read::Content::operator==(const Content& k) const {
 	return (path==k.path);
 }
 
-std::size_t Read::Hash::operator()(const Key& k) const {
+std::size_t Read::Hash::operator()(const Content& k) const {
 	return std::hash<std::string>()(k.path);
 }
 
@@ -45,7 +44,7 @@ Node* Read::Factory(std::string file_path) {
 	return new Read(in_file);
 }
 
-Node* Read::clone(std::unordered_map<Node*,Node*> other_to_this) {
+Node* Read::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 	return new Read(this,other_to_this);
 }
 
@@ -56,7 +55,7 @@ Read::Read(SharedFile in_file)
 	, InputNode(in_file)
 { }
 
-Read::Read(const Read *other, std::unordered_map<Node*,Node*> other_to_this)
+Read::Read(const Read *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: IONode(other,other_to_this)
 	, InputNode() // @ InputNode(other) ?
 { }

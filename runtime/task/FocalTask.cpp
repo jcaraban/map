@@ -46,7 +46,8 @@ void FocalTask::blocksToLoad(Coord coord, InKeyList &in_keys) const {
 			for (int x=-N; x<=N; x++) {
 				auto nbc = coord + Coord{x,y};
 				HoldType hold_nbc = (any(nbc < 0) || any(nbc >= numblock())) ? HOLD_0 : hold;
-				in_keys.push_back( std::make_tuple(Key(node,nbc),hold_nbc) );
+				int depend = node->isInput() ? nextInterDepends(node,nbc) : -1; // @
+				in_keys.push_back( std::make_tuple(Key(node,nbc),hold_nbc,depend) );
 			}
 		}
 	}

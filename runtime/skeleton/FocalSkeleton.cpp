@@ -28,7 +28,6 @@ FocalSkeleton::FocalSkeleton(Version *ver)
 	, conv()
 	, func()
 	, percent()
-	, flow()
 	, halo()
 {
 	indent_count = 2;
@@ -55,7 +54,6 @@ void FocalSkeleton::compact() {
 	sort_unique(conv,node_id_less(),node_id_equal());
 	sort_unique(func,node_id_less(),node_id_equal());
 	sort_unique(percent,node_id_less(),node_id_equal());
-	sort_unique(flow,node_id_less(),node_id_equal());
 }
 
 string FocalSkeleton::versionCode() {
@@ -92,8 +90,6 @@ string FocalSkeleton::versionCode() {
 			add_line( "" );
 		}
 	}
-	if (!flow.empty())
-		add_section( defines_focal_flow() );
 	
 	// Signature
 	add_line( kernel_sign(ver->signature()) );
@@ -400,46 +396,6 @@ void FocalSkeleton::visit(FocalPercent *node) {
 	
 	shared.push_back(node->prev());
 	percent.push_back(node);
-}
-
-void FocalSkeleton::visit(FocalFlow *node) {
-	// Adds FocalFlow code
-	{
-		const int N = node->numdim().toInt();
-		DataType dt = node->prev()->datatype();
-		string dt_str = dt.ctypeString();
-		string var = var_name(node);
-		string self = var_name(node->prev(),SHARED) + "[" + local_proj_focal_H(N) + "]";
-		string nbh = var_name(node->prev(),SHARED) + "[" + local_proj_focal_of(N) + "]";
-
-		add_line( dt_str + " max_"+node->id + " = 0;" );// + ReductionType(MAX).neutralString(dt) + ";" );
-		add_line( string("int pos_")+node->id + " = -1;" );
-		add_line( "for (int dir=0; dir<N_DIR; dir++) {" );
-		indent_count++;
-		add_line( "int of0 = offset0[dir];" );
-		add_line( "int of1 = offset1[dir];" );
-		add_line( dt_str + " zdif = " + self + " - " + nbh + ";" );
-		add_line( dt_str + " dist = (dir%2 == 0) ? 1 : 1.414213f;" );
-		add_line( dt_str + " drop = zdif / dist;" );
-		add_line( string("if (drop > max_")+node->id + ") {" );
-		indent_count++;
-		add_line( string("max_")+node->id + " = drop;" );
-		add_line( string("pos_")+node->id + " = dir;" );
-		indent_count--;
-		add_line( "}" );
-		indent_count--;
-		add_line( "}" );
-		add_line( var + " = (" + "pos_"+node->id + " == -1) ? 0 : 1 << pos_"+node->id + ";" );
-	}
-	
-	if (halo.size() > level) {
-		halo[level] = cond(node->halo() > halo[level], node->halo(), halo[level]);
-	} else {
-		halo.push_back(node->halo());
-	}
-	
-	shared.push_back(node->prev());
-	flow.push_back(node);
 }
 
 } } // namespace map::detail

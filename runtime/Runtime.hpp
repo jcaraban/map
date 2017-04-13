@@ -75,8 +75,6 @@ class Runtime
 	Group* addGroup(Group *group);
 	Version* addVersion(Version *ver);
 
-	void removeNode(Node *node); // @
-	void updateNode(Node *node); // @
 	void unlinkIsolated(const OwnerNodeList &node_list, bool drop=false);
 
 	void evaluate(NodeList list); // Evaluate a list of {0,1,N} nodes 

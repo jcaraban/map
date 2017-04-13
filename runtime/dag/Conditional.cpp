@@ -2,9 +2,9 @@
  * @file	Conditional.cpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * TODO: e.g. con(local,focal,spread), it might be efficient to not fuse a condition and check
- *       if a block fully evaluates (ie all cells) to true/false, then computing the spread for
- *       that block would be unnecesary. However, the runtime support required gets too complex.
+ * TODO: e.g. con(local,focal,radial), it might be efficient to not fuse a condition and check
+ *       if a block fully evaluates (ie all cells) to true/false, then computing the radial for
+ *       that block would be unnecesary. However, the required runtime support gets too complex.
  */
 
 #include "Conditional.hpp"
@@ -16,17 +16,17 @@ namespace map { namespace detail {
 
 // Internal declarations
 
-Conditional::Key::Key(Conditional *node) {
+Conditional::Content::Content(Conditional *node) {
 	cond = node->cond();
 	lprev = node->left();
 	rprev = node->right();
 }
 
-bool Conditional::Key::operator==(const Key& k) const {
+bool Conditional::Content::operator==(const Content& k) const {
 	return (cond==k.cond && lprev==k.lprev && rprev==k.rprev);
 }
 
-std::size_t Conditional::Hash::operator()(const Key& k) const {
+std::size_t Conditional::Hash::operator()(const Content& k) const {
 	return std::hash<Node*>()(k.cond) ^ std::hash<Node*>()(k.lprev) ^ std::hash<Node*>()(k.rprev);
 }
 
@@ -86,7 +86,7 @@ Node* Conditional::Factory(Node *cond, Node *lhs, Node *rhs) {
 	return new Conditional(meta,cond,lhs,rhs);
 }
 
-Node* Conditional::clone(std::unordered_map<Node*,Node*> other_to_this) {
+Node* Conditional::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 	return new Conditional(this,other_to_this);
 }
 
@@ -105,7 +105,7 @@ Conditional::Conditional(const MetaData &meta, Node *cond, Node *lprev, Node *rp
 	rprev->addNext(this);
 }
 
-Conditional::Conditional(const Conditional *other, std::unordered_map<Node*,Node*> other_to_this)
+Conditional::Conditional(const Conditional *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 { }
 
@@ -130,29 +130,48 @@ std::string Conditional::signature() const {
 	sign += right()->datatype().toString();
 	return sign;
 }
-/*
-Node*& Conditional::cond() {
-	return prev_list[0];
-}
-*/
+
 Node* Conditional::cond() const {
 	return prev_list[0];
 }
-/*
-Node*& Conditional::left() {
-	return prev_list[1]; // second element
-}
-*/
+
 Node* Conditional::left() const {
 	return prev_list[1]; // second element
 }
-/*
-Node*& Conditional::right() {
-	return prev_list[2]; // third element
-}
-*/
+
 Node* Conditional::right() const {
 	return prev_list[2]; // third element
+}
+
+void Conditional::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
+	assert(numdim() == D0);
+	Coord coord = {0,0};
+	auto cval = hash.find({cond(),coord})->second;
+	auto lval = hash.find({left(),coord})->second;
+	auto rval = hash.find({right(),coord})->second;
+	hash[{this,coord}] = cval.convert(B8).get<B8>() ? lval : rval;
+}
+
+void Conditional::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
+	auto *node = this;
+	ValFix vf = {{},false};
+
+	auto cond = hash[{node->cond(),coord}];
+	auto left = hash[{node->left(),coord}];
+	auto right = hash[{node->right(),coord}];
+
+	if (cond.fixed) {
+		if (cond.value.convert(B8).get<B8>()) {
+			if (left.fixed) 
+				vf = {left.value,true};
+		} else {
+			if (right.fixed)
+				vf = {right.value,true};
+		}
+	}
+	hash[{node,coord}] = vf;
+
+	// TODO: if 'cond' is fixed but 'left'/'right' are not, still one side might be ignored
 }
 
 } } // namespace map::detail

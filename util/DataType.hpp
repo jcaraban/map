@@ -52,7 +52,6 @@ class DataType {
 	DataType to16() const;
 	DataType to32() const;
 	DataType to64() const;
-
 };
 
 } } // namespace map::detail

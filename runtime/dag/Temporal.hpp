@@ -18,11 +18,11 @@ struct Temporal : public Node
 	// Internal declarations
 	
 	// Factory
-	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
+	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
 	Temporal(const MetaData &meta);
-	Temporal(const Temporal *other, std::unordered_map<Node*,Node*> other_to_this);
+	Temporal(const Temporal *other, const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);

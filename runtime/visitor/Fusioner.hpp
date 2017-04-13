@@ -114,11 +114,6 @@ struct Fusioner
 	void sorting();
 
 	/*
-	 * Topological sort for the Groups DAG
-	 */
-	void toposort(Group *group);
-
-	/*
 	 *
 	 */
 	void print();

@@ -12,17 +12,17 @@ namespace map { namespace detail {
 
 // Internal declarations
 
-FocalPercent::Key::Key(FocalPercent *node) {
+FocalPercent::Content::Content(FocalPercent *node) {
 	prev = node->prev();
 	smask = node->smask;
 	type = node->type;
 }
 
-bool FocalPercent::Key::operator==(const Key& k) const {
+bool FocalPercent::Content::operator==(const Content& k) const {
 	return (prev==k.prev && smask==k.smask && type==k.type);
 }
 
-std::size_t FocalPercent::Hash::operator()(const Key& k) const {
+std::size_t FocalPercent::Hash::operator()(const Content& k) const {
 	return std::hash<Node*>()(k.prev) ^ k.smask.hash() ^ std::hash<int>()(k.type.get());
 }
 
@@ -43,7 +43,7 @@ Node* FocalPercent::Factory(Node *prev, const Mask &mask, PercentType type) {
 	return new FocalPercent(meta,prev,mask,type);
 }
 
-Node* FocalPercent::clone(std::unordered_map<Node*,Node*> other_to_this) {
+Node* FocalPercent::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 	return new FocalPercent(this,other_to_this);
 }
 
@@ -60,7 +60,7 @@ FocalPercent::FocalPercent(const MetaData &meta, Node *prev, const Mask &mask, P
 	prev->addNext(this);
 }
 
-FocalPercent::FocalPercent(const FocalPercent *other, std::unordered_map<Node*,Node*> other_to_this)
+FocalPercent::FocalPercent(const FocalPercent *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 {
 	this->smask = other->smask;
@@ -86,11 +86,7 @@ std::string FocalPercent::signature() const {
 	sign += type.toString();
 	return sign;
 }
-/*
-Node*& FocalPercent::prev() {
-	return prev_list[0];
-}
-*/
+
 Node* FocalPercent::prev() const {
 	return prev_list[0];
 }
@@ -102,5 +98,7 @@ Mask FocalPercent::mask() const {
 BlockSize FocalPercent::halo() const {
 	return smask.datasize() / 2;
 }
+
+// Compute
 
 } } // namespace detail, map

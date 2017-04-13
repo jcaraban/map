@@ -123,6 +123,12 @@ void Program::print() {
 		std::cout << "  next:" << std::endl;
 		for (auto &next : task->nextList())
 			std::cout << "    " << next << std::endl;
+		std::cout << "  back:" << std::endl;
+		for (auto &back : task->backList())
+			std::cout << "    " << back << std::endl;
+		std::cout << "  forw:" << std::endl;
+		for (auto &forw : task->forwList())
+			std::cout << "    " << forw << std::endl;
 		std::cout << std::endl;
 	}
 }

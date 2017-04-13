@@ -30,7 +30,6 @@ struct FocalZonalSkeleton : public Skeleton
 	DECLARE_VISIT(Convolution)
 	DECLARE_VISIT(FocalFunc)
 	DECLARE_VISIT(FocalPercent)
-	DECLARE_VISIT(FocalFlow)
 
 	DECLARE_VISIT(ZonalReduc)
 	
@@ -40,7 +39,6 @@ struct FocalZonalSkeleton : public Skeleton
 	std::vector<Convolution*> conv; //!< Stores Convolution nodes
 	std::vector<FocalFunc*> func; //!< Stores FocalFunc nodes
 	std::vector<FocalPercent*> percent; //!< Stores FocalPercent nodes
-	std::vector<FocalFlow*> flow; //!< Stores FocalFlow nodes
 	int level;
 	std::vector<BlockSize> halo; //< Stores the halo of each level
 

@@ -156,6 +156,13 @@ void Runtime::setupDevices(std::string plat_name, DeviceType dev, std::string de
 Node* Runtime::loopAssemble() {
 	const LoopStruct &stru = assembler.loop_struct[assembler.loop_level];
 
+	// Remove 'body' nodes from Simplifier, to avoid problems with updatePrev() when assembling
+	for (auto node : stru.body)
+		simplifier.drop(node);
+
+	// Assembling the loop includes:
+	//  - determining the 'prev', 'cond', 'body', feedbacks, etc
+	//  - creating 'head', 'empty', 'merge', 'switch', 'loop', 'tail', ('next'?) nodes
 	assembler.assemble();
 	
 	// TODO: how to simplify a loop?
@@ -203,15 +210,6 @@ Version* Runtime::addVersion(Version *ver) {
 	return ver;
 }
 
-void Runtime::removeNode(Node *node) {
-	simplifier.drop(node);
-}
-
-void Runtime::updateNode(Node *node) {
-	Node *orig = simplifier.simplify(node);
-	assert(orig == node);
-}
-
 void Runtime::unlinkIsolated(const OwnerNodeList &node_list, bool drop) {
 	// In reverse order, new isolated appear as we unlink nodes
 	for (auto it=node_list.rbegin(); it!=node_list.rend(); it++) {
@@ -257,7 +255,7 @@ void Runtime::evaluate(NodeList list_to_eval) {
 	clock.prepare();
 	clock.start(EVAL);
 
-print_nodes(node_list); // @ Prints nodes
+//print_nodes(node_list); // @ Prints nodes
 
 	// Unlinks all unaccessible (i.e. isolated) nodes & removes them from simplifier 
 	unlinkIsolated(node_list,true);
@@ -266,7 +264,7 @@ print_nodes(node_list); // @ Prints nodes
 	auto pred = [](std::unique_ptr<Node> &node){ return node->ref==0; };
 	node_list.erase(std::remove_if(node_list.begin(),node_list.end(),pred),node_list.end());
 
-print_nodes(node_list); // @ Prints nodes
+//print_nodes(node_list); // @ Prints nodes
 
 	NodeList full_list;
 	if (list_to_eval.size() == 0) // eval all nodes
@@ -284,12 +282,12 @@ print_nodes(node_list); // @ Prints nodes
 		full_list = Lister().list(list_to_eval);
 	}
 
-print_nodes(full_list); // @ Prints nodes
+//print_nodes(full_list); // @ Prints nodes
 
 	// Sorts the list by 'dependencies' 1st, and 'id' 2nd
 	auto sort_list = Sorter().sort(full_list);
 
-print_nodes(sort_list); // @ Prints nodes
+//print_nodes(sort_list); // @ Prints nodes
 
 	// Clones the list of sorted nodes into new list of new nodes
 	OwnerNodeList priv_list; //!< Owned by this particular evaluation
@@ -297,7 +295,7 @@ print_nodes(sort_list); // @ Prints nodes
 	auto graph = cloner.clone(sort_list);
 	auto map_new_old = cloner.new_hash;
 
-print_nodes(priv_list); // @ Prints nodes
+//print_nodes(priv_list); // @ Prints nodes
 
 	/**/
 	workflow(graph);
@@ -343,7 +341,7 @@ void Runtime::workflow(NodeList list) {
 	cache.allocEntries();
 	
 	// Adding initial jobs
-	scheduler.addInitialJobs();
+	scheduler.initialJobs();
 
 	// Make workers work
 	this->work();

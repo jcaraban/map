@@ -33,5 +33,5 @@ nstd  = sqrt(zsum(norm) / N)
 
 #print value(nstd)
 eval(maxv,minv,rang,mean,geom,harm,quam,cubm,std,nstd)
-print "max: ",value(maxv), "min: ", value(minv), "range: ", value(rang), "mean: ", value(mean), "std: ", value(std)
-print "nstd: ", value(nstd), "geom: ", value(geom), "harm: ", value(harm), "quam: ", value(quam), "cubm: ", value(cubm)
+print "max: ", value(maxv), "min: ", value(minv), "range: ", value(rang), "mean: ", value(mean), "geom: ", value(geom)
+print "harm: ", value(harm), "quam: ", value(quam), "cubm: ", value(cubm), "std: ", value(std), "nstd: ", value(nstd)

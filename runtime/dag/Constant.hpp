@@ -16,23 +16,23 @@ namespace map { namespace detail {
 struct Constant : public Node
 {
 	// Internal declarations
-	struct Key {
-		Key(Constant *node);
-		bool operator==(const Key& k) const;
+	struct Content {
+		Content(Constant *node);
+		bool operator==(const Content& k) const;
 		NumDim num_dim;
 		VariantType cnst;
 	};
 	struct Hash {
-		std::size_t operator()(const Key& k) const;
+		std::size_t operator()(const Content& k) const;
 	};
 
 	// Factory
 	static Node* Factory(VariantType arg, DataSize ds, DataType dt, MemOrder mo, BlockSize bs);
-	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
+	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
 	Constant(const MetaData &meta, VariantType val);
-	Constant(const Constant *other, std::unordered_map<Node*,Node*> other_to_this);
+	Constant(const Constant *other, const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);
@@ -40,6 +40,10 @@ struct Constant : public Node
 	std::string signature() const;
 	char classSignature() const;
 	Pattern pattern() const { return FREE; }
+	
+	// Compute
+	void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
+	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
 
 	// Variables
 	VariantType cnst;

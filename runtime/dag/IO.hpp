@@ -22,7 +22,7 @@ struct IONode : public Node
 	IONode();
 	IONode(SharedFile file, InputNodeFlag not_used);
 	IONode(SharedFile file, OutputNodeFlag not_used);
-	IONode(const IONode *other, std::unordered_map<Node*,Node*> other_to_this);
+	IONode(const IONode *other, const std::unordered_map<Node*,Node*> &other_to_this);
 
 	IFile* file();
 	const IFile* file() const;
@@ -37,8 +37,6 @@ struct InputNode : public virtual IONode
 	InputNode(SharedFile file);
 
 	bool isInput() const;
-	//std::string signature() const;
-	//char classSignature() const;
 };
 
 struct OutputNode : public virtual IONode
@@ -47,9 +45,6 @@ struct OutputNode : public virtual IONode
 	OutputNode(Node *prev, SharedFile file);
 
 	bool isOutput() const;
-	//std::string signature() const;
-	//char classSignature() const;
-	//Node*& prev();
 	Node* prev() const;
 };
 

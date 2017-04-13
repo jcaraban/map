@@ -60,7 +60,8 @@ void RadiatingTask::blocksToLoad(Coord coord, InKeyList &in_keys) const {
 
 			auto lambda = [&](Coord nbc) {
 				HoldType hold = (sum(abs(startb-nbc)) < sum(dif)) ? HOLD_N : HOLD_0;
-				in_keys.push_back( std::make_tuple(Key(node,nbc),hold) );
+				int depend = node->isInput() ? nextInterDepends(node,nbc) : -1; // @
+				in_keys.push_back( std::make_tuple(Key(node,nbc),hold,depend) );
 			};
 
 			lambda(coord + Coord{unit[0],0}); // Neighbour in first dir
@@ -174,13 +175,13 @@ void RadiatingTask::compute(Coord coord, const BlockList &in_blk, const BlockLis
 			void *dev_mem = (b->entry != nullptr) ? b->entry->dev_mem : nullptr;
 			/****/ if (b->holdtype() == HOLD_0) { // If HOLD_0, a null argument is given to the kernel
 				clSetKernelArg(*krn, arg++, sizeof(cl_mem), &dev_mem);
-				clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &b->value.get());
+				clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &b->value.ref());
 				clSetKernelArg(*krn, arg++, sizeof(b->fixed), &b->fixed);
 			} else if (b->holdtype() == HOLD_1) { // If HOLD_1, a scalar argument is given
-				clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &b->value.get());
+				clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &b->value.ref());
 			} else if (b->holdtype() == HOLD_N) { // In the normal case a valid cl_mem with memory is given
 				clSetKernelArg(*krn, arg++, sizeof(cl_mem), &dev_mem);
-				clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &b->value.get());
+				clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &b->value.ref());
 				clSetKernelArg(*krn, arg++, sizeof(b->fixed), &b->fixed);
 			} else {
 				assert(0);

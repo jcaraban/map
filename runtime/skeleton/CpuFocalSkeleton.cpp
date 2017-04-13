@@ -28,7 +28,6 @@ CpuFocalSkeleton::CpuFocalSkeleton(Version *ver)
 	, conv()
 	, func()
 	, percent()
-	, flow()
 	, halo()
 {
 	indent_count = 2;
@@ -56,7 +55,6 @@ void CpuFocalSkeleton::compact() {
 	sort_unique(conv,node_id_less(),node_id_equal());
 	sort_unique(func,node_id_less(),node_id_equal());
 	sort_unique(percent,node_id_less(),node_id_equal());
-	sort_unique(flow,node_id_less(),node_id_equal());
 }
 
 string CpuFocalSkeleton::versionCode() {
@@ -95,8 +93,6 @@ string CpuFocalSkeleton::versionCode() {
 			add_line( "" );
 		}
 	}
-	if (!flow.empty())
-		add_section( defines_focal_flow() );
 	
 	// Signature
 	add_line( kernel_sign(ver->signature()) );
@@ -443,22 +439,6 @@ void CpuFocalSkeleton::visit(FocalPercent *node) {
 
 	shared.push_back(node->prev());
 	percent.push_back(node);
-}
-
-void CpuFocalSkeleton::visit(FocalFlow *node) {
-	// Adds FocalFlow code
-	{
-		assert(0);
-	}
-	
-	if (halo.size() > level) {
-		halo[level] = cond(node->halo() > halo[level], node->halo(), halo[level]);
-	} else {
-		halo.push_back(node->halo());
-	}
-	
-	shared.push_back(node->prev());
-	flow.push_back(node);
 }
 
 } } // namespace map::detail

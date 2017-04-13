@@ -1,5 +1,5 @@
 /**
- * @file	Merge.cpp 
+ * @file	Merge.cpp
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  * TODO: not restricting the patterns could work, but would inhibit fusion in those cases
@@ -15,16 +15,16 @@ namespace map { namespace detail {
 
 // Internal declarations
 
-Merge::Key::Key(Merge *node) {
+Merge::Content::Content(Merge *node) {
 	lprev = node->left();
 	rprev = node->right();
 }
 
-bool Merge::Key::operator==(const Key& k) const {
+bool Merge::Content::operator==(const Content& k) const {
 	return (lprev==k.lprev && rprev==k.rprev);
 }
 
-std::size_t Merge::Hash::operator()(const Key& k) const {
+std::size_t Merge::Hash::operator()(const Content& k) const {
 	return std::hash<Node*>()(k.lprev) ^ std::hash<Node*>()(k.rprev);
 }
 
@@ -55,7 +55,7 @@ Node* Merge::Factory(Node *lhs, Node *rhs) {
 	return new Merge(meta,lhs,rhs);
 }
 
-Node* Merge::clone(std::unordered_map<Node*,Node*> other_to_this) {
+Node* Merge::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 	return new Merge(this,other_to_this);
 }
 
@@ -90,7 +90,7 @@ Merge::Merge(const MetaData &meta, Node *lprev, Node *rprev)
 	assert(lprev->id != rprev->id);
 }
 
-Merge::Merge(const Merge *other, std::unordered_map<Node*,Node*> other_to_this)
+Merge::Merge(const Merge *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 {
 	//this->pat = other->pat;
@@ -115,19 +115,11 @@ std::string Merge::signature() const {
 	sign += right()->datatype().toString();
 	return sign;
 }
-/*
-Node*& Merge::left() {
-	return prev_list[0]; // first element
-}
-*/
+
 Node* Merge::left() const {
 	return prev_list[0]; // first element
 }
-/*
-Node*& Merge::right() {
-	return prev_list[1]; // second element
-}
-*/
+
 Node* Merge::right() const {
 	assert(prev_list.size() + forw_list.size() == 2);
 	return (prev_list.size() == 2) ? prev_list[1] : forw_list[0];
@@ -135,6 +127,47 @@ Node* Merge::right() const {
 
 Pattern Merge::pattern() const {
 	return MERGE;
+}
+
+// Compute
+
+void Merge::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
+	assert(numdim() == D0);
+	Coord coord = {0,0};
+	auto *node = this;
+
+	bool left_found = hash.find({left(),coord}) != hash.end();
+	bool right_found = hash.find({right(),coord}) != hash.end();
+	assert(left_found xor right_found);
+
+	VariantType value;
+	if (left_found)
+		value = hash.find({left(),coord})->second;
+	else // right_found
+		value = hash.find({right(),coord})->second;
+
+	hash[{node,coord}] = value;
+}
+
+void Merge::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
+	auto *node = this;
+	ValFix vf = {{},false};
+
+	bool left_found = hash.find({left(),coord}) != hash.end();
+	bool right_found = hash.find({right(),coord}) != hash.end();
+	assert(left_found xor right_found);
+
+	if (left_found) {
+		auto left = hash.find({node->left(),coord})->second;
+		if (left.fixed) {
+			vf = {left.value,true};
+		}
+	} else { // right_found
+		auto right = hash.find({node->right(),coord})->second;
+		if (right.fixed)
+			vf = {right.value,true};
+	}
+	hash[{node,coord}] = vf;
 }
 
 } } // namespace map::detail

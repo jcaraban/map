@@ -38,9 +38,12 @@ class Worker
 	Worker& operator=(Worker&&) = default;
 
 	void work(ThreadId thread_id);
+	void get_blocks(Job job);
+	void pre_load(Job job);
 	void load(Job job);
-	void store(Job job);
 	void compute(Job job);
+	void store(Job job);
+	void post_store(Job job);
 
   private:
 	Cache &cache; // Aggregate

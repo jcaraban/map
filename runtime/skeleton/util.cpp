@@ -137,12 +137,17 @@ string mask_decl(const Mask &mask, int id) {
 	DataSize ds = mask.datasize();
 	DataType dt = mask.datatype();
 	string str = dt.ctypeString() + " ";
+	
 	str += dt.toString() + "L_" + std::to_string(id);
 	for (int i=0; i<ds.size(); i++) {
 		str += "[" + std::to_string(ds[i]) + "]";
 	}
 	str += " = ";
-	BlockSize idx(ds.size(),0);
+
+	BlockSize idx(ds.size());
+	for (int i=0; i<idx.size(); i++)
+		idx[i] = 0;
+
 	mask_helper(str,mask,idx,ds.size());
 	return str + ";";
 }

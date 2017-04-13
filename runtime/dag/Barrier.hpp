@@ -16,32 +16,35 @@ namespace map { namespace detail {
 struct Barrier : public Node
 {
 	// Internal declarations
-	struct Key {
-		Key(Barrier *node);
-		bool operator==(const Key& k) const;
+	struct Content {
+		Content(Barrier *node);
+		bool operator==(const Content& k) const;
 		Node *prev;
 	};
 	struct Hash {
-		std::size_t operator()(const Key& k) const;
+		std::size_t operator()(const Content& k) const;
 	};
 
 	// Factory
 	static Node* Factory(Node *arg);
-	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
+	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
 	Barrier(const MetaData &meta, Node *prev);
-	Barrier(const Barrier *other, std::unordered_map<Node*,Node*> other_to_this);
+	Barrier(const Barrier *other, const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;
 	char classSignature() const;
-	//Node*& prev();
 	Node* prev() const;
-	Pattern pattern() const { return BARRIER; }
+	Pattern pattern() const { return GLOBAL; }
 
+	// Compute
+	//void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
+	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
+	
 	// Variables
 };
 

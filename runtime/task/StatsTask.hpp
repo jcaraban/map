@@ -35,7 +35,7 @@ struct StatsTask : public Task
 	void postCompute(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
 	void compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
 
-	Pattern pattern() const { return SPECIAL+ZONAL; }
+	Pattern pattern() const { return STATS+ZONAL; }
 
   // vars
 	Stats *stats;

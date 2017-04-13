@@ -16,34 +16,37 @@ namespace map { namespace detail {
 struct Neighbor : public Node
 {
 	// Internal declarations
-	struct Key {
-		Key(Neighbor *node);
-		bool operator==(const Key& k) const;
+	struct Content {
+		Content(Neighbor *node);
+		bool operator==(const Content& k) const;
 		Node *prev;
 		Coord scoord;
 	};
 	struct Hash {
-		std::size_t operator()(const Key& k) const;
+		std::size_t operator()(const Content& k) const;
 	};
 
 	// Factory
 	static Node* Factory(Node *prev, const Coord &coord);
-	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
+	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
 	Neighbor(const MetaData &meta, Node *prev, const Coord &coord);
-	Neighbor(const Neighbor *other, std::unordered_map<Node*,Node*> other_to_this);
+	Neighbor(const Neighbor *other, const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;
 	char classSignature() const;
-	//Node*& prev();
 	Node* prev() const;
 	Coord coord() const;
 	Pattern pattern() const { return FOCAL; }
 	BlockSize halo() const;
+
+	// Compute
+	//void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
+	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
 
 	// Variables
 	Coord scoord; //!< Static neighbor direction

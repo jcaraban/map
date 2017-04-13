@@ -98,7 +98,7 @@ void ZonalTask::preCompute(Coord coord, const BlockList &in_blk, const BlockList
 			VariantType neutral = rtype.neutral(b->datatype());
 			b->value = neutral; // necessary to set the datatype
 
-			cl_int clerr = clEnqueueFillBuffer(*que,b->scalar_page,&neutral.get(),neutral.datatype().sizeOf(),index,b->datatype().sizeOf(),0,nullptr,nullptr);
+			cl_int clerr = clEnqueueFillBuffer(*que,b->scalar_page,&neutral.ref(),neutral.datatype().sizeOf(),index,b->datatype().sizeOf(),0,nullptr,nullptr);
 			cle::clCheckError(clerr);
 		}
 	}
@@ -118,7 +118,7 @@ void ZonalTask::postCompute(Coord coord, const BlockList &in_blk, const BlockLis
 		if (b->holdtype() == HOLD_1)
 		{
 			int index = sizeof(double)*(conf.max_out_block*Tid.rnk() + sidx++);
-			cl_int clerr = clEnqueueReadBuffer(*que,b->scalar_page,CL_TRUE,index,b->datatype().sizeOf(),&b->value.get(),0,nullptr,nullptr);
+			cl_int clerr = clEnqueueReadBuffer(*que,b->scalar_page,CL_TRUE,index,b->datatype().sizeOf(),&b->value.ref(),0,nullptr,nullptr);
 			cle::clCheckError(clerr);
 
 			if (b->key.node->pattern().is(ZONAL)) {

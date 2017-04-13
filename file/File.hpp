@@ -500,10 +500,9 @@ Ferr FILE_DEC::readBlock(Block &block) const {
 		block.stats.min = stats.minb[idx];
 		block.stats.std = stats.stdb[idx];
 		block.stats.active = true;
-		block.fixed = (block.stats.max.f64 == block.stats.min.f64); // @
-		if (block.fixed) {
-			block.value = VariantType(block.stats.max,getDataType());
-			return 0; // No need to read when the value is fixed
+		if (block.stats.max.f64 == block.stats.min.f64) { // @
+			block.fixValue( VariantType(block.stats.max,getDataType()) );
+			return 0; // @ No need to read when the value is fixed
 		}
 	}
 

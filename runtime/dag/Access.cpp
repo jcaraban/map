@@ -12,16 +12,16 @@ namespace map { namespace detail {
 
 // Internal declarations
 
-Access::Key::Key(Access *node) {
+Access::Content::Content(Access *node) {
 	prev = node->prev();
 	coord = node->coord();
 }
 
-bool Access::Key::operator==(const Key& k) const {
+bool Access::Content::operator==(const Content& k) const {
 	return (prev==k.prev && all(coord==k.coord));
 }
 
-std::size_t Access::Hash::operator()(const Key& k) const {
+std::size_t Access::Hash::operator()(const Content& k) const {
 	size_t hash = std::hash<Node*>()(k.prev);
 	for (int i=0; i<k.coord.size(); i++)
 		hash ^= std::hash<int>()(k.coord[i]);
@@ -43,7 +43,7 @@ Node* Access::Factory(Node *arg, const Coord &coord) {
 	return new Access(meta,arg,coord);
 }
 
-Node* Access::clone(std::unordered_map<Node*,Node*> other_to_this) {
+Node* Access::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 	return new Access(this,other_to_this);
 }
 
@@ -57,7 +57,7 @@ Access::Access(const MetaData &meta, Node *prev, const Coord &coord) : Node(meta
 	prev->addNext(this);
 }
 
-Access::Access(const Access *other, std::unordered_map<Node*,Node*> other_to_this)
+Access::Access(const Access *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 {
 	this->cell_coord = other->cell_coord;
@@ -81,11 +81,7 @@ std::string Access::signature() const {
 	sign += to_string(coord());
 	return sign;
 }
-/*
-Node*& Access::prev() {
-	return prev_list[0];
-}
-*/
+
 Node* Access::prev() const {
 	return prev_list[0];
 }

@@ -2,6 +2,7 @@
  * @file	SpreadScan.hpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
+ * TODO: remove it in favour of loop + focal, or find another use
  */
 
 #ifndef MAP_RUNTIME_DAG_SPREADSCAN_HPP_
@@ -15,42 +16,41 @@ namespace map { namespace detail {
 struct SpreadScan : public Node
 {
 	// Internal declarations
-	struct Key {
-		Key(SpreadScan *node);
-		bool operator==(const Key& k) const;
+	struct Content {
+		Content(SpreadScan *node);
+		bool operator==(const Content& k) const;
 		Node *prev;
 		Node *dir;
 		ReductionType type;
 	};
 	struct Hash {
-		std::size_t operator()(const Key& k) const;
+		std::size_t operator()(const Content& k) const;
 	};
 
 	// Factory
 	static Node* Factory(Node *arg, Node *dir, ReductionType type);
-	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
+	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
 	SpreadScan(const MetaData &meta, Node *prev, Node *dir, ReductionType type);
-	SpreadScan(const SpreadScan *other, std::unordered_map<Node*,Node*> other_to_this);
+	SpreadScan(const SpreadScan *other, const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;
 	char classSignature() const;
-	//Node*& prev();
 	Node* prev() const;
-	//Node*& dir();
 	Node* dir() const;
-	//Node*& spread();
 	Node* spread() const;
-	//Node*& buffer();
 	Node* buffer() const;
-	//Node*& stable();
 	Node* stable() const;
 	Pattern pattern() const { return SPREAD; }
 
+	// Compute
+	//void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
+	//void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
+	
 	// Variables
 	ReductionType type;
 };

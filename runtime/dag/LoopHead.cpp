@@ -14,34 +14,32 @@ namespace map { namespace detail {
 
 // Internal declarations
 
-LoopHead::Key::Key(LoopHead *node) {
+LoopHead::Content::Content(LoopHead *node) {
 	prev = node->prev();
 	loop = node->loop();
 }
 
-bool LoopHead::Key::operator==(const Key& k) const {
+bool LoopHead::Content::operator==(const Content& k) const {
 	return (prev==k.prev && loop==k.loop);
 }
 
-std::size_t LoopHead::Hash::operator()(const Key& k) const {
+std::size_t LoopHead::Hash::operator()(const Content& k) const {
 	return std::hash<Node*>()(k.prev) ^ std::hash<LoopCond*>()(k.loop);
 }
 
-// LoopHead
+// Factory
 
-//Node* LoopHead::Factory(LoopCond *loop, Node *prev) {
 Node* LoopHead::Factory(Node *prev) {
 	MetaData meta = prev->metadata();
 	return new LoopHead(meta,prev);
 }
 
-Node* LoopHead::clone(std::unordered_map<Node*,Node*> other_to_this) {
+Node* LoopHead::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 	return new LoopHead(this,other_to_this);
 }
 
 // Constructors
 
-//LoopHead::LoopHead(const MetaData &meta, LoopCond *loop, Node *prev)
 LoopHead::LoopHead(const MetaData &meta, Node *prev)
 	: Node(meta)
 {
@@ -54,10 +52,11 @@ LoopHead::LoopHead(const MetaData &meta, Node *prev)
 	prev->addNext(this);
 }
 
-LoopHead::LoopHead(const LoopHead *other, std::unordered_map<Node*,Node*> other_to_this)
+LoopHead::LoopHead(const LoopHead *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 {
 	this->owner_loop = nullptr; // filled later by 'loop', because it does not live yet
+	this->twin_tail = nullptr; // might be filled later by a 'tail', if a twin exists
 }
 
 LoopHead::~LoopHead() {
@@ -77,8 +76,11 @@ std::string LoopHead::getName() const {
 }
 
 std::string LoopHead::signature() const {
-	assert(0);
-	return "";
+	std::string sign = "";
+	sign += classSignature();
+	sign += prev()->numdim().toString();
+	sign += prev()->datatype().toString();
+	return sign;
 }
 
 LoopCond* LoopHead::loop() const {

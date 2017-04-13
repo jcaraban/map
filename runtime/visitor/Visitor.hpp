@@ -25,6 +25,7 @@ struct Visitor
   public:
   	bool wasVisited(Node* node);
   	void setVisited(Node* node);
+  	void unVisited(Node *node);
 
   	void visit(Node *node) = delete;
 	DECLARE_VISIT(Constant)
@@ -42,7 +43,6 @@ struct Visitor
 	DECLARE_VISIT(Convolution)
 	DECLARE_VISIT(FocalFunc)
 	DECLARE_VISIT(FocalPercent)
-	DECLARE_VISIT(FocalFlow)
 	DECLARE_VISIT(ZonalReduc)
 	DECLARE_VISIT(RadialScan)
 	DECLARE_VISIT(SpreadScan)

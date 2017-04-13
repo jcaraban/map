@@ -4,7 +4,8 @@
  *
  * TODO: initilized gen_xxx_xxx to {0,0,0,0} in the constructor if Array4 is made an aggregate
  * Note: using the Group pointer in 'prev_hash' is only possible if all groups are first created at once
- *       Think, new objects may often the address of recently deleted objects, creating false dependencies
+ *       Think, new objects often take the address of recently deleted objects, creating false dependencies
+ * Note: careful with 'prev_hash' and how it is propagated, it probably won't work when spliting groups
  */
 
 #include "Group.hpp"
@@ -55,6 +56,14 @@ const GroupList& Group::prevList() const {
 
 const GroupList& Group::nextList() const {
 	return next_list;
+}
+
+const GroupList& Group::backList() const {
+	return back_list;
+}
+
+const GroupList& Group::forwList() const {
+	return forw_list;
 }
 
 NumDim Group::numdim() const {
@@ -134,7 +143,7 @@ void Group::removeAutoNode(Node *node) {
 		removeOutputNode(node);
 	} else {
 		removeNode(node);
-	} 
+	}
 }
 
 void Group::addPrev(Group *group, Pattern pattern) {
@@ -195,6 +204,34 @@ void Group::removeNext(Group *group) {
 
 bool Group::isNext(const Group *group) const {
 	return group->isPrev(this);
+}
+
+void Group::addBack(Group *group, Pattern pattern) { //
+	assert(group!=this);
+	assert(isPrev(group)); // cyclic
+	
+	auto i = std::find(back_list.begin(),back_list.end(),group);
+	if (i == back_list.end()) {
+		back_list.push_back(group);
+	}
+}
+
+void Group::removeBack(Group *group) {
+	remove_value(group,back_list);
+}
+
+void Group::addForw(Group *group, Pattern pattern) { //
+	assert(group!=this);
+	assert(isNext(group)); // cyclic
+	
+	auto i = std::find(forw_list.begin(),forw_list.end(),group);
+	if (i == forw_list.end()) {
+		forw_list.push_back(group);
+	}
+}
+
+void Group::removeForw(Group *group) {
+	remove_value(group,forw_list);
 }
 
 void Group::updateAttributes() const {

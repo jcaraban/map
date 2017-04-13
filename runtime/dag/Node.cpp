@@ -5,7 +5,6 @@
 
 #include "Node.hpp"
 #include "util.hpp"
-#include "../Runtime.hpp"
 
 
 namespace map { namespace detail {
@@ -36,7 +35,7 @@ Node::Node(const MetaData &meta)
 	, value()
 { }
 
-Node::Node(const Node *other, std::unordered_map<Node*,Node*> other_to_this)
+Node::Node(const Node *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: id(other->id)
 	, ref(0)
 	, prev_list()
@@ -107,10 +106,7 @@ const MetaData& Node::metadata() const {
 void Node::updatePrev(Node *old_node, Node *new_node) {
 	auto it = std::find(prev_list.begin(),prev_list.end(),old_node);
 	assert(it != prev_list.end());
-	Runtime::getInstance().removeNode(this); // @
 	*it = new_node;
-	Runtime::getInstance().updateNode(this); // @
-	// @@ ... continue ... rethink remove/update
 }
 
 void Node::updateNext(Node *old_node, Node *new_node) {
@@ -197,6 +193,14 @@ const NumBlock& Node::numblock() const {
 
 const DataStats& Node::datastats() const {
 	return stats;
+}
+
+void Node::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
+	assert(!"computeScalar() not implemented in derived class");
+}
+
+void Node::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
+	assert(!"computeFixed() not implemented in derived class");
 }
 
 } } // namespace map::detail

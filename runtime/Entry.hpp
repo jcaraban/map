@@ -19,18 +19,13 @@ struct Entry {
   // Constructors & methods
 	Entry(cl_mem dev_mem);
 
+	void reset();
 	void setDirty();
 	void unsetDirty();
 	bool isDirty();
 	void setUsed();
 	void unsetUsed();
 	bool isUsed();
-	void setLoading();
-	void unsetLoading();
-	bool isLoading();
-	void setWriting();
-	void unsetWriting();
-	bool isWriting();
 
   // Variables
 	std::list<Entry*>::iterator self;
@@ -38,7 +33,7 @@ struct Entry {
 	void *host_mem;
 	Block *block;
 	char used;
-	bool dirty, loading, writing;
+	bool dirty;
 };
 
 } } // namespace map::detail

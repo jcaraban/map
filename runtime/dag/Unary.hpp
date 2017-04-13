@@ -16,32 +16,35 @@ namespace map { namespace detail {
 struct Unary : public Node
 {
 	// Internal declarations
-	struct Key {
-		Key(Unary *node);
-		bool operator==(const Key& k) const;
+	struct Content {
+		Content(Unary *node);
+		bool operator==(const Content& k) const;
 		Node *prev;
 		UnaryType type;
 	};
 	struct Hash {
-		std::size_t operator()(const Key& k) const;
+		std::size_t operator()(const Content& k) const;
 	};
 
 	// Factory
 	static Node* Factory(Node *arg, UnaryType type);
-	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
+	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
 	Unary(const MetaData &meta, Node *prev, UnaryType type);
-	Unary(const Unary *other, std::unordered_map<Node*,Node*> other_to_this);
+	Unary(const Unary *other, const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;
 	char classSignature() const;
-	//Node*& prev();
 	Node* prev() const;
 	Pattern pattern() const { return LOCAL; }
+	
+	// Compute
+	void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
+	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
 
 	// Variables
 	UnaryType type; //!< Enum corresponding to the type of unary operation / function

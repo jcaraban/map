@@ -515,15 +515,6 @@ Raster aspect(Raster dem, float dist)
 	return z1 + z0;
 }
 
-Raster flowDirection(Raster data) {
-	assert( data.datatype() == F32 );
-	assert( data.numdim() == D2 );
-
-	Raster dir( FocalFlow::Factory(data.node) );
-
-	return dir;
-}
-
 Raster flowDir(Raster data) {
 	assert( data.numdim() == D2 );
 	assert( data.datatype() == F32 );

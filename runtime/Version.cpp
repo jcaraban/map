@@ -68,7 +68,7 @@ void Version::compileProgram() {
 	std::string kernel_name = "krn" + std::to_string(hash);
 
 	// Includes
-	#ifdef RAND123
+	#ifdef RAND123 // needs the RAND123 dir because OpenCL compiles at runtime,
 		#define xstr(s) str(s)
 		#define str(s) #s
 		flags += "-I " xstr(RAND123) " ";

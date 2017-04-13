@@ -19,22 +19,22 @@ namespace map { namespace detail {
 struct Read : public InputNode
 {
 	// Internal declarations
-	struct Key {
-		Key(Read *node);
-		bool operator==(const Key& k) const;
+	struct Content {
+		Content(Read *node);
+		bool operator==(const Content& k) const;
 		std::string path;
 	};
 	struct Hash {
-		std::size_t operator()(const Key& k) const;
+		std::size_t operator()(const Content& k) const;
 	};
 	
 	// Factory
 	static Node* Factory(std::string file_path);
-	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
+	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
 	Read(SharedFile in_file);
-	Read(const Read *other, std::unordered_map<Node*,Node*> other_to_this);
+	Read(const Read *other, const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);

@@ -12,15 +12,15 @@ namespace map { namespace detail {
 
 // Internal declarations
 
-Identity::Key::Key(Identity *node) {
+Identity::Content::Content(Identity *node) {
 	prev = node->prev();
 }
 
-bool Identity::Key::operator==(const Key& k) const {
+bool Identity::Content::operator==(const Content& k) const {
 	return (prev==k.prev);
 }
 
-std::size_t Identity::Hash::operator()(const Key& k) const {
+std::size_t Identity::Hash::operator()(const Content& k) const {
 	return std::hash<Node*>()(k.prev);
 }
 
@@ -31,7 +31,7 @@ Node* Identity::Factory(Node *prev) {
 	return new Identity(prev->metadata(),prev);
 }
 
-Node* Identity::clone(std::unordered_map<Node*,Node*> other_to_this) {
+Node* Identity::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 	return new Identity(this,other_to_this);
 }
 
@@ -46,7 +46,7 @@ Identity::Identity(const MetaData &meta, Node *prev)
 	prev->addNext(this);
 }
 
-Identity::Identity(const Identity *other, std::unordered_map<Node*,Node*> other_to_this)
+Identity::Identity(const Identity *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 { }
 
@@ -67,13 +67,27 @@ std::string Identity::signature() const {
 	sign += prev()->datatype().toString();
 	return sign;
 }
-/*
-Node*& Identity::prev() {
-	return prev_list[0];
-}
-*/
+
 Node* Identity::prev() const {
 	return prev_list[0];
+}
+
+// Compute
+
+void Identity::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
+	assert(numdim() == D0);
+	Coord coord = {0,0};
+	auto *node = this;
+
+	auto pval = hash.find({node->prev(),coord})->second;
+	hash[{node,coord}] = pval;
+}
+
+void Identity::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
+	auto *node = this;
+
+	auto prev = hash.find({node->prev(),coord})->second;
+	hash[{node,coord}] = {prev.value,prev.fixed};
 }
 
 } } // namespace map::detail

@@ -33,7 +33,6 @@ void SimplifierOnline::clear() {
 	ConvolutionMap.clear();
 	FocalFuncMap.clear();
 	FocalPercentMap.clear();
-	FocalFlowMap.clear();
 	ZonalReducMap.clear();
 	RadialScanMap.clear();
 	SpreadScanMap.clear();
@@ -86,7 +85,6 @@ void SimplifierOnline::drop(Node *node) {
 	DEFINE_VISIT(Convolution)
 	DEFINE_VISIT(FocalFunc)
 	DEFINE_VISIT(FocalPercent)
-	DEFINE_VISIT(FocalFlow)
 	DEFINE_VISIT(ZonalReduc)
 	DEFINE_VISIT(RadialScan)
 	DEFINE_VISIT(SpreadScan)

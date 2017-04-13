@@ -12,16 +12,16 @@ namespace map { namespace detail {
 
 // Internal declarations
 
-Cast::Key::Key(Cast *node) {
+Cast::Content::Content(Cast *node) {
 	prev = node->prev();
 	type = node->type;
 }
 
-bool Cast::Key::operator==(const Key& k) const {
+bool Cast::Content::operator==(const Content& k) const {
 	return (prev==k.prev && type==k.type);
 }
 
-std::size_t Cast::Hash::operator()(const Key& k) const {
+std::size_t Cast::Hash::operator()(const Content& k) const {
 	return std::hash<Node*>()(k.prev) ^ std::hash<int>()(k.type.get());
 }
 
@@ -40,7 +40,7 @@ Node* Cast::Factory(Node *prev, DataType new_type) {
 	return new Cast(meta,prev);
 }
 
-Node* Cast::clone(std::unordered_map<Node*,Node*> other_to_this) {
+Node* Cast::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 	return new Cast(this,other_to_this);
 }
 
@@ -56,7 +56,7 @@ Cast::Cast(const MetaData &meta, Node *prev)
 	prev->addNext(this);
 }
 
-Cast::Cast(const Cast *other, std::unordered_map<Node*,Node*> other_to_this)
+Cast::Cast(const Cast *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 {
 	this->type = other->type;
@@ -80,13 +80,28 @@ std::string Cast::signature() const {
 	sign += type.toString();
 	return sign;
 }
-/*
-Node*& Cast::prev() {
-	return prev_list[0];
-}
-*/
+
 Node* Cast::prev() const {
 	return prev_list[0];
+}
+
+// Compute
+
+void Cast::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
+	assert(numdim() == D0);
+	Coord coord = {0,0};
+	auto pval = hash.find({prev(),coord})->second;
+	hash[{this,coord}] = pval.convert(type);
+}
+
+void Cast::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
+	auto pval = hash.find({prev(),coord})->second.value;
+	auto pfix = hash.find({prev(),coord})->second.fixed;
+	if (pfix) {
+		hash[{this,coord}] = {pval.convert(type),true};
+	} else  {
+		hash[{this,coord}] = {{},false};
+	}
 }
 
 } } // namespace map::detail

@@ -18,7 +18,7 @@ namespace map { namespace detail {
  * Enumerate storing the possible different patterns
  */
 enum PatternEnum { NONE_PAT=0x00, FREE=0x01, LOCAL=0x02, FOCAL=0x04, ZONAL=0x08, RADIAL=0x10, SPREAD=0x20,
-				 	SPECIAL=0x40, BARRIER=0x80, HEAD=0x100, TAIL=0x200, MERGE=0x400, SWITCH=0x800 };
+				 	STATS=0x40, GLOBAL=0x80, HEAD=0x100, TAIL=0x200, MERGE=0x400, SWITCH=0x800, LOOP=0x1000 };
 
 PatternEnum operator + (const PatternEnum& lhs, const PatternEnum& rhs);
 //PatternEnum& operator += (PatternEnum& lhs, const PatternEnum& rhs);

@@ -2,6 +2,7 @@
  * @file	Block.cpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
+ * TODO: reduce constructors to just one ?
  */
 
 #include "Block.hpp"
@@ -10,34 +11,6 @@
 
 
 namespace map { namespace detail {
-
-/*******
-   Key
- *******/
-
-Key::Key()
-	: node(nullptr)
-	, coord{-1,-1} // @
-{ }
-
-Key::Key(Node *node, Coord coord)
-	: node(node)
-	, coord(coord)
-{ }
-
-bool Key::operator==(const Key& k) const {
-	return (node==k.node && all(coord==k.coord));
-}
-
-std::size_t key_hash::operator()(const Key &k) const {
-	/*std::size_t h = std::hash<Task*>()(k.node);
-	for (int i=0; i<k.coord.size(); i++)
-		h ^= std::hash<int>()(k.coord[i]);*/
-	std::size_t h = (size_t)k.node & 0x00000000ffffffff;
-	for (int i=0; i<k.coord.size(); i++)
-		h |= (size_t)k.coord[i] << (32+i*16);
-	return h;
-}
 
 /*********
    Stats
@@ -61,10 +34,15 @@ Block::Block()
 	, scalar_page(nullptr)
 	, value()
 	, fixed(false)
+	, ready(false)
 	, stats()
 	, total_size(-1)
 	, dependencies(DEPEND_UNKNOWN)
 	, hold_type()
+	, used(0)
+	, dirty(false)
+	, loading(false)
+	, writing(false)
 { }
 
 Block::Block(Key key)
@@ -73,10 +51,15 @@ Block::Block(Key key)
 	, scalar_page(nullptr)
 	, value()
 	, fixed(false)
+	, ready(false)
 	, stats()
 	, total_size(-1)
 	, dependencies(DEPEND_UNKNOWN)
 	, hold_type(HOLD_0)
+	, used(0)
+	, dirty(false)
+	, loading(false)
+	, writing(false)
 { }
 
 Block::Block(Key key, cl_mem scalar_page)
@@ -85,10 +68,15 @@ Block::Block(Key key, cl_mem scalar_page)
 	, scalar_page(scalar_page)
 	, value()
 	, fixed(false)
+	, ready(false)
 	, stats()
 	, total_size(-1)
 	, dependencies(DEPEND_UNKNOWN)
 	, hold_type(HOLD_1)
+	, used(0)
+	, dirty(false)
+	, loading(false)
+	, writing(false)
 {
 	assert(numdim() == D0);
 }
@@ -99,10 +87,15 @@ Block::Block(Key key, int max_size, int depend)
 	, scalar_page(nullptr)
 	, value()
 	, fixed(false)
+	, ready(false)
 	, stats()
 	, total_size(-1)
 	, dependencies(depend)
 	, hold_type(HOLD_N)
+	, used(0)
+	, dirty(false)
+	, loading(false)
+	, writing(false)
 {
 	assert(numdim() != D0);
 	
@@ -112,6 +105,30 @@ Block::Block(Key key, int max_size, int depend)
 }
 
 Block::~Block() { }
+
+int Block::size() const {
+	return total_size;
+}
+
+StreamDir Block::streamdir() const {
+	return key.node->streamdir();
+}
+
+DataType Block::datatype() const {
+	return key.node->datatype();
+}
+
+NumDim Block::numdim() const {
+	return key.node->numdim();
+}
+
+MemOrder Block::memorder() const {
+	return key.node->memorder();
+}
+
+HoldType Block::holdtype() const {
+	return hold_type;
+}
 
 Berr Block::send() {
 	TimedRegion region(Runtime::getClock(),SEND);
@@ -193,6 +210,13 @@ Berr Block::store(IFile *file) {
 	return berr;
 }
 
+void Block::fixValue(VariantType var) {
+	assert(not var.isNone());
+	fixed = true;
+	ready = true;
+	value = var;
+}
+
 void Block::notify() {
 	if (dependencies >= 0)
 		dependencies--;
@@ -203,28 +227,96 @@ bool Block::discardable() const {
 	return dependencies == DEPEND_ZERO; // == 0
 }
 
-int Block::size() const {
-	return total_size;
+void Block::setReady() {
+	assert(not ready);
+	ready = true;
 }
 
-StreamDir Block::streamdir() const {
-	return key.node->streamdir();
+bool Block::isReady() {
+	return ready;
 }
 
-DataType Block::datatype() const {
-	return key.node->datatype();
+void Block::setDirty() {
+	assert(not dirty);
+	dirty = true;
+	entry->setDirty();
 }
 
-NumDim Block::numdim() const {
-	return key.node->numdim();
+void Block::unsetDirty() {
+	assert(dirty);
+	dirty = false;
+	entry->unsetDirty();	
 }
 
-MemOrder Block::memorder() const {
-	return key.node->memorder();
+bool Block::isDirty() {
+	assert(dirty == entry->dirty);
+	return dirty;
 }
 
-HoldType Block::holdtype() const {
-	return hold_type;
+void Block::setUsed() {
+	used++;
+	if (entry)
+		entry->setUsed();
 }
 
+void Block::unsetUsed() {
+	assert(used > 0);
+	used--;
+	if (entry)
+		entry->unsetUsed();
+}
+
+bool Block::isUsed() {
+	if (entry)
+		assert(used == entry->used);
+	return used > 0;
+}
+
+void Block::setLoading() {
+	assert(not loading);
+	loading = true;
+}
+
+void Block::unsetLoading() {
+	assert(loading);
+	loading = false;
+}
+
+bool Block::isLoading() {
+	return loading;
+}
+
+void Block::setWriting() {
+	assert(not writing);
+	writing = true;
+}
+
+void Block::unsetWriting() {
+	assert(writing);
+	writing = false;
+}
+
+bool Block::isWriting() {
+	return writing;
+}
+
+void Block::waitForLoader() {
+	std::unique_lock<std::mutex> lock(mtx,std::adopt_lock);
+	cv_load.wait(lock,[&]{ return !isLoading(); }); // exit-condition = !loading
+	lock.release();
+}
+
+void Block::notifyLoaders() {
+	cv_load.notify_all();
+}
+
+void Block::waitForWriter() {
+	std::unique_lock<std::mutex> lock(mtx,std::adopt_lock);
+	cv_write.wait(lock,[&]{ return !isWriting(); }); // exit-condition = !writing
+	lock.release();
+}
+
+void Block::notifyWriters() {
+	cv_write.notify_all();
+}
 } } // namespace map::detail

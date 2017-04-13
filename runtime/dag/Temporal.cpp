@@ -11,7 +11,7 @@ namespace map { namespace detail {
 
 // Factory
 
-Node* Temporal::clone(std::unordered_map<Node*,Node*> other_to_this) {
+Node* Temporal::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 	return new Temporal(this,other_to_this);
 }
 
@@ -21,7 +21,7 @@ Temporal::Temporal(const MetaData &meta) :
 	Node(meta)
 { }
 
-Temporal::Temporal(const Temporal *other, std::unordered_map<Node*,Node*> other_to_this)
+Temporal::Temporal(const Temporal *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 { }
 

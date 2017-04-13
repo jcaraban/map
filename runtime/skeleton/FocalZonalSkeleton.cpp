@@ -28,7 +28,6 @@ FocalZonalSkeleton::FocalZonalSkeleton(Version *ver)
 	, conv()
 	, func()
 	, percent()
-	, flow()
 	, halo()
 	, reduc()
 	, zonal_code()
@@ -61,12 +60,12 @@ void FocalZonalSkeleton::compact() {
 	sort_unique(conv,node_id_less(),node_id_equal());
 	sort_unique(func,node_id_less(),node_id_equal());
 	sort_unique(percent,node_id_less(),node_id_equal());
-	sort_unique(flow,node_id_less(),node_id_equal());
 }
 
 string FocalZonalSkeleton::versionCode() {
 	//// Variables ////
 	const int N = 2;
+	const Group *group = ver->task->group();
 
 	//// Header ////
 	indent_count = 0;
@@ -86,20 +85,15 @@ string FocalZonalSkeleton::versionCode() {
 	std::vector<bool> added_F(N_DATATYPE,false);
 	for (auto &node : ver->task->inputList()) {
 		DataType dt = node->datatype();
-		if (!added_F[dt.get()] && isInputOf(node,ver->task->group()).is(FOCAL)) {
+		if (!added_F[dt.get()] && isInputOf(node,group).is(FOCAL)) {
 			add_section( defines_focal_type(dt) );
 			added_F[dt.get()] = true;
 			add_line( "" );
-		} else if (!added_L[dt.get()] && isInputOf(node,ver->task->group()).is(LOCAL)) {
+		} else if (!added_L[dt.get()] && isInputOf(node,group).is(LOCAL)) {
 			add_section( defines_local_type(dt) );
 			added_L[dt.get()] = true;
 			add_line( "" );
 		}
-	}
-
-	if (!flow.empty()) {
-		add_section( defines_focal_flow() );
-		add_line( "" );
 	}
 
 	std::vector<bool> added_Z(N_REDUCTION,false);
@@ -118,9 +112,9 @@ string FocalZonalSkeleton::versionCode() {
 	add_line( "(" );
 	indent_count++;
 	for (auto &node : ver->task->inputList()) { // keeps the order IN_0, IN_8, ...
-		if (tag_hash[node] == PRECORE && node->numdim() != D0)
+		if (tag_hash[node] == PRECORE && isInputOf(node,group).is(FOCAL))
 			add_line( "TYPE_VAR_LIST(" + node->datatype().ctypeString() + ",IN_" + node->id + ")," );
-		else if (tag_hash[node] == POSCORE || node->numdim() == D0)
+		else //if (tag_hash[node] == POSCORE || node->numdim() == D0)
 			add_line( in_arg(node) );
 	}
 	for (auto &node : ver->task->outputList()) {
@@ -220,12 +214,12 @@ string FocalZonalSkeleton::versionCode() {
 	add_line( "" );
 
 	// Adds PRECORE input-nodes
-	for (auto &node : ver->task->inputList()) {
+	for (auto &node : ver->task->inputList()) {  // @ erroneus, needs two PRECORE to differentiate FOCAL / ZONAL
 		if (tag_hash[node] == PRECORE) {
-			if (node->numdim() == D0) { // @ erroneus, needs two PRECORE to differentiate FOCAL / ZONAL
-				add_line( var_name(node) + " = " + in_var(node) + ";" );	
-			} else {
+			if (isInputOf(node,group).is(FOCAL)) {
 				add_line( var_name(node) + " = " + in_var_focal(node) + ";" );
+			} else {
+				add_line( var_name(node) + " = " + in_var(node) + ";" );	
 			}
 		}
 	}
@@ -504,46 +498,6 @@ void FocalZonalSkeleton::visit(FocalPercent *node) {
 
 	shared.push_back(node->prev());
 	percent.push_back(node);
-}
-
-void FocalZonalSkeleton::visit(FocalFlow *node) {
-	// Adds FocalFlow code
-	{
-		const int N = node->numdim().toInt();
-		DataType dt = node->prev()->datatype();
-		string dt_str = dt.ctypeString();
-		string var = var_name(node);
-		string self = var_name(node->prev(),SHARED) + "[" + local_proj_focal_H(N) + "]";
-		string nbh = var_name(node->prev(),SHARED) + "[" + local_proj_focal_of(N) + "]";
-
-		add_line( dt_str + " max_"+node->id + " = 0;" );// + ReductionType(MAX).neutralString(dt) + ";" );
-		add_line( string("int pos_")+node->id + " = -1;" );
-		add_line( "for (int dir=0; dir<N_DIR; dir++) {" );
-		indent_count++;
-		add_line( "int of0 = offset0[dir];" );
-		add_line( "int of1 = offset1[dir];" );
-		add_line( dt_str + " zdif = " + self + " - " + nbh + ";" );
-		add_line( dt_str + " dist = (dir%2 == 0) ? 1 : 1.414213f;" );
-		add_line( dt_str + " drop = zdif / dist;" );
-		add_line( string("if (drop > max_")+node->id + ") {" );
-		indent_count++;
-		add_line( string("max_")+node->id + " = drop;" );
-		add_line( string("pos_")+node->id + " = dir;" );
-		indent_count--;
-		add_line( "}" );
-		indent_count--;
-		add_line( "}" );
-		add_line( var + " = (" + "pos_"+node->id + " == -1) ? 0 : 1 << pos_"+node->id + ";" );
-	}
-	
-	if (halo.size() > level) {
-		halo[level] = cond(node->halo() > halo[level], node->halo(), halo[level]);
-	} else {
-		halo.push_back(node->halo());
-	}
-	
-	shared.push_back(node->prev());
-	flow.push_back(node);
 }
 
 void FocalZonalSkeleton::visit(ZonalReduc *node) {

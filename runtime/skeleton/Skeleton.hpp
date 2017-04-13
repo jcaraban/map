@@ -52,6 +52,8 @@ struct Skeleton : public Visitor
 	DECLARE_VISIT(Binary)
 	DECLARE_VISIT(Conditional)
 	DECLARE_VISIT(Diversity)
+	DECLARE_VISIT(LoopHead)
+	DECLARE_VISIT(LoopTail)
 	DECLARE_VISIT(LhsAccess)
 	DECLARE_VISIT(Access)
 	DECLARE_VISIT(Read)

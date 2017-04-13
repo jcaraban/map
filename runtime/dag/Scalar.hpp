@@ -20,22 +20,22 @@ namespace map { namespace detail {
 struct Scalar : public OutputNode
 {
 	// Internal declarations
-	struct Key {
-		Key(Scalar *node);
-		bool operator==(const Key& k) const;
+	struct Content {
+		Content(Scalar *node);
+		bool operator==(const Content& k) const;
 		Node *prev;
 	};
 	struct Hash {
-		std::size_t operator()(const Key& k) const;
+		std::size_t operator()(const Content& k) const;
 	};
 	
 	// Factory
 	static Node* Factory(Node *prev);
-	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
+	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
 	Scalar(Node *prev, SharedFile sca_file);
-	Scalar(const Scalar *other, std::unordered_map<Node*,Node*> other_to_this);
+	Scalar(const Scalar *other, const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);
@@ -44,6 +44,10 @@ struct Scalar : public OutputNode
 	char classSignature() const;
 	VariantType value();
 
+	// Compute
+	//void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
+	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
+	
 	// Variables
 	//ScaFile sca_file;
 };

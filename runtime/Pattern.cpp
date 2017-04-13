@@ -51,86 +51,94 @@ bool Pattern::isNot(Pattern pat) const {
 }
 
 bool canPipeFuse(const Pattern& top, const Pattern& bot) {
-	#define PIPE(t,b,r) if ((top.pat & t) == t && (bot.pat & b) == b) return r;
-	#define PIPE_T(t,r) if ((top.pat & t) == t) return r;
-	#define PIPE_B(b,r) if ((bot.pat & b) == b) return r;
-	
-	PIPE(SPREAD,RADIAL,false)
-	PIPE(SPREAD,ZONAL,false)
-	PIPE(SPREAD,FOCAL,false)
-	PIPE(SPREAD,LOCAL,false)
-	PIPE(SPREAD,FREE,true)
-	PIPE(SPREAD,SPECIAL,false)
-	PIPE(SPREAD,BARRIER,false)
-	
-	PIPE(RADIAL,SPREAD,false)
-	PIPE(RADIAL,RADIAL,false) // RAD | RAD can be fused if 'start' is close enough, but scan of scan doesn't make sense
-	PIPE(RADIAL,ZONAL,false) // RAD | ZONAL can be fused, skeleton not ready
-	PIPE(RADIAL,FOCAL,false) // Incomplatible data dependencies
-	PIPE(RADIAL,LOCAL,true)
-	PIPE(RADIAL,FREE,true)
-	PIPE(RADIAL,SPECIAL,false)
-	PIPE(RADIAL,BARRIER,false)
-	
-	PIPE(ZONAL,SPREAD,false)
-	PIPE(ZONAL,RADIAL,false)
-	PIPE(ZONAL,ZONAL,false)
-	PIPE(ZONAL,FOCAL,false)
-	PIPE(ZONAL,LOCAL,false)
-	PIPE(ZONAL,FREE,true)
-	PIPE(ZONAL,SPECIAL,true)
-	PIPE(ZONAL,BARRIER,false)
-
-	PIPE(FOCAL,SPREAD,false)
-	PIPE(FOCAL,RADIAL,false) // FOCAL | RAD can be fused, skeleton not ready
-	PIPE(FOCAL,ZONAL,true) // @ FocalZonal
-	PIPE(FOCAL,FOCAL,false) // FOCAL | FOCAL can be fused, skeleton not ready
-	PIPE(FOCAL,LOCAL,true)
-	PIPE(FOCAL,FREE,true)
-	PIPE(FOCAL,SPECIAL,false)
-	PIPE(FOCAL,BARRIER,false)
-
-	PIPE(LOCAL,SPREAD,false)
-	PIPE(LOCAL,RADIAL,true)
-	PIPE(LOCAL,ZONAL,true)
-	PIPE(LOCAL,FOCAL,false)
-	PIPE(LOCAL,LOCAL,true)
-	PIPE(LOCAL,FREE,true)
-	PIPE(LOCAL,SPECIAL,false)
-	PIPE(LOCAL,BARRIER,true)
-
-	PIPE(SPECIAL,SPREAD,false)
-	PIPE(SPECIAL,RADIAL,false)
-	PIPE(SPECIAL,ZONAL,false)
-	PIPE(SPECIAL,FOCAL,false)
-	PIPE(SPECIAL,LOCAL,false)
-	PIPE(SPECIAL,FREE,true)
-	PIPE(SPECIAL,SPECIAL,false)
-	PIPE(SPECIAL,BARRIER,false)
-
-	PIPE(BARRIER,SPREAD,false)
-	PIPE(BARRIER,RADIAL,false)
-	PIPE(BARRIER,ZONAL,false)
-	PIPE(BARRIER,FOCAL,false)
-	PIPE(BARRIER,LOCAL,false)
-	PIPE(BARRIER,FREE,true)
-	PIPE(BARRIER,SPECIAL,false)
-	PIPE(BARRIER,BARRIER,false)
-
-	PIPE(HEAD,HEAD,true)
-	PIPE_T(HEAD,false)
-	PIPE_B(HEAD,false)
-
-	PIPE(TAIL,TAIL,true)
-	PIPE_T(TAIL,false)
-	PIPE_B(TAIL,false)
+	#define PIPE(t,b,val) if ((top.pat & t) == t && (bot.pat & b) == b) fuses &= val;
+	#define PIPE_T(t,val) if ((top.pat & t) == t) fuses &= val;
+	#define PIPE_B(b,val) if ((bot.pat & b) == b) fuses &= val;
+	// NB: commented means true
+	bool fuses = true;
 
 	PIPE_T(FREE,true) // everything can be fused when top=FREE
 	PIPE_B(FREE,true) // everything can be fused when bot=Free
 
-	std::cerr << "Error in pipe-fusion, top: " << top << " bot: " << bot << std::endl;
-	assert(0);
-	return false;
+	PIPE(LOCAL,FREE,true)
+	PIPE(LOCAL,LOCAL,true)
+	PIPE(LOCAL,FOCAL,	false)
+	PIPE(LOCAL,ZONAL,true)
+	PIPE(LOCAL,RADIAL,true)
+	PIPE(LOCAL,SPREAD,	false)
+	PIPE(LOCAL,STATS,	false)
+	PIPE(LOCAL,GLOBAL,true)
+
+	PIPE(FOCAL,FREE,true)
+	PIPE(FOCAL,LOCAL,true)
+	PIPE(FOCAL,FOCAL,	false) // FOCAL | FOCAL can be fused, skeleton not ready
+	PIPE(FOCAL,ZONAL,true) // @ FocalZonal
+	PIPE(FOCAL,RADIAL,	false) // FOCAL | RAD can be fused, skeleton not ready
+	PIPE(FOCAL,SPREAD,	false)
+	PIPE(FOCAL,STATS,	false)
+	PIPE(FOCAL,GLOBAL,	false)
+	
+	PIPE(ZONAL,FREE,true)
+	PIPE(ZONAL,LOCAL,	false)
+	PIPE(ZONAL,FOCAL,	false)
+	PIPE(ZONAL,ZONAL,	false)
+	PIPE(ZONAL,RADIAL,	false)
+	PIPE(ZONAL,SPREAD,	false)
+	PIPE(ZONAL,STATS,true) // @ stats
+	PIPE(ZONAL,GLOBAL,	false)
+
+	PIPE(RADIAL,FREE,true)
+	PIPE(RADIAL,LOCAL,true)
+	PIPE(RADIAL,FOCAL,	false) // Incomplatible data dependencies
+	PIPE(RADIAL,ZONAL,	false) // RAD | ZONAL can be fused, skeleton not ready
+	PIPE(RADIAL,RADIAL,	false) // RAD | RAD can be fused if 'start' is close enough, but scan of scan doesn't make sense
+	PIPE(RADIAL,SPREAD,	false)
+	PIPE(RADIAL,STATS,	false)
+	PIPE(RADIAL,GLOBAL,	false)
+
+	PIPE(SPREAD,FREE,true)
+	PIPE(SPREAD,LOCAL,	false)
+	PIPE(SPREAD,FOCAL,	false)
+	PIPE(SPREAD,ZONAL,	false)
+	PIPE(SPREAD,RADIAL,	false)
+	PIPE(SPREAD,SPREAD,	false)
+	PIPE(SPREAD,STATS,	false)
+	PIPE(SPREAD,GLOBAL,	false)
+	
+	PIPE(STATS,FREE,true)
+	PIPE(STATS,LOCAL,	false)
+	PIPE(STATS,FOCAL,	false)
+	PIPE(STATS,ZONAL,	false)
+	PIPE(STATS,RADIAL,	false)
+	PIPE(STATS,SPREAD,	false)
+	PIPE(STATS,STATS,	false)
+	PIPE(STATS,GLOBAL,	false)
+
+	PIPE(GLOBAL,FREE,true)
+	PIPE(GLOBAL,LOCAL,	false)
+	PIPE(GLOBAL,FOCAL,	false)
+	PIPE(GLOBAL,ZONAL,	false)
+	PIPE(GLOBAL,RADIAL,	false)
+	PIPE(GLOBAL,SPREAD,	false)
+	PIPE(GLOBAL,STATS,	false)
+	PIPE(GLOBAL,GLOBAL,	false)
+
+	PIPE_T(HEAD,true)
+	PIPE_B(HEAD,	false)
+
+	PIPE_T(MERGE,true)
+	PIPE_B(MERGE,	false)
+
+	PIPE_T(SWITCH,	false)
+	PIPE_B(SWITCH,true)
+
+	PIPE_T(TAIL,	false)
+	PIPE_B(TAIL,true)
+
+	PIPE_T(LOOP,true)
+	PIPE_B(LOOP,true)
+
+	return fuses;
 
 	#undef PIPE
 	#undef PIPE_T
@@ -138,60 +146,67 @@ bool canPipeFuse(const Pattern& top, const Pattern& bot) {
 }
 
 bool canFlatFuse(const Pattern& left, const Pattern& right) {
-	#define FLAT(l,r,ret) if ((left.pat & l) == l && (right.pat & r) == r) return ret;
-	#define FLAT_L(l,ret) if ((left.pat & l) == l) return ret;
-	#define FLAT_R(r,ret) if ((right.pat & r) == r) return ret;
-
-	FLAT(SPREAD,SPREAD,false)
-	FLAT(SPREAD,RADIAL,false)
-	FLAT(SPREAD,ZONAL,false)
-	FLAT(SPREAD,FOCAL,false)
-	FLAT(SPREAD,LOCAL,false)
-	FLAT(SPREAD,FREE,true)
-
-	FLAT(RADIAL,SPREAD,false)
-	FLAT(RADIAL,RADIAL,false) // RAD + RAD can be fused if 'start' is close
-	FLAT(RADIAL,ZONAL,false) // RAD + ZONAL can be fused, skeleton not ready
-	FLAT(RADIAL,FOCAL,false) // RAD + FOCAL can be fused, skeleton not ready
-	FLAT(RADIAL,LOCAL,true)
-	FLAT(RADIAL,FREE,true)
-
-	FLAT(ZONAL,SPREAD,false)
-	FLAT(ZONAL,RADIAL,false) // ZONAL + RAD can be fused, skeleton not ready
-	FLAT(ZONAL,ZONAL,true)
-	FLAT(ZONAL,FOCAL,true) // @ FocalZonal
-	FLAT(ZONAL,LOCAL,true)
-	FLAT(ZONAL,FREE,true)
-
-	FLAT(FOCAL,SPREAD,false) // cannot be fused within kernel, incomplatible data dependencies
-	FLAT(FOCAL,RADIAL,false) // FOCAL + RAD can be fused, code not ready
-	FLAT(FOCAL,ZONAL,true) // @ FocalZonal
-	FLAT(FOCAL,FOCAL,true) // ...take care with different halo sizes
-	FLAT(FOCAL,LOCAL,true)
-	FLAT(FOCAL,FREE,true)
-
-	FLAT_L(LOCAL,true) // everything can be fused when left=Local
-	FLAT_R(LOCAL,true) // everything can be fused when right=Local
-
-	FLAT_L(SPECIAL,true)
-	FLAT_R(SPECIAL,true)
-
-	FLAT_L(BARRIER,true)
-	FLAT_R(BARRIER,true)
-
-	FLAT(HEAD,HEAD,true)
-	FLAT_L(HEAD,false)
-	FLAT_R(HEAD,false)
-
-	FLAT(TAIL,TAIL,true)
-	FLAT_L(TAIL,false)
-	FLAT_R(TAIL,false)
+	#define FLAT(l,r,val) if ((left.pat & l) == l && (right.pat & r) == r) fuses &= val;
+	#define FLAT_L(l,val) if ((left.pat & l) == l) fuses &= val;
+	#define FLAT_R(r,val) if ((right.pat & r) == r) fuses &= val;
+	bool fuses = true;
 
 	FLAT_L(FREE,true) // everything can be fused when left=Free
 	FLAT_R(FREE,true) // everything can be fused when right=Free
 
-	assert(0);
-	return false;
+	FLAT_L(LOCAL,true) // everything can be fused when left=Local
+	FLAT_R(LOCAL,true) // everything can be fused when right=Local
+
+	FLAT(FOCAL,FREE,true)
+	FLAT(FOCAL,LOCAL,true)
+	FLAT(FOCAL,FOCAL,true) // ...take care with different halo sizes
+	FLAT(FOCAL,ZONAL,true) // @ FocalZonal
+	FLAT(FOCAL,RADIAL,	false) // FOCAL + RAD can be fused, code not ready
+	FLAT(FOCAL,SPREAD,	false) // cannot be fused within kernel, incomplatible data dependencies
+
+	FLAT(ZONAL,FREE,true)
+	FLAT(ZONAL,LOCAL,true)
+	FLAT(ZONAL,FOCAL,true) // @ FocalZonal
+	FLAT(ZONAL,ZONAL,true)
+	FLAT(ZONAL,RADIAL,	false) // ZONAL + RAD can be fused, skeleton not ready
+	FLAT(ZONAL,SPREAD,	false)
+
+	FLAT(RADIAL,FREE,true)
+	FLAT(RADIAL,LOCAL,true)
+	FLAT(RADIAL,FOCAL,	false) // RAD + FOCAL can be fused, skeleton not ready
+	FLAT(RADIAL,ZONAL,	false) // RAD + ZONAL can be fused, skeleton not ready
+	FLAT(RADIAL,RADIAL,	false) // RAD + RAD can be fused if 'start' is close
+	FLAT(RADIAL,SPREAD,	false)
+
+	FLAT(SPREAD,FREE,true)
+	FLAT(SPREAD,LOCAL,	false)
+	FLAT(SPREAD,FOCAL,	false)
+	FLAT(SPREAD,ZONAL,	false)
+	FLAT(SPREAD,RADIAL,	false)
+	FLAT(SPREAD,SPREAD,	false)
+
+	FLAT_L(STATS,true)
+	FLAT_R(STATS,true)
+
+	FLAT_L(GLOBAL,true)
+	FLAT_R(GLOBAL,true)
+
+	FLAT_L(HEAD,true)
+	FLAT_R(HEAD,true)
+
+	FLAT_L(MERGE,true)
+	FLAT_R(MERGE,true)
+
+	FLAT_L(SWITCH,true)
+	FLAT_R(SWITCH,true)
+
+	FLAT_L(TAIL,true)
+	FLAT_R(TAIL,true)
+
+	FLAT_L(LOOP,true)
+	FLAT_R(LOOP,true)
+
+	return fuses;
 
 	#undef FLAT
 	#undef FLAT_L
@@ -199,32 +214,34 @@ bool canFlatFuse(const Pattern& left, const Pattern& right) {
 }
 
 std::ostream& operator<< (std::ostream& os, const Pattern& pat) {
-	/**/ if (pat.is(TAIL))
-		os << "Tail";
-	else if (pat.is(HEAD))
-		os << "Head";
-	else if (pat.is(BARRIER))
-		os << "Barrier";
-	else if (pat.is(SPECIAL))
-		os << "Special";
-	else if (pat.is(SPREAD))
-		os << "Spreading";
-	else if (pat.is(RADIAL))
-		os << "Radiating";
-	else if (pat.is(FOCAL+ZONAL))
-		os << "FocalZonal";
-	else if (pat.is(ZONAL))
-		os << "Zonal";
-	else if (pat.is(FOCAL))
-		os << "Focal";
-	else if (pat.is(LOCAL))
-		os << "Local";
-	else if (pat.is(FREE))
-		os << "Free";
-	else if (pat.is(NONE_PAT))
+	if (pat.pat == NONE_PAT)
 		os << "None";
-	else
-		assert(0);
+	if (pat.is(FREE))
+		os << "Free";
+	if (pat.is(LOCAL))
+		os << "Local";
+	if (pat.is(FOCAL))
+		os << "Focal";
+	if (pat.is(ZONAL))
+		os << "Zonal";
+	if (pat.is(RADIAL))
+		os << "Radiating";
+	if (pat.is(SPREAD))
+		os << "Spreading";
+	if (pat.is(STATS))
+		os << "Stats";
+	if (pat.is(GLOBAL))
+		os << "Barrier";
+	if (pat.is(HEAD))
+		os << "Head";
+	if (pat.is(MERGE))
+		os << "Merge";
+	if (pat.is(SWITCH))
+		os << "Switch";
+	if (pat.is(TAIL))
+		os << "Tail";
+	if (pat.is(LOOP))
+		os << "Loop";
 	return os;
 }
 

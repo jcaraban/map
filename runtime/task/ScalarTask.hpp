@@ -8,17 +8,14 @@
 #define MAP_RUNTIME_TASK_SCALAR_HPP_
 
 #include "Task.hpp"
-#include "../visitor/Visitor.hpp"
 
 
 namespace map { namespace detail {
 
-#define DECLARE_VISIT(class) virtual void visit(class *node);
-
 /*
  *
  */
-struct ScalarTask : public Task, public Visitor
+struct ScalarTask : public Task
 {
 	ScalarTask(Group *group);
 
@@ -40,25 +37,9 @@ struct ScalarTask : public Task, public Visitor
 	
 	Pattern pattern() const { return LOCAL; }
 
-  // visit
-	bool is_input(Node *node); // @
-	bool is_output(Node *node); // @
-
-	DECLARE_VISIT(Constant)
-	DECLARE_VISIT(Cast)
-	DECLARE_VISIT(Unary)
-	DECLARE_VISIT(Binary)
-	DECLARE_VISIT(Conditional)
-	DECLARE_VISIT(Diversity)
-	DECLARE_VISIT(Scalar)
-	DECLARE_VISIT(ZonalReduc)
-
   // vars
-	VariantType variant; //!< Used to store the last returned value while visiting nodes
-	BlockList in_blk, out_blk;  //!< Used to store the blocks while visiting nodes
+	std::unordered_map<Key,VariantType,key_hash> hash;
 };
-
-#undef DECLARE_VISIT
 
 } } // namespace map::detail
 

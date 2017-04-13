@@ -39,7 +39,8 @@ void FocalZonalTask::blocksToLoad(Coord coord, InKeyList &in_keys) const {
 			for (int x=-N; x<=N; x++) {
 				auto nbc = coord + Coord{x,y};
 				HoldType hold_nbc = (any(nbc < 0) || any(nbc >= numblock())) ? HOLD_0 : hold;
-				in_keys.push_back( std::make_tuple(Key(node,nbc),hold_nbc) );
+				int depend = node->isInput() ? nextInterDepends(node,nbc) : -1; // @
+				in_keys.push_back( std::make_tuple(Key(node,nbc),hold_nbc,depend) );
 			}
 		}
 	}
@@ -137,7 +138,7 @@ void FocalZonalTask::preCompute(Coord coord, const BlockList &in_blk, const Bloc
 			VariantType neutral = rtype.neutral(b->datatype());
 			b->value = neutral; // necessary to set the datatype
 
-			cl_int clerr = clEnqueueFillBuffer(*que,b->scalar_page,&neutral.get(),neutral.datatype().sizeOf(),index,b->datatype().sizeOf(),0,nullptr,nullptr);
+			cl_int clerr = clEnqueueFillBuffer(*que,b->scalar_page,&neutral.ref(),neutral.datatype().sizeOf(),index,b->datatype().sizeOf(),0,nullptr,nullptr);
 			cle::clCheckError(clerr);
 		}
 	}
@@ -158,7 +159,7 @@ void FocalZonalTask::postCompute(Coord coord, const BlockList &in_blk, const Blo
 		if (b->holdtype() == HOLD_1)
 		{
 			int index = sizeof(double)*(conf.max_out_block*Tid.rnk() + sidx++);
-			cl_int clerr = clEnqueueReadBuffer(*que,b->scalar_page,CL_TRUE,index,b->datatype().sizeOf(),&b->value.get(),0,nullptr,nullptr);
+			cl_int clerr = clEnqueueReadBuffer(*que,b->scalar_page,CL_TRUE,index,b->datatype().sizeOf(),&b->value.ref(),0,nullptr,nullptr);
 			cle::clCheckError(clerr);
 		}
 	}

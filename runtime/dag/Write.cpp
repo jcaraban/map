@@ -13,16 +13,16 @@ namespace map { namespace detail {
 
 // Internal declarations
 
-Write::Key::Key(Write *node) {
+Write::Content::Content(Write *node) {
 	prev = node->prev();
 	path = node->file()->getFilePath();
 }
 
-bool Write::Key::operator==(const Key& k) const {
+bool Write::Content::operator==(const Content& k) const {
 	return (prev==k.prev && path==k.path);
 }
 
-std::size_t Write::Hash::operator()(const Key& k) const {
+std::size_t Write::Hash::operator()(const Content& k) const {
 	return std::hash<Node*>()(k.prev) ^ std::hash<std::string>()(k.path);
 }
 
@@ -54,7 +54,7 @@ Node* Write::Factory(Node *prev, std::string file_path) {
 	return new Write(prev,out_file);
 }
 
-Node* Write::clone(std::unordered_map<Node*,Node*> other_to_this) {
+Node* Write::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 	return new Write(this,other_to_this);
 }
 
@@ -65,7 +65,7 @@ Write::Write(Node *prev, SharedFile out_file) :
 	OutputNode(prev,out_file)
 { }
 
-Write::Write(const Write *other, std::unordered_map<Node*,Node*> other_to_this)
+Write::Write(const Write *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: IONode(other,other_to_this)
 	, OutputNode() // @ InputNode(other) ?
 { }
@@ -87,6 +87,15 @@ std::string Write::signature() const {
 	sign += prev()->datatype().toString();
 	sign += file()->getFilePath();
 	return sign;
+}
+
+// Compute
+
+void Write::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
+	auto *node = this;
+
+	auto prev = hash.find({node->prev(),coord})->second;
+	hash[{node,coord}] = {prev.value,prev.fixed};
 }
 
 } } // namespace map::detail

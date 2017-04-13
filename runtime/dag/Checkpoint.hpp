@@ -17,22 +17,22 @@ namespace map { namespace detail {
 struct Checkpoint : public OutInNode
 {
 	// Internal declarations
-	struct Key {
-		Key(Checkpoint *node);
-		bool operator==(const Key& k) const;
+	struct Content {
+		Content(Checkpoint *node);
+		bool operator==(const Content& k) const;
 		Node *prev;
 	};
 	struct Hash {
-		std::size_t operator()(const Key& k) const;
+		std::size_t operator()(const Content& k) const;
 	};
 	
 	// Factory
 	static Node* Factory(Node *prev);
-	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
+	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
 	Checkpoint(Node *prev, SharedFile tmp_file);
-	Checkpoint(const Checkpoint *other, std::unordered_map<Node*,Node*> other_to_this);
+	Checkpoint(const Checkpoint *other, const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);
@@ -40,6 +40,10 @@ struct Checkpoint : public OutInNode
 	std::string signature() const;
 	char classSignature() const;
 
+	// Compute
+	//void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
+	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
+	
 	// Variables
 	//AnyFile file;
 };

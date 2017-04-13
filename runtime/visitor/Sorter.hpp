@@ -2,7 +2,7 @@
  * @file	Sorter.hpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * Visitor of the DAG that reorders the input list by {dependencies,id}
+ * Visitor of the graph in forward direction that reorders the list by {dependencies,id}
  */
 
 #ifndef MAP_RUNTIME_VISITOR_SORTER_HPP_
@@ -10,7 +10,6 @@
 
 #include "Visitor.hpp"
 #include <unordered_map>
-#include <unordered_set>
 #include <queue>
 
 
@@ -30,40 +29,13 @@ struct Sorter : public Visitor
   // methods
 	void clear();
 
-  // helper
-	template <typename T> void helper(T *node);
-
-  // visit
-	void static_visit(Node *node);
-	//DECLARE_VISIT(...)
-
   // vars
 	NodeList node_list;
-	std::priority_queue<Node*,std::vector<Node*>,node_id_greater> queue;
+	std::priority_queue<Node*,std::vector<Node*>,node_id_greater> prique;
 	std::unordered_map<Node*,int> prev_count; //!< Keeps the count of remaining prevs
 };
 
 #undef DECLARE_VISIT
-
-} } // namespace map::detail
-
-#endif
-
-//-------------------------------------------------------------------------------------------------------------------//
-
-#ifndef MAP_RUNTIME_VISITOR_SIMPLIFIERBU_TPL_
-#define MAP_RUNTIME_VISITOR_SIMPLIFIERBU_TPL_
-
-namespace map { namespace detail {
-
-template <typename T>
-void Sorter::helper(T *node) {
-	if (wasVisited(node)) return;
-	setVisited(node);
-	
-	node->acceptPrev(this);
-	node_list.push_back(node);
-}
 
 } } // namespace map::detail
 

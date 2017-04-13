@@ -98,7 +98,7 @@ string ZonalSkeleton::versionCode() {
 	}
 	// @ for the Stats functionality
 	for (auto &node : ver->task->nodeList())
-		if (node->pattern().is(ZONAL) && node->nextList()[0]->pattern().is(SPECIAL)) // @@ nextList can be empty
+		if (node->pattern().is(ZONAL) && node->nextList()[0]->pattern().is(STATS)) // @@ nextList can be empty
 			add_line( out_arg(node) );
 	//
 	for (int n=0; n<N; n++) {

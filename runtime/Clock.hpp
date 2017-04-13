@@ -2,7 +2,7 @@
  * @file	Clock.hpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * Clock class
+ * Clock class, needs to be extremelly efficient because it is called on the critical loop
  */
 
 #ifndef MAP_RUNTIME_CLOCK_HPP_
@@ -22,7 +22,7 @@ namespace map { namespace detail {
 // Enum
 
 enum TimerEnum { NONE_TIMER, OVERALL, DEVICES, EVAL, ALLOC_C, FUSION, TASKIF, CODGEN, COMPIL, ADD_JOB, ALLOC_E, EXEC, FREE_E, FREE_C,
-				 GET_JOB, LOAD, COMPUTE, STORE, NOTIFY, READ, SEND, KERNEL, RECV, WRITE, N_TIMER };
+				 GET_JOB, GET_BLOCK, PRE_LOAD, LOAD, COMPUTE, STORE, POST_STORE, NOTIFY, READ, SEND, KERNEL, RECV, WRITE, N_TIMER };
 
 enum CounterEnum { NONE_COUNTER, LOADED, STORED, COMPUTED, DISCARDED, EVICTED, NOT_LOADED, NOT_STORED, NOT_COMPUTED, N_COUNTER };
 

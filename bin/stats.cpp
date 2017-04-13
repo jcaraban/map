@@ -55,6 +55,6 @@ int main(int argc, char **argv) {
 
 	//std::cerr << value(nstd) << std::endl;
 	eval({maxv,minv,mean,geom,harm,quam,cubm,std,nstd});
-	std::cerr << value(maxv) << value(minv) << value(mean) << value(geom) <<
-		value(harm) << value(quam) << value(cubm) << value(std) << value(nstd) << std::endl;
+	std::cerr << value(maxv) << " " << value(minv) << " " << value(rang) << " " << value(mean) << " " << value(geom) << " " <<
+		value(harm) << " " << value(quam) << " " << value(cubm) << " " << value(std) << " " << value(nstd) << std::endl;
 }

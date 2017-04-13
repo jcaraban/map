@@ -12,16 +12,16 @@ namespace map { namespace detail {
 
 // Internal declarations
 
-Neighbor::Key::Key(Neighbor *node) {
+Neighbor::Content::Content(Neighbor *node) {
 	prev = node->prev();
 	scoord = node->coord();
 }
 
-bool Neighbor::Key::operator==(const Key& k) const {
+bool Neighbor::Content::operator==(const Content& k) const {
 	return (prev==k.prev && all(scoord==k.scoord));
 }
 
-std::size_t Neighbor::Hash::operator()(const Key& k) const {
+std::size_t Neighbor::Hash::operator()(const Content& k) const {
 	size_t hash = std::hash<Node*>()(k.prev);
 	for (int i=0; i<k.scoord.size(); i++)
 		hash ^= std::hash<int>()(k.scoord[i]);
@@ -44,7 +44,7 @@ Node* Neighbor::Factory(Node *prev, const Coord &coord) {
 	return new Neighbor(meta,prev,coord);
 }
 
-Node* Neighbor::clone(std::unordered_map<Node*,Node*> other_to_this) {
+Node* Neighbor::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 	return new Neighbor(this,other_to_this);
 }
 
@@ -60,7 +60,7 @@ Neighbor::Neighbor(const MetaData &meta, Node *prev, const Coord &coord)
 	prev->addNext(this);
 }
 
-Neighbor::Neighbor(const Neighbor *other, std::unordered_map<Node*,Node*> other_to_this)
+Neighbor::Neighbor(const Neighbor *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 {
 	this->scoord = other->scoord;
@@ -84,11 +84,7 @@ std::string Neighbor::signature() const {
 	sign += to_string(coord());
 	return sign;
 }
-/*
-Node*& Neighbor::prev() {
-	return prev_list[0];
-}
-*/
+
 Node* Neighbor::prev() const {
 	return prev_list[0];
 }
@@ -99,6 +95,20 @@ Coord Neighbor::coord() const {
 
 BlockSize Neighbor::halo() const {
 	return abs(scoord);
+}
+
+// Compute
+
+void Neighbor::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
+	auto *node = this;
+
+	auto prev = hash.find({node->prev(),coord})->second;
+	auto neig = hash.find({node->prev(),coord+node->coord()})->second;
+	ValFix vf = {{},false};
+
+	if (prev.fixed && neig.fixed && prev.value == neig.value)
+		vf = {prev.value,true};
+	hash[{node,coord}] = vf;
 }
 
 } } // namespace map::detail

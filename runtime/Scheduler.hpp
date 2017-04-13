@@ -36,9 +36,9 @@ class Scheduler
   	void clear();
 	void print();
 	
-	void addInitialJobs();
-	Job getJob();
-	void notifyEnd(Job job);
+	void initialJobs();
+	Job requestJob();
+	void returnJob(Job job);
 
   private:
   	void waitForJob(std::unique_lock<std::mutex> &lock);

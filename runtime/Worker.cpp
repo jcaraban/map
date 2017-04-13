@@ -43,57 +43,82 @@ void Worker::work(ThreadId thread_id) {
 
 	while (true) // Worker loop
 	{
-		Job job = sche.getJob();
+		Job job = sche.requestJob();
 		
 		if (job.task == nullptr) break; // Exit point
-			//std::cout << job.task->id() << job.coord << std::endl;
+
+		get_blocks(job);
+
+		pre_load(job);
+
 		load(job);
 
+		//pre_comp(job);
+
 		compute(job);
-		
+
+		//post_comp(job)
+
 		store(job);
-		
-		sche.notifyEnd(job);
+
+		post_store(job);
+
+		//return_blocks ?
+
+		sche.returnJob(job);
 	}
+}
+
+void Worker::get_blocks(Job job) {
+	TimedRegion region(clock,GET_BLOCK); // Timed function
+
+	job.task->blocksToLoad(job.coord,in_keys);
+	job.task->blocksToStore(job.coord,out_keys);
+
+	cache.requestInputBlocks(in_keys,in_blk);
+	cache.requestOutputBlocks(out_keys,out_blk);
+}
+
+void Worker::pre_load(Job job) {
+	TimedRegion region(clock,PRE_LOAD); // Timed function
+
+	job.task->preLoad(job.coord);
+
+	Predictor predictor(job.task->base_group);
+	predictor.predict(job.coord,in_blk,out_blk);
 }
 
 void Worker::load(Job job) {
 	TimedRegion region(clock,LOAD); // Timed function
 
-	job.task->preLoad(job.coord);
+	cache.retainInputEntries(in_blk);
+	cache.retainOutputEntries(out_blk);
+	// ! those outputs that were 'fixed' by predictor don't need entry anymore
 
-	job.task->blocksToLoad(job.coord,in_keys);
-	cache.retainInputBlocks(in_keys,in_blk);
-
-	job.task->blocksToStore(job.coord,out_keys);
-	cache.retainOutputBlocks(out_keys,out_blk);
-}
-
-void Worker::store(Job job) {
-	TimedRegion region(clock,STORE); // Timed function
-
-	cache.releaseInputBlocks(in_blk);
-	cache.releaseOutputBlocks(out_blk,out_keys);
-
-	job.task->postStore(job.coord);
+	cache.readInputBlocks(in_blk);
 }
 
 void Worker::compute(Job job) {
 	TimedRegion region(clock,COMPUTE); // Timed function
 
-	 // @ tries to predict the result according to some fixed inputs
-	Predictor predictor(job.task->base_group);
-	if (predictor.predict(job.coord,in_blk,out_blk)) {
-			//std::cout << job.task->id() << job.coord << std::endl;
-		clock.incr(NOT_COMPUTED);
-		return;
-	} else {
-		clock.incr(COMPUTED);
-	}
-
 	job.task->preCompute(job.coord,in_blk,out_blk);
 	job.task->compute(job.coord,in_blk,out_blk);
 	job.task->postCompute(job.coord,in_blk,out_blk);
+}
+
+void Worker::store(Job job) {
+	TimedRegion region(clock,STORE); // Timed function
+
+	cache.writeOutputBlocks(out_blk);
+
+	cache.returnInputBlocks(in_blk);
+	cache.returnOutputBlocks(out_blk);
+}
+
+void Worker::post_store(Job job) {
+	TimedRegion region(clock,POST_STORE); // Timed function
+
+	job.task->postStore(job.coord);
 }
 
 } } // namespace map::detail

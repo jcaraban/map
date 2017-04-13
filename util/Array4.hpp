@@ -12,6 +12,7 @@
 #define MAP_UTIL_ARRAY4_HPP_
 
 #include "promote.hpp"
+#include "NumDim.hpp"
 #include <iostream>
 #include <array>
 #include <algorithm>
@@ -59,7 +60,7 @@ class Array4
 	/*
 	 *
 	 */
-	Array4(int n, const T &val);
+	//Array4(int n, const T &val);
 
 	/*
 	 *
@@ -158,7 +159,7 @@ Array4<T>::Array4(int n) :
 {
 	assert(n <= N);
 }
-
+/*
 template <typename T>
 Array4<T>::Array4(int n, const T &val) :
 	arr{},
@@ -168,7 +169,7 @@ Array4<T>::Array4(int n, const T &val) :
 	for (int i=0; i<size(); i++)
 		arr[i] = val;
 }
-
+*/
 template <typename T>
 Array4<T>::Array4(std::initializer_list<T> ini_list) :
 	arr{},

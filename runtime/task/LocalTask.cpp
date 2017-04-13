@@ -59,11 +59,11 @@ int LocalTask::nextInterDepends(Node *node, Coord coord) const {
 }
 
 int LocalTask::prevIntraDepends(Node *node, Coord coord) const {
-	return 0; // Local do not present intra dependencies
+	return 0; // Local does not present intra dependencies
 }
 
 int LocalTask::nextIntraDepends(Node *node, Coord coord) const {
-	return 0; // Local do not present intra dependencies
+	return 0; // Local does not present intra dependencies
 }
 
 void LocalTask::compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {

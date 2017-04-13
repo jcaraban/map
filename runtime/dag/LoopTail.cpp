@@ -14,39 +14,37 @@ namespace map { namespace detail {
 
 // Internal declarations
 
-LoopTail::Key::Key(LoopTail *node) {
+LoopTail::Content::Content(LoopTail *node) {
 	prev = node->prev();
 	loop = node->loop();
 }
 
-bool LoopTail::Key::operator==(const Key& k) const {
+bool LoopTail::Content::operator==(const Content& k) const {
 	return (prev==k.prev && loop==k.loop);
 }
 
-std::size_t LoopTail::Hash::operator()(const Key& k) const {
+std::size_t LoopTail::Hash::operator()(const Content& k) const {
 	return std::hash<Node*>()(k.prev) ^ std::hash<LoopCond*>()(k.loop);
 }
 
 // Factory
 
-//Node* LoopTail::Factory(LoopCond *loop, Node *prev) {
 Node* LoopTail::Factory(Node *prev) {
 	MetaData meta = prev->metadata();
 	return new LoopTail(meta,prev);
 }
 
-Node* LoopTail::clone(std::unordered_map<Node*,Node*> other_to_this) {
+Node* LoopTail::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 	return new LoopTail(this,other_to_this);
 }
 
 // Constructors
 
-//LoopTail::LoopTail(const MetaData &meta, LoopCond *loop, Node *prev)
 LoopTail::LoopTail(const MetaData &meta, Node *prev)
 	: Node(meta)
 {
-	owner_loop = nullptr; // 'head' knows who its 'loop' is
-	twin_head = nullptr; // 'head' might have a twin 'tail'
+	owner_loop = nullptr; // 'tail' knows who its 'loop' is
+	twin_head = nullptr; // 'tail' might have a twin 'head'
 
 	prev_list.reserve(1);
 	this->addPrev(prev);
@@ -54,14 +52,21 @@ LoopTail::LoopTail(const MetaData &meta, Node *prev)
 	prev->addNext(this); // 'prev' is a 'switch' that points to 'tail'
 }
 
-LoopTail::LoopTail(const LoopTail *other, std::unordered_map<Node*,Node*> other_to_this)
+LoopTail::LoopTail(const LoopTail *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 {
 	Node *this_loop = other_to_this.find(other->owner_loop)->second;
 	this->owner_loop = dynamic_cast<LoopCond*>(this_loop);
 	
-	/// Pushes itself into 'loop', because 'tail' did not live when 'loop' was created
+	// Pushes itself into 'loop', because 'tail' did not live when 'loop' was created
 	this->owner_loop->tail_list.push_back(this);
+
+	// Notifies its twin 'head', if any exists
+	if (other->twin_head != nullptr) {
+		Node *this_head = other_to_this.find(other->twin_head)->second;
+		this->twin_head = dynamic_cast<LoopHead*>(this_head);
+		this->twin_head->twin_tail = this;
+	}
 }
 
 LoopTail::~LoopTail() {
@@ -80,8 +85,11 @@ std::string LoopTail::getName() const {
 }
 
 std::string LoopTail::signature() const {
-	assert(0);
-	return "";
+	std::string sign = "";
+	sign += classSignature();
+	sign += prev()->numdim().toString();
+	sign += prev()->datatype().toString();
+	return sign;
 }
 
 LoopCond* LoopTail::loop() const {

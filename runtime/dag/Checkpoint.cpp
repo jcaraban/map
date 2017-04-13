@@ -12,15 +12,15 @@ namespace map { namespace detail {
 
 // Internal declarations
 
-Checkpoint::Key::Key(Checkpoint *node) {
+Checkpoint::Content::Content(Checkpoint *node) {
 	prev = node->prev();
 }
 
-bool Checkpoint::Key::operator==(const Key& k) const {
+bool Checkpoint::Content::operator==(const Content& k) const {
 	return (prev==k.prev);
 }
 
-std::size_t Checkpoint::Hash::operator()(const Key& k) const {
+std::size_t Checkpoint::Hash::operator()(const Content& k) const {
 	return std::hash<Node*>()(k.prev);
 }
 
@@ -36,7 +36,7 @@ Node* Checkpoint::Factory(Node *prev) {
 	return new Checkpoint(prev,tmp_file);
 }
 
-Node* Checkpoint::clone(std::unordered_map<Node*,Node*> other_to_this) {
+Node* Checkpoint::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 	return new Checkpoint(this,other_to_this);
 }
 
@@ -50,7 +50,7 @@ Checkpoint::Checkpoint(Node *prev, SharedFile tmp_file)
 	for (auto next : prev->nextList())
 		if (next != this)
 			next->updatePrev(prev,this);
-	
+assert(!"updatePrev was changed");
 	// 'checkpoint' links to every 'next'
 	for (auto next : prev->nextList())
 		if (next != this)
@@ -63,7 +63,7 @@ Checkpoint::Checkpoint(Node *prev, SharedFile tmp_file)
 	prev->addNext(this);
 }
 
-Checkpoint::Checkpoint(const Checkpoint *other, std::unordered_map<Node*,Node*> other_to_this)
+Checkpoint::Checkpoint(const Checkpoint *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: IONode(other,other_to_this) // because of virtual inheritance
 	, OutInNode()
 { }
@@ -84,6 +84,15 @@ std::string Checkpoint::signature() const {
 	sign += numdim().toString();
 	sign += datatype().toString();
 	return sign;
+}
+
+// Compute
+
+void Checkpoint::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
+	auto *node = this;
+
+	auto prev = hash.find({node->prev(),coord})->second;
+	hash[{node,coord}] = {prev.value,prev.fixed};
 }
 
 } } // namespace map::detail

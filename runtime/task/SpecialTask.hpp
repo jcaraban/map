@@ -1,20 +1,20 @@
 /**
- * @file    SpecialTask.hpp 
+ * @file    StatsTask.hpp 
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  */
 
-#ifndef MAP_RUNTIME_TASK_SPECIAL_HPP_
-#define MAP_RUNTIME_TASK_SPECIAL_HPP_
+#ifndef MAP_RUNTIME_TASK_STATS_HPP_
+#define MAP_RUNTIME_TASK_STATS_HPP_
 
 #include "Task.hpp"
 
 
 namespace map { namespace detail {
 
-struct SpecialTask : public Task
+struct StatsTask : public Task
 {
-	SpecialTask(Group *group) : Task(group) { }
+	StatsTask(Group *group) : Task(group) { }
 
 	void createVersions();
 
@@ -32,7 +32,7 @@ struct SpecialTask : public Task
 
 	void compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
 	
-	Pattern pattern() const { return SPECIAL; }
+	Pattern pattern() const { return STATS; }
 
   // vars
 	BlockSize halo;

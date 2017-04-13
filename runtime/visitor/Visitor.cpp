@@ -16,4 +16,8 @@ void Visitor::setVisited(Node *node) {
 	visited.insert(node);
 }
 
+void Visitor::unVisited(Node *node) {
+	visited.erase(node);
+}
+
 } } // namespace map::detail

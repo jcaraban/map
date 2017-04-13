@@ -2,8 +2,14 @@
  * @file    LoopAssembler.cpp 
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * TODO: instead of injecting the Head, Merge, Switch nodes; create them in the right order
- *       - For that the Python While would need to be parsed first, dag or bytecode
+ * NOTE: the whole approach is flawed, this is a quick & dirty way of assembling loops.
+ *       Instead of deleting the 'again' nodes, playing with the 'ssa_id_count',
+ *       injecting the Head, Merge, Switch, Tail, Loop nodes in the middle, etc...
+ *       the nodes should be created in sequential order, respecting the SSA and dataflow
+ *       - For that a Python front-end needs to parse the While first, (as dag or bytecode)
+ *
+ * TODO: only the '{body.ref - again.ref} > 0' nodes are alive in Python,
+ *       and we can use this information to avoid their Empty+Head+Merge+Switch+Tail nodes
  * TODO: is_included is "expensive", it can be avoided by tagging the nodes during insertion
  */
 
@@ -67,8 +73,8 @@ void LoopAssembler::clear() {
 	loop_struct[loop_level].cond.clear();
 	loop_struct[loop_level].body.clear();
 	loop_struct[loop_level].again.clear();
-	loop_struct[loop_level].feed_in.clear();
-	loop_struct[loop_level].feed_out.clear();
+	loop_struct[loop_level].circ_in.clear();
+	loop_struct[loop_level].circ_out.clear();
 	loop_struct[loop_level].loop = nullptr;
 	loop_struct[loop_level].head.clear();
 	loop_struct[loop_level].tail.clear();
@@ -123,8 +129,8 @@ void LoopAssembler::extract() {
 
 	assert(stru.cond.size() == 2);
 	Node *cond_node = stru.cond[0]; // 'cond' node that activated the Python while loop
-	stru.prev.push_back(stru.cond[0]); // 'cond' is the first 'prev' and thus first 'feed_in'
-	stru.feed_out.push_back(stru.cond[1]); // 'again-cond' is the first 'feed_out'
+	stru.prev.push_back(stru.cond[0]); // 'cond' is the first 'prev' and thus first 'circ_in'
+	stru.circ_out.push_back(stru.cond[1]); // 'again-cond' is the first 'circ_out'
 
 	// 'prev' of 'loop' are all those 'prev' to 'body', but outside 'body'
 	for (auto node : stru.body)
@@ -174,18 +180,18 @@ void LoopAssembler::extract() {
 		}
 	}
 
-	// 'feed_in' nodes are those 'prevs' not found on the constant list
-	stru.feed_in = left_join(stru.prev,const_list);
+	// 'circ_in' nodes are those 'prevs' not found on the constant list
+	stru.circ_in = left_join(stru.prev,const_list);
 
-	// 'feed_out' nodes are those reused between iterations
+	// 'circ_out' nodes are those reused between iterations
 	for (auto node : stru.again)
 		for (auto prev : node->prevList())
-			if (is_included(prev,stru.body) && !is_included(prev,stru.feed_out))
-				stru.feed_out.push_back(prev);
+			if (is_included(prev,stru.body) && !is_included(prev,stru.circ_out))
+				stru.circ_out.push_back(prev);
 
-	// Note: 'feed_in' and 'feed_out' must maintain same size and --> order <--
-	assert(stru.feed_in.size() == stru.feed_out.size());
-	assert(not stru.feed_in.empty());
+	// Note: 'circ_in' and 'circ_out' must maintain same size and --> order <--
+	assert(stru.circ_in.size() == stru.circ_out.size());
+	assert(not stru.circ_in.empty());
 
 	// Unlinks 'again' nodes, now that we have figured out the feedbacks
 	for (auto it=stru.again.rbegin(); it!=stru.again.rend(); it++) {
@@ -202,10 +208,10 @@ void LoopAssembler::extract() {
 		Node::id_count--; // @ a more elegant way of restoring the counter ?
 	}
 
-	// Unreachable 'body' nodes when going up from 'feed_out' are out-loop-invariants
+	// Unreachable 'body' nodes when going up from 'circ_out' are out-loop-invariants
 	std::queue<Node*> queue;
 	std::set<Node*> reachable;
-	for (auto out : stru.feed_out)
+	for (auto out : stru.circ_out)
 		queue.push(out);
 	while (not queue.empty()) {
 		Node *node = queue.front();
@@ -254,7 +260,7 @@ void LoopAssembler::compose() {
 		}
 	};
 
-	int fix = stru.feed_out.size(); // feed-in/out
+	int fix = stru.circ_out.size(); // feed-in/out
 	int num_elem = stru.prev.size() + stru.body.size() - fix;
 
 	// Re-adjusting ssa ids with these offsets
@@ -270,7 +276,7 @@ void LoopAssembler::compose() {
 	Node::id_count -= jmp_body; // @
 
 	// Completes the 'prev' list with auxiliar 'empty' input nodes
-	for (auto node : left_join(stru.body,stru.feed_out)) {
+	for (auto node : left_join(stru.body,stru.circ_out)) {
 		// This should be an Empty node, not a Const // @
 		auto *empty = new Constant(node->metadata(),VariantType(0,node->datatype()));
 		stru.prev.push_back(empty);
@@ -285,10 +291,10 @@ void LoopAssembler::compose() {
 		Node *prev = stru.prev[i];
 		Node *back = nullptr;
 
-		if (is_included(prev,stru.feed_in))
+		if (is_included(prev,stru.circ_in))
 		{	// This is a feed-in 'prev', so a 'body' node exists in 'feed-out'
-			int i = value_position(prev,stru.feed_in);
-			back = stru.feed_out[i];
+			int i = value_position(prev,stru.circ_in);
+			back = stru.circ_out[i];
 		}
 		else if (is_included(prev,empty_list))
 		{	// This is a 'tmp' node in body, an 'empty' node was created
@@ -356,7 +362,9 @@ void LoopAssembler::compose() {
 		Node *prev = stru.prev[i];
 		Switch *swit = stru.switc[i];
 		swap_next_nodes(prev,swit);
-		// @ how to move 'next' to the true side of 'switch'?
+		// Moves all 'next' nodes to the 'true_side' of 'switch'
+		for (auto next : swit->nextList())
+			swit->addTrue(next);
 	}
 
 	Node::id_count += jmp_body; // @
@@ -364,7 +372,7 @@ void LoopAssembler::compose() {
 	// Creates a 'tail' node hanging from the 'false' side of 'switch'
 	for (int i=0; i<stru.switc.size(); i++) {
 		Node *node = back_list[i];
-		Node *swit = stru.switc[i];
+		Switch *swit = stru.switc[i];
 
 		if (not is_included(node,iden_list)) {
 			auto tail = dynamic_cast<LoopTail*>( LoopTail::Factory(swit) );
@@ -374,8 +382,9 @@ void LoopAssembler::compose() {
 			LoopHead *head = stru.head[i];
 			head->twin_tail = tail;
 			tail->twin_head = head;
-			// @ how to move tail to the false_side ?
-		}		
+			// Adds the 'tail' node to the 'false_side' of 'switch'
+			swit->addFalse(tail);
+		}
 	}
 	
 	// Link 'head' and 'tail' nodes with their owner 'loop'
@@ -385,8 +394,6 @@ void LoopAssembler::compose() {
 		head->owner_loop = stru.loop;
 	for (auto tail : stru.tail)
 		tail->owner_loop = stru.loop;
-
-	// Notify 'switch' of its 'false_next' and 'true_next' nodes
 
 	// assert ?
 }

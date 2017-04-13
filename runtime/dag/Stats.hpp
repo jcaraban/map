@@ -3,6 +3,9 @@
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  * Node that manually computes the statistics. Returns the input node, now including the statistics
+ *
+ * TODO: @@ refactor this functionality, perhaps decompose it in multiple operations, think about it...
+ * TODO: remove STATS from the patterns
  */
 
 #ifndef MAP_RUNTIME_DAG_STATS_HPP_
@@ -16,36 +19,37 @@ namespace map { namespace detail {
 struct Stats : public Node
 {
 	// Internal declarations
-	struct Key {
-		Key(Stats *node);
-		bool operator==(const Key& k) const;
+	struct Content {
+		Content(Stats *node);
+		bool operator==(const Content& k) const;
 		Node *prev;
 	};
 	struct Hash {
-		std::size_t operator()(const Key& k) const;
+		std::size_t operator()(const Content& k) const;
 	};
 
 	// Factory
 	static Node* Factory(Node *prev);
-	Node* clone(std::unordered_map<Node*,Node*> other_to_this);
+	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
 	Stats(const MetaData &meta, Node *prev);
-	Stats(const Stats *other, std::unordered_map<Node*,Node*> other_to_this);
+	Stats(const Stats *other, const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);
 	std::string getName() const;
 	std::string signature() const;
 	char classSignature() const;
-	//Node*& prev();
 	Node* prev() const;
-	//Node*& max();
 	Node* max() const;
-	//Node*& min();
 	Node* min() const;
-	Pattern pattern() const { return SPECIAL; }
+	Pattern pattern() const { return STATS; }
 
+	// Compute
+	//void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
+	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
+	
 	// Variables
 };
 
