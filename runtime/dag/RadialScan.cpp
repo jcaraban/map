@@ -5,6 +5,7 @@
 
 #include "RadialScan.hpp"
 #include "../visitor/Visitor.hpp"
+#include "../../util/Direction.hpp"
 #include <functional>
 
 
@@ -55,10 +56,13 @@ RadialScan::RadialScan(const MetaData &meta, Node *prev, ReductionType type, Coo
 {
 	prev_list.reserve(1);
 	this->addPrev(prev);
+	prev->addNext(this);
+	
 	this->type = type;
 	this->start = start;
-	
-	prev->addNext(this);
+
+	this->in_spatial_reach = Mask(numdim().unitVec(),true);
+	this->out_spatial_reach = Mask(numdim().unitVec(),true);
 }
 
 RadialScan::RadialScan(const RadialScan *other, const std::unordered_map<Node*,Node*> &other_to_this)
@@ -92,11 +96,72 @@ Node* RadialScan::prev() const {
 	return prev_list[0];
 }
 
+// Spatial
+
+const Mask& RadialScan::inputReach(Coord coord) const {
+	return center; // @@
+
+	auto startb = this->start / blocksize();
+	auto dif = abs(startb - coord);
+	int x = coord[0] - startb[0];
+	int y = coord[1] - startb[1];
+
+	if (all(dif == 0)) // Center
+	{
+		// { 0, 0, 0 }
+		// { 0, 1, 0 }
+		// { 0, 0, 0 }
+		return center;
+	}
+	else if (sum(dif) == 1)  // Center +- 1 in only 1 dir
+	{
+		if (x==0 && y < 0) { // North
+			// { 0, 0, 0 }
+			// { 0, 1, 0 }
+			// { 0, 1, 0 }
+			return north;
+		}
+		else if (x > 1 && y==0) {
+			// { 1, 1, 0 }
+			// { 1, 1, 0 }
+			// { 1, 1, 0 }
+			return east;	
+		}
+		else if (x==0 && y > 0) {
+			// { 1, 1, 1 }
+			// { 1, 1, 1 }
+			// { 0, 0, 0 }
+			return south;
+		}
+		else if (x > 1 && y==0) {
+			// { 1, 1, 0 }
+			// { 1, 1, 0 }
+			// { 1, 1, 0 }
+			return east;	
+		}
+		else {
+			assert(0);
+		}
+	}
+	else if (any(dif == 0)) // Compass
+	{
+		;
+	}
+	else if (std::abs(dif[0]-dif[1]) <= 1) // Diagonal (inner and upper too)
+	{
+		;
+	}
+	else // Sector
+	{
+		;
+	}
+}
+
 // Compute
 
 void RadialScan::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
 	auto *node = this;
-	hash[{node,coord}] = {{},false};
+	hash[{node,coord}] = ValFix();
 	// @ if max summary value of the block is lower than the accumulated, then fix it!
 }
 

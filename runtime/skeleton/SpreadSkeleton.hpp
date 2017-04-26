@@ -1,5 +1,5 @@
 /**
- * @file	SpreadingSkeleton.hpp 
+ * @file	SpreadSkeleton.hpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  * Visitor of the dag that composes the kernel code from skeletons
@@ -15,11 +15,11 @@ namespace map { namespace detail {
 
 #define DECLARE_VISIT(class) virtual void visit(class *node);
 
-struct SpreadingSkeleton : public Skeleton
+struct SpreadSkeleton : public Skeleton
 {
   // constructor and main function
-	SpreadingSkeleton(Version *ver);
-	void generate();
+	SpreadSkeleton(Version *ver);
+	std::string generate();
 
   // methods
 	std::string versionCode();

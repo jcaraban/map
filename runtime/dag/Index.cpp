@@ -44,6 +44,9 @@ Index::Index(const MetaData &meta, NumDim dim)
 	: Node(meta)
 {
 	this->dim = dim;
+	
+	this->in_spatial_reach = Mask(); // empty
+	this->out_spatial_reach = Mask(numdim().unitVec(),true);
 }
 
 Index::Index(const Index *other, const std::unordered_map<Node*,Node*> &other_to_this)
@@ -76,7 +79,7 @@ void Index::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
 }
 
 void Index::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
-	hash[{this,coord}] = {{},false}; // never fixed
+	hash[{this,coord}] = ValFix(); // @ not fixed, but we can now some statistics
 }
 
 } } // namespace map::detail

@@ -81,7 +81,7 @@ Node* Conditional::Factory(Node *cond, Node *lhs, Node *rhs) {
 
 	MetaData meta(ds,dt,mo,bs);
 
-	// @ identity functionality would go here
+	// @ identity functionality would go here ?
 
 	return new Conditional(meta,cond,lhs,rhs);
 }
@@ -103,6 +103,9 @@ Conditional::Conditional(const MetaData &meta, Node *cond, Node *lprev, Node *rp
 	cond->addNext(this);
 	lprev->addNext(this);
 	rprev->addNext(this);
+
+	this->in_spatial_reach = Mask(numdim().unitVec(),true);
+	this->out_spatial_reach = Mask(numdim().unitVec(),true);
 }
 
 Conditional::Conditional(const Conditional *other, const std::unordered_map<Node*,Node*> &other_to_this)
@@ -149,24 +152,24 @@ void Conditional::computeScalar(std::unordered_map<Key,VariantType,key_hash> &ha
 	auto cval = hash.find({cond(),coord})->second;
 	auto lval = hash.find({left(),coord})->second;
 	auto rval = hash.find({right(),coord})->second;
-	hash[{this,coord}] = cval.convert(B8).get<B8>() ? lval : rval;
+	hash[{this,coord}] = cval ? lval : rval;
 }
 
 void Conditional::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
 	auto *node = this;
-	ValFix vf = {{},false};
+	ValFix vf = ValFix();
 
 	auto cond = hash[{node->cond(),coord}];
 	auto left = hash[{node->left(),coord}];
 	auto right = hash[{node->right(),coord}];
 
 	if (cond.fixed) {
-		if (cond.value.convert(B8).get<B8>()) {
+		if (cond.value) {
 			if (left.fixed) 
-				vf = {left.value,true};
+				vf = ValFix(left.value);
 		} else {
 			if (right.fixed)
-				vf = {right.value,true};
+				vf = ValFix(right.value);
 		}
 	}
 	hash[{node,coord}] = vf;

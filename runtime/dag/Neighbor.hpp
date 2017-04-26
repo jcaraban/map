@@ -41,8 +41,11 @@ struct Neighbor : public Node
 	char classSignature() const;
 	Node* prev() const;
 	Coord coord() const;
+
+	// Spatial
 	Pattern pattern() const { return FOCAL; }
-	BlockSize halo() const;
+	// const Mask& inputReach(Coord coord) const;
+	// const Mask& outputReach(Coord coord) const;
 
 	// Compute
 	//void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);

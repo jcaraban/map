@@ -354,11 +354,11 @@ class Raster:
 		return _lib.ma_numblock(self).toList()
 
 	def __pow__(self,other): # exceptional operator in python
-		rhs = _const_to_raster(other)
+		rhs = _const_to_raster(other) + 0.0
 		return Raster( _lib.ma_binary(self,rhs,POW) )
 
 	def __rpow__(self,other): # which is not an operator in C
-		lhs = _const_to_raster(other)
+		lhs = _const_to_raster(other) + 0.0
 		return Raster( _lib.ma_binary(lhs,self,POW) )
 
 	def no(self):
@@ -545,8 +545,8 @@ def con(cond,lhs,rhs):
 	return Raster( _lib.ma_conditional(cond,lhs,rhs) )
 
 def convolve(raster,lst):
-	assert( all(len(e)==len(lst[0]) for e in lst) )
-	ds = Array( [len(lst[0]),len(lst)] )
+	assert( all(len(e)==len(lst) for e in lst) )
+	ds = Array( [len(lst),len(lst)] )
 	unroll = sum(lst,[])
 	size = len(unroll)
 	VarArr = Variant * size # C array of Variant
@@ -559,8 +559,8 @@ def fsum(raster):
 	return convolve(raster,lst)
 
 def fmin(raster,lst):
-	assert( all(len(e)==len(lst[0]) for e in lst) )
-	ds = Array( [len(lst[0]),len(lst)] )
+	assert( all(len(e)==len(lst) for e in lst) )
+	ds = Array( [len(lst),len(lst)] )
 	unroll = sum(lst,[])
 	size = len(unroll)
 	VarArr = Variant * size # C array of Variant

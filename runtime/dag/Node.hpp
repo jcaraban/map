@@ -5,6 +5,8 @@
  * TODO: signature() is not really working smooth. A binary+ task could have 4 signatures
  *       depending on the order of nodes. However the kernel does the same in all 4 cases
  * TODO: is 'back'/'forw'List necessary, can we use 'next'/'prev'List only with 'ssa_id' ?
+ * TODO: updatePrev() sounds like a hack, get rid of it, nodes should be inmutable entities
+ * TODO: move 'static id_count' somewhere outside node, to runtime? to 'session'?
  */
 
 #ifndef MAP_RUNTIME_DAG_NODE_HPP_
@@ -59,19 +61,22 @@ struct Node {
   // Prev / Next methods
 	void addPrev(Node *node);
 	void addNext(Node *node);
-	void updatePrev(Node *old_node, Node *new_node);
+	void updatePrev(Node *old_node, Node *new_node); // @
 	void updateNext(Node *old_node, Node *new_node);
 	void removeNext(Node *node);
   // 
 	void addBack(Node *node);
 	void addForw(Node *node);
 	void removeBack(Node *node);
-  // Virtual const methods
-	virtual Pattern pattern() const; // FREE by default
+  // I/O
 	virtual bool isInput() const; // False by default
 	virtual bool isOutput() const; // False by default
-	virtual BlockSize halo() const; // {0..}xND by default
-  // Const methods
+  // Spatial
+	virtual Pattern pattern() const { return spatial_pattern; }
+	virtual const Mask& inputReach(Coord coord) const { return in_spatial_reach; }
+	//virtual const Mask& intraReach(Coord coord) const { return in_spatial_reach; }
+	virtual const Mask& outputReach(Coord coord) const { return out_spatial_reach; }
+  // Getters
 	const MetaData& metadata() const;
 	StreamDir streamdir() const;
 	DataType datatype() const;
@@ -97,6 +102,9 @@ struct Node {
 	MetaData meta; //!< MetaData
 	DataStats stats; //!< DataStats
 	VariantType value; //!< Value of D0 nodes
+
+	Pattern spatial_pattern;
+	Mask in_spatial_reach, out_spatial_reach;
 };
 
 } } // namespace map::detail

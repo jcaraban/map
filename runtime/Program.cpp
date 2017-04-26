@@ -10,7 +10,6 @@
 #include "Program.hpp"
 #include "Clock.hpp"
 #include "Config.hpp"
-#include "skeleton/Skeleton.hpp"
 #include "Runtime.hpp"
 #include <memory>
 #include <thread>
@@ -30,7 +29,7 @@ Program::Program(Clock &clock, Config &conf)
 void Program::clear() {
 	task_list.clear();
 	// Note: ver_cache is not cleared
-	ver_to_comp.clear();
+	ver_to_compile.clear();
 }
 
 void Program::addTask(Task *task) {
@@ -43,7 +42,7 @@ void Program::compose(OwnerGroupList& group_list) {
 	// Groups are transformed into Tasks, in topological order
 	for (auto &group : group_list)
 	{
-		Task *task = Task::Factory(group.get()); // Creates a Task out of the group
+		Task *task = Task::Factory(*this,clock,conf,group.get()); // Creates a Task out of the group
 		Runtime::getInstance().addTask(task); // Adds task to Runtime
 		this->addTask(task); // Adds task to Program
 	}
@@ -54,39 +53,35 @@ void Program::generate() {
 
 	for (auto task : task_list) // For every task...
 	{
-		if (task->numdim() == D0)
-			continue; // Skips D0 tasks, those dont require kernels
+		// Generates all the 'versions' first
+		task->createVersions();
 
-		VersionList ver_list = task->versionList(); // Gets task's versions
+		// Gets the task 'versions' in a list
+		auto ver_list = task->versionList();
 		
 		for (auto ver : ver_list)  // For every version...
 		{
-			auto it = ver_cache.find(ver->signature());
-			if (it != ver_cache.end() && conf.compil_cache) // Similar version found in cache
+			bool found = ver_cache.find(ver->signature()) != ver_cache.end();
+			if (found && conf.compil_cache) // Similar version found in cache
 			{
-				ver->copyParams(it->second);
+				// Reuses some generated 'code', saves generation / compilation time
+				ver->reuseCode(ver_cache[ver->signature()]);
 			}
-			else // Version code not found, has to generate it
+			else // Version not found, has to generate new 'code'
 			{
-				// Ask Skel::Factory() for the appropiate skeleton
-				auto skel = std::unique_ptr<Skeleton>( Skeleton::Factory(ver) );
-
-				// Generates the code and configures the version
-				skel->generate();
-
-				// Creates the cl_task (aka cl_program)
-				ver->createProgram();
-
-				// Adds version to cache
-				ver_cache[ver->signature()] = ver;
+				// Generates the code and creates the cl_program
+				ver->generateCode();
 
 				// Adds 'ver' to the list of versions to be compiled
-				ver_to_comp.push_back(ver);
+				ver_to_compile.push_back(ver);
+
+				// Adds version to cache, for future 'reusing'
+				ver_cache[ver->signature()] = ver;
 			}
 		}
 	}
 
-	print();
+	print(); // @
 }
 
 void Program::compile() {
@@ -94,8 +89,8 @@ void Program::compile() {
 	std::vector<std::unique_ptr<std::thread>> vth;
 
 	// Launchs asynchronous threads to compile in parallel
-	for (auto ver : ver_to_comp) {
-		auto *thr = new std::thread( &Version::compileProgram, ver);
+	for (auto ver : ver_to_compile) {
+		auto *thr = new std::thread( &Version::compileCode, ver);
 		vth.push_back( std::unique_ptr<std::thread>(thr) );
 	}
 

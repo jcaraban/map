@@ -19,7 +19,7 @@ struct CpuFocalSkeleton : public Skeleton
 {
   // constructor and main function
 	CpuFocalSkeleton(Version *ver);
-	void generate();
+	std::string generate();
 
   // methods
 	void compact();
@@ -38,7 +38,7 @@ struct CpuFocalSkeleton : public Skeleton
 	std::vector<FocalFunc*> func; //!< Stores FocalFunc nodes
 	std::vector<FocalPercent*> percent; //!< Stores FocalPercent nodes
 	int level;
-	std::vector<BlockSize> halo; //!< Stores the halo of each level
+	//std::vector<BlockSize> halo; //!< Stores the halo of each level
 	bool inner_part; //!< Signals visitors to generate code for the inner / outer part
 };
 

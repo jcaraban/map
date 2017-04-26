@@ -1,23 +1,22 @@
 /**
- * @file    RadiatingTask.cpp 
+ * @file    RadialTask.cpp 
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  */
 
-#include "RadiatingTask.hpp"
+#include "RadialTask.hpp"
 #include "../Runtime.hpp"
-#include "../Direction.hpp"
+#include "../../util/Direction.hpp"
 
 
 namespace map { namespace detail {
 
 /*************
-   Radiating
+   Radial
  *************/
 
-RadiatingTask::RadiatingTask(Group *group)
-	: Task(group)
+RadialTask::RadialTask(Program &prog, Clock &clock, Config &conf, Group *group)
+	: Task(prog,clock,conf,group)
 {
-	// @ TODO: fix this somehow
 	for (auto node : group->nodeList()) {
 		if (node->pattern().is(RADIAL)) {
 			auto *scan = dynamic_cast<RadialScan*>(node);
@@ -27,13 +26,13 @@ RadiatingTask::RadiatingTask(Group *group)
 			break;
 		}
 	}
-	
-	createVersions();
 }
 
-void RadiatingTask::createVersions() {
+void RadialTask::createVersions() {
 	cle::OclEnv& env = Runtime::getOclEnv();
-	// All devices are accepted
+
+	// Generates a short list of most promising versions first
+	VerkeyList key_list;
 	for (int i=0; i<env.deviceSize(); i++) {
 		// One version per Radial Direction
 		for (int cas=0; cas<N_RADIAL_CASE; cas++) {
@@ -41,14 +40,36 @@ void RadiatingTask::createVersions() {
 			radia2dir((RadialCase)cas,fst,snd);
 			std::string detail = fst.toString() + snd.toString();
 
-			Version *ver = new Version(this,env.D(i),detail);
+			Verkey key(this);
+			key.dev = env.D(i);
+			key.group = {256,1}; // @
+			key.detail = detail;
+			key_list.push_back(key);
+		}
+	}
+
+	// Create the versions if they did not exist yet
+	for (auto key : key_list) {
+		// @
+		DeviceType dev_type;
+		cl_device_type type = *(cl_device_type*) key.dev.get(CL_DEVICE_TYPE);
+		switch (type) {
+			case CL_DEVICE_TYPE_CPU:		 dev_type = DEV_CPU; break;
+			case CL_DEVICE_TYPE_GPU:		 dev_type = DEV_GPU; break;
+			case CL_DEVICE_TYPE_ACCELERATOR: dev_type = DEV_ACC; break;
+			default: assert(0);
+		}
+		//
+		const Version *ver = getVersion(dev_type,key.group,key.detail);
+		if (ver == nullptr) {
+			Version *ver = new Version(key);
 			Runtime::getInstance().addVersion(ver); // Adds version to Runtime
 			ver_list.push_back(ver);  // Adds version to Task
 		}
 	}
 }
 
-void RadiatingTask::blocksToLoad(Coord coord, InKeyList &in_keys) const {
+void RadialTask::blocksToLoad(Coord coord, KeyList &in_keys) const {
 	Task::blocksToLoad(coord,in_keys);
 
 	// Requires its own output in previous blocks
@@ -71,7 +92,7 @@ void RadiatingTask::blocksToLoad(Coord coord, InKeyList &in_keys) const {
 	}
 }
 
-void RadiatingTask::blocksToStore(Coord coord, OutKeyList &out_keys) const {
+void RadialTask::blocksToStore(Coord coord, KeyList &out_keys) const {
 	Task::blocksToStore(coord,out_keys);
 
 	// Adds the intra-dependencies
@@ -89,14 +110,14 @@ void RadiatingTask::blocksToStore(Coord coord, OutKeyList &out_keys) const {
 	}
 }
 
-void RadiatingTask::initialJobs(std::vector<Job> &job_vec) {
+void RadialTask::initialJobs(std::vector<Job> &job_vec) {
 	job_vec.push_back( Job(this,startb) ); // Only start coord
 }
 
-void RadiatingTask::selfJobs(Job done_job, std::vector<Job> &job_vec) {
+void RadialTask::selfJobs(Job done_job, std::vector<Job> &job_vec) {
 	assert(done_job.task == this);
 
-	// should it check 'for every out_node'? in case of fused Radiating?
+	// should it check 'for every out_node'? in case of fused Radial?
 
 	auto dif = abs(startb - Coord(done_job.coord));
 	for (int y=-1; y<=1; y++) {
@@ -110,29 +131,29 @@ void RadiatingTask::selfJobs(Job done_job, std::vector<Job> &job_vec) {
 	}
 }
 
-void RadiatingTask::nextJobs(Key done_block, std::vector<Job> &job_vec) {
+void RadialTask::nextJobs(Key done_block, std::vector<Job> &job_vec) {
 	if (done_block.node->numdim() == D0) // Case when prev=D0, self=D2
 		notifyAll(job_vec);
 	else // Case when prev=D2, self=D2
 		notify(done_block.coord,job_vec);
 }
 
-int RadiatingTask::prevInterDepends(Node *node, Coord coord) const {
+int RadialTask::prevInterDepends(Node *node, Coord coord) const {
 	return node->pattern() == FREE ? 0 : 1;
 }
 
-int RadiatingTask::nextInterDepends(Node *node, Coord coord) const {
+int RadialTask::nextInterDepends(Node *node, Coord coord) const {
 	return node->pattern() == FREE ? 0 : 1;
 }
 
-int RadiatingTask::prevIntraDepends(Node *node, Coord coord) const {
+int RadialTask::prevIntraDepends(Node *node, Coord coord) const {
 	if (node->pattern().is(RADIAL))
 		return all(coord == startb) ? 0 : any(coord == startb) ? 1 : 3;
-	else // non-radiating outputs dont add dependencies
+	else // non-Radial outputs dont add dependencies
 		return 0;
 }
 
-int RadiatingTask::nextIntraDepends(Node *node, Coord coord) const {
+int RadialTask::nextIntraDepends(Node *node, Coord coord) const {
 	if (node->pattern().is(RADIAL)) {
 		if (any(coord == 0) || any(coord == numblock()-1))
 			return 0; // borders have no next-intra-dependency
@@ -142,7 +163,7 @@ int RadiatingTask::nextIntraDepends(Node *node, Coord coord) const {
 	}
 }
 
-void RadiatingTask::compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
+void RadialTask::compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
 	const int dim = numdim().toInt();
 	auto dif = abs(startb - coord);
 	Direction first, second;
@@ -152,7 +173,7 @@ void RadiatingTask::compute(Coord coord, const BlockList &in_blk, const BlockLis
 	auto compute_sector = [&](RadialCase rcase)
 	{
 		std::string detail = radia2str(rcase);
-		const Version *ver = version(DEV_ALL,detail);
+		const Version *ver = getVersion(DEV_ALL,{},detail);
 
 		// CL related vars
 		cle::Task tsk = ver->tsk;

@@ -43,7 +43,11 @@ struct Access : public Node
 	char classSignature() const;
 	Node* prev() const;
 	Coord coord() const;
+	
+	// Spatial
 	Pattern pattern() const { return GLOBAL; }
+	// const Mask& inputReach(Coord coord) const;
+	// const Mask& outputReach(Coord coord) const;
 
 	// Variables
 	Coord cell_coord; //!< Access coordinate

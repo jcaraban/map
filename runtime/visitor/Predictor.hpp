@@ -29,7 +29,6 @@ struct Predictor : public Visitor
 
   // vars
 	Group *group;
-	Coord coord;
 
 	std::unordered_map<Key,ValFix,key_hash> hash;
 };

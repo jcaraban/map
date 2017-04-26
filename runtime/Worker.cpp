@@ -26,83 +26,96 @@ Worker::Worker(Cache &cache, Scheduler &sche, Clock &clock, Config &conf)
 	, clock(clock)
 	, conf(conf)
 {
-	in_keys.reserve(conf.max_in_block);
+	in_key.reserve(conf.max_in_block);
 	in_blk.reserve(conf.max_in_block);
-	out_keys.reserve(conf.max_in_block);
+	out_key.reserve(conf.max_in_block);
 	out_blk.reserve(conf.max_in_block);
 }
 
 void Worker::work(ThreadId thread_id) {
 	Tid = thread_id; // Local thread id initialization
 	
-	// @@ SymLoop 'condition' + 'unrolling' needs to happen at local level
-	// the worker needs to walk the nodes and make more decisions
-	// all this without killing the performance, i.e. will be challenging
-
-	// Shall the worker unroll the loop for himself if it is LOCAL?
+	// @@ SymLoop 'condition' + 'unrolling' needs to happen locally
 
 	while (true) // Worker loop
 	{
+		before_work();
+
 		Job job = sche.requestJob();
 		
-		if (job.task == nullptr) break; // Exit point
+		if (job.isNone()) break; // Exit point
 
-		get_blocks(job);
+		request_blocks(job);
 
 		pre_load(job);
 
 		load(job);
 
-		//pre_comp(job);
+		pre_compute(job);
 
 		compute(job);
 
-		//post_comp(job)
+		post_compute(job);
 
 		store(job);
 
 		post_store(job);
 
-		//return_blocks ?
+		return_blocks(job);
 
 		sche.returnJob(job);
+
+		after_work();
 	}
 }
 
-void Worker::get_blocks(Job job) {
+void Worker::before_work() {
+	// what could be do 'before work' and not related to the job
+	// e.g. machine related stuff, debug checks,  distributed exchange (of version_cache, statistics) ?
+}
+
+void Worker::request_blocks(Job job) {
 	TimedRegion region(clock,GET_BLOCK); // Timed function
 
-	job.task->blocksToLoad(job.coord,in_keys);
-	job.task->blocksToStore(job.coord,out_keys);
+	job.task->blocksToLoad(job.coord,in_key);
+	job.task->blocksToStore(job.coord,out_key);
 
-	cache.requestInputBlocks(in_keys,in_blk);
-	cache.requestOutputBlocks(out_keys,out_blk);
+	cache.requestBlocks(in_key,in_blk);
+	cache.requestBlocks(out_key,out_blk);
 }
 
 void Worker::pre_load(Job job) {
 	TimedRegion region(clock,PRE_LOAD); // Timed function
 
-	job.task->preLoad(job.coord);
-
-	Predictor predictor(job.task->base_group);
-	predictor.predict(job.coord,in_blk,out_blk);
+	job.task->preLoad(job.coord,in_blk,out_blk);
 }
 
 void Worker::load(Job job) {
 	TimedRegion region(clock,LOAD); // Timed function
 
-	cache.retainInputEntries(in_blk);
-	cache.retainOutputEntries(out_blk);
-	// ! those outputs that were 'fixed' by predictor don't need entry anymore
+	cache.retainEntries(in_blk);
+	cache.retainEntries(out_blk);
 
 	cache.readInputBlocks(in_blk);
+}
+
+void Worker::pre_compute(Job job) {
+	TimedRegion region(clock,PRE_COMP); // Timed function
+
+	// choose a version among the available, according to statistics, devices ?
+
+	job.task->preCompute(job.coord,in_blk,out_blk);
 }
 
 void Worker::compute(Job job) {
 	TimedRegion region(clock,COMPUTE); // Timed function
 
-	job.task->preCompute(job.coord,in_blk,out_blk);
 	job.task->compute(job.coord,in_blk,out_blk);
+}
+
+void Worker::post_compute(Job job) {
+	TimedRegion region(clock,POST_COMP); // Timed function
+
 	job.task->postCompute(job.coord,in_blk,out_blk);
 }
 
@@ -111,14 +124,26 @@ void Worker::store(Job job) {
 
 	cache.writeOutputBlocks(out_blk);
 
-	cache.returnInputBlocks(in_blk);
-	cache.returnOutputBlocks(out_blk);
+	cache.releaseEntries(in_blk);
+	cache.releaseEntries(out_blk);
 }
 
 void Worker::post_store(Job job) {
 	TimedRegion region(clock,POST_STORE); // Timed function
 
-	job.task->postStore(job.coord);
+	job.task->postStore(job.coord,in_blk,out_blk);
+}
+
+void Worker::return_blocks(Job job) {
+	TimedRegion region(clock,RET_BLOCK); // Timed function
+
+	cache.returnBlocks(in_key,in_blk);
+	cache.returnBlocks(out_key,out_blk);
+}
+
+void Worker::after_work() {
+	// a place for statiscs based 'code transformations', 'adaptive refinement', etc?
+	// e.g. trying different loop unrolling factors, different fusion rules
 }
 
 } } // namespace map::detail

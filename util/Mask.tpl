@@ -15,9 +15,9 @@ template <typename T> Mask::Mask(DataSize data_size, Array<T> array) {
   	assert(prod(data_size) == array.size());
 	assert(array.size() > 0);
 	
-		//mask = Array<VariantType>(array.size());
+	//array = Array<VariantType>(array.size());
 	for (int i=0; i<array.size(); i++)
-		mask[i] = VariantType(array[i]);
+		this->array[i] = VariantType(array[i]);
 
 	this->data_type = Ctype2DataType<T>::value; //Dtype<T>();
 	this->num_dim = DataSize2NumDim(data_size);

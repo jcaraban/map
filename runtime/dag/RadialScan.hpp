@@ -2,7 +2,7 @@
  * @file	RadialScan.hpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * Node representing a Radial Scan operation (i.e. sum,prod,min,max radiating to the borders from a starting point)
+ * Node representing a Radial Scan operation (i.e. sum,prod,min,max Radial to the borders from a starting point)
  */
 
 #ifndef MAP_RUNTIME_DAG_RADIALSCAN_HPP_
@@ -41,7 +41,12 @@ struct RadialScan : public Node
 	std::string signature() const;
 	char classSignature() const;
 	Node* prev() const;
+	
+	// Spatial
 	Pattern pattern() const { return RADIAL; }
+	const Mask& inputReach(Coord coord) const;
+	// const Mask& intraReach(Coord coord) const;
+	// const Mask& outputReach(Coord coord) const;
 
 	// Compute
 	//void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
@@ -49,7 +54,8 @@ struct RadialScan : public Node
 
 	// Variables
 	ReductionType type;
-	Coord start; //!< Starting coordinates
+	Coord start, start_block; //!< Starting coordinates
+	Mask center, north, east, south, west;
 };
 
 } } // namespace map::detail

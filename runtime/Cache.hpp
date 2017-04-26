@@ -3,6 +3,7 @@
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  * TODO: There should be 1 cache per physical memory (Dev mem, Host mem, SSD mem, HDD mem)
+ * TODO: consider refactorizing the 'block management' functionality out of Cache
  */
 
 #ifndef MAP_RUNTIME_CACHE_HPP_
@@ -10,7 +11,6 @@
 
 #include "Entry.hpp"
 #include "Block.hpp"
-#include "Config.hpp"
 #include <vector>
 #include <list>
 #include <unordered_map>
@@ -24,15 +24,16 @@ namespace map { namespace detail {
 
 class Program; // Forward declaration
 class Clock; // Forward declaration
+class Config; // Forward declaration
 
 class Cache
 {
   private:
-	Program &prog; // Aggregate
 	Clock &clock; // Aggregate
 	Config &conf; // Aggregate
 
-	cl_mem scalar_page; //!< Page of device memory where scalars reside
+	cl_mem scalar_page; //!< Page of device memory for reduced scalars variables
+	cl_mem group_page; //!< Page of device memory for work-group statistics
 	std::vector<cl_mem> chunk_list; //!< Chunks of device memory
 	std::vector<Entry> entry_list; //!< Entry memory allocator
 	std::list<Entry*> lru_list; //!< Least Recently Used LRU linked list
@@ -50,7 +51,7 @@ class Cache
 	std::unordered_map<Node*,IFile*> file_hash;
 
   public:
-	Cache(Program &prog, Clock &clock, Config &conf);
+	Cache(Clock &clock, Config &conf);
 	~Cache();
 	Cache(const Cache&) = delete;
 	Cache& operator=(const Cache&) = delete;
@@ -59,20 +60,17 @@ class Cache
 
 	void allocChunks(cle::Context ctx);
 	void freeChunks();
-	void allocEntries();
+	void allocEntries(const Program &prog);
 	void freeEntries();
 
-	void requestInputBlocks(const InKeyList &in_key, BlockList &in_blk);
-	void requestOutputBlocks(const OutKeyList &out_key, BlockList &out_blk);
+	void requestBlocks(const KeyList &key_list, BlockList &blk_list);
+	void retainEntries(BlockList &blk_list);
 
-	void retainInputEntries(BlockList &in_blk);
-	void retainOutputEntries(BlockList &out_blk);
+	void readInputBlocks(BlockList &in_blk_list);
+	void writeOutputBlocks(BlockList &out_blk_list);
 
-	void readInputBlocks(BlockList &in_blk);
-	void writeOutputBlocks(BlockList &out_blk);
-
-	void returnInputBlocks(BlockList &in_blk);
-	void returnOutputBlocks(BlockList &out_blk);
+	void releaseEntries(BlockList &blk_list);
+	void returnBlocks(const KeyList &key_list, BlockList &blk_list);
 
   private:
   	Block* retainBlock(const Key &k, int depend);
@@ -81,8 +79,8 @@ class Cache
 	void readInBlk(Block *blk);
 	void writeOutBlk(Block *blk);
 
-	void releaseInEntry(Block *blk);
-	void releaseOutEntry(Block *blk);
+	void releaseEntry(Block *blk);
+	void releaseBlock(const Key &key, Block *blk);
 
 	Entry* getEntry();
 	void touchEntry(Entry *entry);

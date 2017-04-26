@@ -57,7 +57,7 @@ Node* Binary::Factory(Node *lhs, Node *rhs, BinaryType type) {
 	}
 	MetaData meta(ds,dt,mo,bs);
 
-	// @ identity functionality goes here?
+	// @ identity functionality goes here ?
 
 	return new Binary(meta,lhs,rhs,type);
 }
@@ -74,10 +74,13 @@ Binary::Binary(const MetaData &meta, Node *lprev, Node *rprev, BinaryType type)
 	prev_list.reserve(2);
 	this->addPrev(lprev); // pos [0]
 	this->addPrev(rprev); // pos [1]
-	this->type = type;
-	
 	lprev->addNext(this);
 	rprev->addNext(this);
+	
+	this->type = type;
+
+	this->in_spatial_reach = Mask(numdim().unitVec(),true);
+	this->out_spatial_reach = Mask(numdim().unitVec(),true);
 }
 
 Binary::Binary(const Binary *other, const std::unordered_map<Node*,Node*> &other_to_this)
@@ -129,8 +132,8 @@ void Binary::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
 
 void Binary::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
 	auto *node = this;
-	ValFix vf = {{},false};
-	ValFix vf0 = {VariantType(0,datatype()),true};
+	ValFix vf = ValFix();
+	ValFix vf0 = ValFix( VariantType(0,datatype()) );
 	
 	auto lval = hash.find({left(),coord})->second.value;
 	auto lfix = hash.find({left(),coord})->second.fixed;
@@ -138,7 +141,7 @@ void Binary::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &
 	auto rfix = hash.find({right(),coord})->second.fixed;
 
 	if (lfix && rfix)
-		vf = {type.apply(lval,rval),true};
+		vf = ValFix(type.apply(lval,rval));
 	else if (type == MUL && lfix && lval.isZero())
 		vf = vf0;
 	else if (type == MUL && rfix && rval.isZero())

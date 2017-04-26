@@ -1,21 +1,21 @@
 /**
- * @file    SpreadingTask.cpp 
+ * @file    SpreadTask.cpp 
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  */
 
-#include "SpreadingTask.hpp"
+#include "SpreadTask.hpp"
 #include "../Runtime.hpp"
 
 
 namespace map { namespace detail {
 
 /*************
-   Spreading
+   Spread
  *************/
 
-SpreadingTask::SpreadingTask(Group *group)
-	: Task(group)
+SpreadTask::SpreadTask(Program &prog, Clock &clock, Config &conf, Group *group)
+	: Task(prog,clock,conf,group)
 {
 	// @ TODO: fix this somehow
 	for (auto node : group->nodeList()) {
@@ -26,21 +26,15 @@ SpreadingTask::SpreadingTask(Group *group)
 			break;
 		}
 	}
-
-	createVersions();
 }
 
-void SpreadingTask::createVersions() {
+void SpreadTask::createVersions() {
 	cle::OclEnv& env = Runtime::getOclEnv();
-	// All devices are accepted
-	for (int i=0; i<env.deviceSize(); i++) {
-		Version *ver = new Version(this,env.D(i),"");
-		Runtime::getInstance().addVersion(ver); // Adds version to Runtime
-		ver_list.push_back(ver);  // Adds version to Task
-	}
+	
+	assert(0);
 }
 
-void SpreadingTask::blocksToLoad(Coord coord, InKeyList &in_keys) const {
+void SpreadTask::blocksToLoad(Coord coord, KeyList &in_keys) const {
 	in_keys.clear();
 	for (int i=0; i<inputList().size(); i++)
 	{
@@ -59,7 +53,7 @@ void SpreadingTask::blocksToLoad(Coord coord, InKeyList &in_keys) const {
 	}
 }
 
-void SpreadingTask::blocksToStore(Coord coord, OutKeyList &out_keys) const {
+void SpreadTask::blocksToStore(Coord coord, KeyList &out_keys) const {
 	out_keys.clear();
 
 	// All non-SPREAD outputs first
@@ -99,11 +93,11 @@ void SpreadingTask::blocksToStore(Coord coord, OutKeyList &out_keys) const {
 	out_keys.push_back( std::make_tuple(Key(scan->stable(),coord),HOLD_N,-1) );
 }
 
-void SpreadingTask::initialJobs(std::vector<Job> &job_vec) {
+void SpreadTask::initialJobs(std::vector<Job> &job_vec) {
 	Task::initialJobs(job_vec);
 }
 
-void SpreadingTask::askJobs(Job done_job, std::vector<Job> &job_vec) {
+void SpreadTask::askJobs(Job done_job, std::vector<Job> &job_vec) {
 	assert(done_job.task == this);	
 
 	// Ask next-tasks only in the last iteration, when the block is stable
@@ -116,7 +110,7 @@ void SpreadingTask::askJobs(Job done_job, std::vector<Job> &job_vec) {
 
 	if (unstable)
 	{
-		// Asks itself for self-jobs, a.k.a. intra-dependencies (e.g. Spreading, Radiating)
+		// Asks itself for self-jobs, a.k.a. intra-dependencies (e.g. Spread, Radial)
 		this->selfJobs(done_job,job_vec);
 	}
 	else // stable
@@ -147,7 +141,7 @@ void SpreadingTask::askJobs(Job done_job, std::vector<Job> &job_vec) {
 	}
 }
 
-void SpreadingTask::selfJobs(Job done_job, std::vector<Job> &job_vec) {
+void SpreadTask::selfJobs(Job done_job, std::vector<Job> &job_vec) {
 	assert(done_job.task == this);
 
 	mtx.lock(); // thread-safe
@@ -162,7 +156,7 @@ void SpreadingTask::selfJobs(Job done_job, std::vector<Job> &job_vec) {
 				notify(done_job.coord+Coord{x,y},job_vec);
 }
 
-void SpreadingTask::nextJobs(Key done_block, std::vector<Job> &job_vec) {
+void SpreadTask::nextJobs(Key done_block, std::vector<Job> &job_vec) {
 	if (done_block.node->numdim() == D0) // Case when prev=D0, self=D2
 	{
 		notifyAll(job_vec);
@@ -183,7 +177,7 @@ void SpreadingTask::nextJobs(Key done_block, std::vector<Job> &job_vec) {
 	}
 }
 
-int SpreadingTask::prevInterDepends(Node *node, Coord coord) const {
+int SpreadTask::prevInterDepends(Node *node, Coord coord) const {
 	if (first_time.find(coord) != first_time.end())
 		return 0; // There are no inter-dependencies after the first initial job
 
@@ -203,23 +197,23 @@ int SpreadingTask::prevInterDepends(Node *node, Coord coord) const {
 	return depend;
 }
 
-int SpreadingTask::nextInterDepends(Node *node, Coord coord) const {
+int SpreadTask::nextInterDepends(Node *node, Coord coord) const {
 	return prevInterDepends(node,coord); // @ reusing prevInterDepends, but would need own code
 }
 
-int SpreadingTask::prevIntraDepends(Node *node, Coord coord) const {
+int SpreadTask::prevIntraDepends(Node *node, Coord coord) const {
 	return (first_time.find(coord) == first_time.end()) ? 0 : 1;
 	// After the first initial job, even 1 self-job should be able to activate this job
 	// de cuantos self-blocks dependo yo?
 }
 
-int SpreadingTask::nextIntraDepends(Node *node, Coord coord) const {
+int SpreadTask::nextIntraDepends(Node *node, Coord coord) const {
 	return -1; // Unknown
 	// cuantos self-blocks dependen de mi?
 }
 
-void SpreadingTask::compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
-	const Version *ver = version(DEV_ALL,""); // Any device, no detail
+void SpreadTask::compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
+	const Version *ver = getVersion(DEV_ALL,{},""); // Any device, no detail
 	cle::Task tsk = ver->tsk;
 	cle::Queue que = tsk.C().D(Tid.dev()).Q(Tid.rnk());
 
@@ -252,7 +246,7 @@ void SpreadingTask::compute(Coord coord, const BlockList &in_blk, const BlockLis
 	// If the out-block is stable, make sure to pass 'write=true' to release-Output-Block
 }
 
-void SpreadingTask::fillScanBuffer(Coord coord, const BlockList &in_blk, const BlockList &out_blk, cle::Queue que) {
+void SpreadTask::fillScanBuffer(Coord coord, const BlockList &in_blk, const BlockList &out_blk, cle::Queue que) {
 	assert(all(coord >= 0) && all(coord < numblock()));
 	
 	Block *blk = nullptr;
@@ -266,7 +260,7 @@ void SpreadingTask::fillScanBuffer(Coord coord, const BlockList &in_blk, const B
 	cle::clCheckError(err);
 }
 
-void SpreadingTask::fillSpreadBuffer(Coord coord, const BlockList &in_blk, const BlockList &out_blk, cle::Queue que) {
+void SpreadTask::fillSpreadBuffer(Coord coord, const BlockList &in_blk, const BlockList &out_blk, cle::Queue que) {
 	assert(all(coord >= 0) && all(coord < numblock()));
 	
 	Block *dst = nullptr;
@@ -295,7 +289,7 @@ void SpreadingTask::fillSpreadBuffer(Coord coord, const BlockList &in_blk, const
 	}
 }
 
-void SpreadingTask::fillStableBuffer(Coord coord, const BlockList &in_blk, const BlockList &out_blk, cle::Queue que) {
+void SpreadTask::fillStableBuffer(Coord coord, const BlockList &in_blk, const BlockList &out_blk, cle::Queue que) {
 	assert(all(coord >= 0) && all(coord < numblock()));
 	
 	Block *blk = nullptr;
@@ -309,7 +303,7 @@ void SpreadingTask::fillStableBuffer(Coord coord, const BlockList &in_blk, const
 	cle::clCheckError(err);
 }
 
-void SpreadingTask::swapSpreadBuffer(Coord coord, const BlockList &in_blk, const BlockList &out_blk, cle::Queue que) {
+void SpreadTask::swapSpreadBuffer(Coord coord, const BlockList &in_blk, const BlockList &out_blk, cle::Queue que) {
 	assert(all(coord >= 0) && all(coord < numblock()));
 	
 	Block *src = nullptr, *dst = nullptr;
@@ -324,7 +318,7 @@ void SpreadingTask::swapSpreadBuffer(Coord coord, const BlockList &in_blk, const
 	cle::clCheckError(err);
 }
 
-stable_vec SpreadingTask::readStableVec(Coord coord, const BlockList &in_blk, const BlockList &out_blk, cle::Queue que) {
+stable_vec SpreadTask::readStableVec(Coord coord, const BlockList &in_blk, const BlockList &out_blk, cle::Queue que) {
 	assert(all(coord >= 0) && all(coord < numblock()));
 
 	Block *blk = nullptr;
@@ -336,7 +330,7 @@ stable_vec SpreadingTask::readStableVec(Coord coord, const BlockList &in_blk, co
 	stable_vec vec;
 
 	int num_elem = blk->total_size / (16*16) / blk->datatype().sizeOf();
-	auto *src = static_cast<const Ctype<U16>*>(blk->entry->host_mem);
+	auto *src = static_cast<const Ctype<U16>*>(blk->host_mem);
 
 	Ctype<U16> tmp = NeutralOperator<rOR,U16>()();
 	for (int i=0; i<num_elem; i++)
@@ -364,7 +358,7 @@ stable_vec SpreadingTask::readStableVec(Coord coord, const BlockList &in_blk, co
 	return vec;
 }
 
-unsigned int SpreadingTask::height(Coord coord) const {
+unsigned int SpreadTask::height(Coord coord) const {
 	unsigned int height = 0;
 
 	if (scan->prev()->isInput()) {

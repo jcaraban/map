@@ -10,12 +10,8 @@
 
 namespace map { namespace detail {
 
-/*************
-   Spreading
- *************/
-
-LoopTask::LoopTask(Group *group)
-	: Task(group)
+LoopTask::LoopTask(Program &prog, Clock &clock, Config &conf, Group *group)
+	: Task(prog,clock,conf,group)
 {
 	this->cond_node = nullptr;
 	pat = NONE_PAT;
@@ -29,21 +25,15 @@ LoopTask::LoopTask(Group *group)
 		}
 		pat += node->pattern();
 	}
-
-	createVersions();
 }
 
 void LoopTask::createVersions() {
 	cle::OclEnv& env = Runtime::getOclEnv();
-	// All devices are accepted
-	for (int i=0; i<env.deviceSize(); i++) {
-		Version *ver = new Version(this,env.D(i),"");
-		Runtime::getInstance().addVersion(ver); // Adds version to Runtime
-		ver_list.push_back(ver);  // Adds version to Task
-	}
+	
+	assert(0);
 }
 
-void LoopTask::blocksToLoad(Coord coord, InKeyList &in_keys) const {
+void LoopTask::blocksToLoad(Coord coord, KeyList &in_keys) const {
 	in_keys.clear();
 
 	// @@ Input nodes depend on the notifiying task: head or tail
@@ -65,7 +55,7 @@ void LoopTask::blocksToLoad(Coord coord, InKeyList &in_keys) const {
 	}
 }
 
-void LoopTask::blocksToStore(Coord coord, OutKeyList &out_keys) const {
+void LoopTask::blocksToStore(Coord coord, KeyList &out_keys) const {
 	out_keys.clear();
 
 	// All non-LOOP outputs first
@@ -94,7 +84,7 @@ void LoopTask::askJobs(Job done_job, std::vector<Job> &job_vec) {
 	
 	// unstable
 	{
-		// Asks itself for self-jobs, a.k.a. intra-dependencies (e.g. Spreading, Radiating)
+		// Asks itself for self-jobs, a.k.a. intra-dependencies (e.g. Spread, Radial)
 		this->selfJobs(done_job,job_vec);
 	}
 	// stable
@@ -175,7 +165,7 @@ int LoopTask::nextIntraDepends(Node *node, Coord coord) const {
 }
 
 void LoopTask::compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
-	const Version *ver = version(DEV_ALL,""); // Any device, no detail
+	const Version *ver = getVersion(DEV_ALL,{},""); // Any device, no detail
 	cle::Task tsk = ver->tsk;
 	cle::Queue que = tsk.C().D(Tid.dev()).Q(Tid.rnk());
 

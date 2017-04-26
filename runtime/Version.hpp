@@ -16,6 +16,28 @@
 namespace map { namespace detail {
 
 struct Task; // forward declaration
+struct Version; // forward declaration
+typedef std::vector<std::unique_ptr<Version>> OwnerVersionList;
+typedef std::vector<Version*> VersionList;
+
+/*
+ *
+ */
+struct Verkey {
+	const Task *task;
+	cle::Device dev;
+	GroupSize group;
+	std::string detail;
+
+	Verkey(Task *task);
+	Verkey(Version *ver);
+	bool operator==(const Verkey &) const;
+	struct Hash {
+		std::size_t operator()(const Verkey &k) const;
+	};
+};
+typedef std::vector<Verkey> VerkeyList;
+
 
 /*
  * Code Version
@@ -23,38 +45,37 @@ struct Task; // forward declaration
  */
 struct Version {
   // constructor
-	Version(Task *task, cle::Device dev, std::string detail);
+	Version(Verkey content);
 
   // methods
 	cle::Device device() const;
 	DeviceType deviceType() const;
-	const BlockSize& groupsize() const;
-	const NumBlock& numgroup() const;
+	const GroupSize& groupsize() const;
+	const NumGroup& numgroup() const;
 	std::string signature() const;
-	void createProgram();
-	void compileProgram();
 
-	void copyParams(Version *ver);
+	void generateCode();
+	void createProgram();
+	void compileCode();
+	void reuseCode(Version *ver);
 
   // vars
-	Task *task;
+	const Task *task; //!< Aggregation
+
 	cle::Device dev;
 	DeviceType dev_type; //!< Device type {CPU,GPU,PHI}
-	std::string detail; //!< Parameter to detail the class of version (e.g. radiating NorthWest)
+	std::string detail; //!< Parameter to detail the class of version (e.g. radial NorthWest)
 	std::string ver_sign; //!< Signature that uniquely represents the code version
 
 	std::string code; //!< Kernel code
 	cle::Task tsk; //!< cle::Task
 	
 	int shared_size; //!< Shared memory size
-	BlockSize group_size; //!< Work group size
-	NumBlock num_group; //!< Work group number
+	GroupSize group_size; //!< Work group size
+	NumGroup num_group; //!< Work group number
 	
 	std::vector<int> extra_arg; //!< @ Extra arguments needed by the skeleton
 };
-
-typedef std::vector<std::unique_ptr<Version>> OwnerVersionList;
-typedef std::vector<Version*> VersionList;
 
 } } // namespace map::detail
 

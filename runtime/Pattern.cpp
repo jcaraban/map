@@ -62,18 +62,18 @@ bool canPipeFuse(const Pattern& top, const Pattern& bot) {
 
 	PIPE(LOCAL,FREE,true)
 	PIPE(LOCAL,LOCAL,true)
-	PIPE(LOCAL,FOCAL,	false)
+	PIPE(LOCAL,FOCAL,	false) // could, not ready
 	PIPE(LOCAL,ZONAL,true)
 	PIPE(LOCAL,RADIAL,true)
-	PIPE(LOCAL,SPREAD,	false)
-	PIPE(LOCAL,STATS,	false)
+	PIPE(LOCAL,SPREAD,	false) // could
+	PIPE(LOCAL,STATS,	false) // could
 	PIPE(LOCAL,GLOBAL,true)
 
 	PIPE(FOCAL,FREE,true)
 	PIPE(FOCAL,LOCAL,true)
 	PIPE(FOCAL,FOCAL,	false) // FOCAL | FOCAL can be fused, skeleton not ready
 	PIPE(FOCAL,ZONAL,true) // @ FocalZonal
-	PIPE(FOCAL,RADIAL,	false) // FOCAL | RAD can be fused, skeleton not ready
+	PIPE(FOCAL,RADIAL,	false) // FOCAL | RAD could be fused, not interesting
 	PIPE(FOCAL,SPREAD,	false)
 	PIPE(FOCAL,STATS,	false)
 	PIPE(FOCAL,GLOBAL,	false)
@@ -111,7 +111,7 @@ bool canPipeFuse(const Pattern& top, const Pattern& bot) {
 	PIPE(STATS,ZONAL,	false)
 	PIPE(STATS,RADIAL,	false)
 	PIPE(STATS,SPREAD,	false)
-	PIPE(STATS,STATS,	false)
+	PIPE(STATS,STATS,true)
 	PIPE(STATS,GLOBAL,	false)
 
 	PIPE(GLOBAL,FREE,true)
@@ -225,9 +225,9 @@ std::ostream& operator<< (std::ostream& os, const Pattern& pat) {
 	if (pat.is(ZONAL))
 		os << "Zonal";
 	if (pat.is(RADIAL))
-		os << "Radiating";
+		os << "Radial";
 	if (pat.is(SPREAD))
-		os << "Spreading";
+		os << "Spread";
 	if (pat.is(STATS))
 		os << "Stats";
 	if (pat.is(GLOBAL))

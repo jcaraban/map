@@ -7,16 +7,14 @@
 #ifndef MAP_RUNTIME_PROGRAM_HPP_
 #define MAP_RUNTIME_PROGRAM_HPP_
 
-#include "Config.hpp"
 #include "task/Task.hpp"
-#include <vector>
-#include <mutex>
-#include <condition_variable>
 
 
 namespace map { namespace detail {
 
 class Clock; // Forward declaration
+class Config; // Forward declaration
+
 
 /*
  *
@@ -46,7 +44,7 @@ class Program
 
 	std::vector<Task*> task_list; //!< List of tasks composing the user program
 	std::unordered_map<std::string,Version*> ver_cache; //!< Cache of already generated versions
-	VersionList ver_to_comp; //!< List of Versions to be compiled
+	VersionList ver_to_compile; //!< List of versions to be compiled
 };
 
 } } // namespace map::detail

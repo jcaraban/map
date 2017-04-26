@@ -67,8 +67,10 @@ LoopCond::LoopCond(const MetaData &meta, Node *prev)
 {
 	this->prev_list.reserve(1);
 	this->addPrev(prev);
-
 	prev->addNext(this);
+
+	this->in_spatial_reach = Mask(numdim().unitVec(),true);
+	this->out_spatial_reach = Mask(numdim().unitVec(),true);
 }
 
 LoopCond::LoopCond(const LoopCond *other, const std::unordered_map<Node*,Node*> &other_to_this)

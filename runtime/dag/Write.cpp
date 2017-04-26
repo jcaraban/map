@@ -95,7 +95,7 @@ void Write::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &h
 	auto *node = this;
 
 	auto prev = hash.find({node->prev(),coord})->second;
-	hash[{node,coord}] = {prev.value,prev.fixed};
+	hash[{node,coord}] = ValFix(prev.value,prev.fixed);
 }
 
 } } // namespace map::detail

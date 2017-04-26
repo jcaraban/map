@@ -6,26 +6,49 @@
 
 #include "Version.hpp"
 #include "task/Task.hpp"
+#include "skeleton/Skeleton.hpp"
 #include "Runtime.hpp"
 #include <fstream>
 
+
 namespace map { namespace detail {
 
-Version::Version(Task *task, cle::Device dev, std::string detail)
+Verkey::Verkey(Task *task) 
 	: task(task)
-	, dev(dev)
-	, detail(detail)
+{ }
+
+Verkey::Verkey(Version *ver)
+	: task(ver->task)
+	, dev(ver->dev)
+	, group(ver->group_size)
+	, detail(ver->detail)
+{ }
+
+bool Verkey::operator==(const Verkey &k) const {
+	return task==k.task && dev==k.dev && all(group==k.group) && detail.compare(k.detail)==0;
+}
+
+std::size_t Verkey::Hash::operator()(const Verkey &k) const {
+	std::size_t h = std::hash<const Task*>()(k.task);
+	h ^= k.dev.hash();
+	h ^= coord_hash()(k.group);
+	h ^= std::hash<std::string>()(k.detail);
+	return h;
+}
+
+Version::Version(Verkey key)
+	: task(key.task)
+	, dev(key.dev)
+	, group_size(key.group)
+	, detail(key.detail)
 {
 	// Filling 'dev_type'
-	cl_device_type type = *(cl_device_type*) dev.get(CL_DEVICE_TYPE);
-	switch (type) {
-		case CL_DEVICE_TYPE_CPU:		 dev_type = DEV_CPU; break;
-		case CL_DEVICE_TYPE_GPU:		 dev_type = DEV_GPU; break;
-		case CL_DEVICE_TYPE_ACCELERATOR: dev_type = DEV_ACC; break;
-		default: assert(0);
-	}
+	dev_type = cledev2devtype(dev);
 	// Filling 'signature'
 	ver_sign = task->group()->signature() + detail + std::to_string(deviceType());
+	// Filling rest...
+	shared_size = -1;
+	num_group = (task->blocksize() - 1) / groupsize() + 1;
 }
 
 cle::Device Version::device() const {
@@ -40,13 +63,28 @@ std::string Version::signature() const {
 	return ver_sign;
 }
 
-const BlockSize& Version::groupsize() const {
+const GroupSize& Version::groupsize() const {
 	return group_size;
 }
 
-const NumBlock& Version::numgroup() const {
+const NumGroup& Version::numgroup() const {
 	return num_group;
 }
+
+void Version::generateCode() {
+	// Asks Skel::Factory() for the appropiate skeleton
+	auto skel = std::unique_ptr<Skeleton>( Skeleton::Factory(this) );
+
+	// Generates the code and configures the version
+	code = skel->generate();
+	assert(not code.empty());
+
+	// Parameters... // @
+
+	// Creates the cl_task (i.e. cl_program)
+	createProgram();
+}
+
 
 void Version::createProgram() {
 	cle::Context ctx = dev.C(0); // Devices only have 1 context
@@ -60,7 +98,7 @@ void Version::createProgram() {
 	this->tsk = ctx.T(id);
 }
 
-void Version::compileProgram() {
+void Version::compileCode() {
 	std::string flags;
 	cl_int err;
 
@@ -79,8 +117,10 @@ void Version::compileProgram() {
 	// Optimizations
 	bool opt = false; // only with AMD
 	if (opt) {
-		flags += "-cl-mad-enable -cl-denorms-are-zero -cl-single-precision-constant -cl-no-signed-zeros -cl-unsafe-math-optimizations -cl-finite-math-only -cl-fast-relaxed-math -cl-fp32-correctly-rounded-divide-sqrt";
-		flags += "-O5";
+		flags += " -cl-mad-enable -cl-denorms-are-zero -cl-single-precision-constant -cl-no-signed-zeros ";
+		flags += " -cl-unsafe-math-optimizations -cl-finite-math-only -cl-fast-relaxed-math ";
+		flags += " -cl-fp32-correctly-rounded-divide-sqrt ";
+		flags += " -O5 ";
 	}
 
 	// Debug
@@ -116,7 +156,7 @@ void Version::compileProgram() {
 	}
 }
 
-void Version::copyParams(Version *ver) {
+void Version::reuseCode(Version *ver) {
 	// Does not copy 'task', makes sure 'dev_type' matches
 	assert(deviceType() == ver->deviceType());
 	code = ver->code;

@@ -24,7 +24,7 @@
 #include "PercentType.hpp"
 
 #include "Mask.hpp"
-
+#include "Direction.hpp"
 #include "null.hpp"
 #include "common.hpp"
 

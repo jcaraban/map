@@ -5,8 +5,8 @@
  * TODO: study how to make variables constants but still keep the assignment operator
  */
 
-#ifndef MAP_RUNTIME_DIRECTION_HPP
-#define MAP_RUNTIME_DIRECTION_HPP
+#ifndef MAP_UTIL_DIRECTION_HPP
+#define MAP_UTIL_DIRECTION_HPP
 
 #include "../util/Array4.hpp"
 #include <string>
@@ -64,9 +64,9 @@ inline Direction Direction::reverse() { return Direction(south,west,north,east);
 inline Array4<int> Direction::unitVec() { return {east - west, south - north}; }
 inline Array4<int> Direction::dimVec() { return {east || west, south || north}; }
 
-/*******************
-   Radiating Cases
- *******************/
+/****************
+   Radial Cases
+ ****************/
 
 enum RadialCase { NORTH_EAST, EAST_NORTH, EAST_SOUTH, SOUTH_EAST, SOUTH_WEST, WEST_SOUTH, WEST_NORTH, NORTH_WEST, N_RADIAL_CASE };
 

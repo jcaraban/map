@@ -135,7 +135,7 @@ void eval(std::initializer_list<Raster> list);
  *********************/
 
 Rerr info(Raster data);
-Raster stats(Raster data);
+Raster stats(Raster data, Raster min=Raster(), Raster max=Raster(), Raster mean=Raster(), Raster std=Raster());
 Raster barrier(Raster data);
 
 VariantType value(Raster data);

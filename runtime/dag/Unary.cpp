@@ -56,9 +56,12 @@ Node* Unary::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 Unary::Unary(const MetaData &meta, Node *prev, UnaryType type) : Node(meta) {
 	prev_list.reserve(1);
 	this->addPrev(prev); // [0]
-	this->type = type;
-	
 	prev->addNext(this);
+	
+	this->type = type;
+
+	this->in_spatial_reach = Mask(numdim().unitVec(),true);
+	this->out_spatial_reach = Mask(numdim().unitVec(),true);
 }
 
 Unary::Unary(const Unary *other, const std::unordered_map<Node*,Node*> &other_to_this)
@@ -103,11 +106,11 @@ void Unary::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
 
 void Unary::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
 	auto *node = this;
-	ValFix vf = {{},false};
+	ValFix vf = ValFix();
 
 	auto prev = hash.find({node->prev(),coord})->second;
 	if (prev.fixed)
-		vf = {node->type.apply(prev.value),true};
+		vf = ValFix(node->type.apply(prev.value));
 	hash[{node,coord}] = vf;
 }
 

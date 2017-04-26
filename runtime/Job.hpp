@@ -27,7 +27,7 @@ struct Order {
 	unsigned int order[N];
 
 	Order();
-	Order(uint x, uint y, uint t, uint h);
+	Order(uint x, uint y, uint z, uint t);
 	bool operator<(const Order &other) const;
 };
 
@@ -42,9 +42,14 @@ struct Job {
 
 	Job();
 	Job(Task *task, Coord coord);
+	bool isNone();
 };
 
-struct job_cmp {
+struct job_greater {
+	bool operator()(const Job &lhs, const Job &rhs) const;
+};
+
+struct job_equal {
 	bool operator()(const Job &lhs, const Job &rhs) const;
 };
 

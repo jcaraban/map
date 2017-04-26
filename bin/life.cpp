@@ -40,24 +40,27 @@ int main(int argc, char **argv) {
 
 	//// Configuration
 
-	//detail::Runtime::getConfig().setNumRanks(1);
+	detail::Runtime::getConfig().setNumRanks(1);
 	//setupDevices("Intel",DEV_CPU,"");
 	setupDevices("",DEV_GPU,"");
 
 	//// Computation
 	
 	state = rand(N,data_size,U8,ROW+BLK,block_size) > 128;
+	//state = rand(N,data_size,U8,ROW+BLK,block_size) * 0;
 
-	//r = data_size[0] / 2;
-	//x = r - index(state,D1);
-	//y = r - index(state,D2);
-	//state = con(x*x+y*y<r*r,state,zeros_like(state));
-	//state = stats(state); // @
+	r = data_size[0] / 2;
+	x = r - index(state,D1);
+	y = r - index(state,D2);
+	state = con(x*x+y*y<r*r/2,state,zeros_like(state));
+	state = stats(state); // @
 	
 	for (int it=0; it<N; it++) {
 		nbh = life(state);
 		state = (nbh == 3) + (nbh == 2) * state;
-		//state = stats(state); // @
+
+		if (it % 5 == 4)
+			state = stats(state); // @
 	}
 
 	write(state,file);

@@ -52,9 +52,12 @@ Node* Access::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 Access::Access(const MetaData &meta, Node *prev, const Coord &coord) : Node(meta) {
 	prev_list.reserve(1);
 	this->addPrev(prev);
-	this->cell_coord = coord;
-	
 	prev->addNext(this);
+	
+	this->cell_coord = coord;
+
+	this->in_spatial_reach = Mask(numdim().unitVec(),true);
+	this->out_spatial_reach = Mask(numdim().unitVec(),true);
 }
 
 Access::Access(const Access *other, const std::unordered_map<Node*,Node*> &other_to_this)

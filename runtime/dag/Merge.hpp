@@ -43,7 +43,11 @@ struct Merge : public Node
 	char classSignature() const;
 	Node* left() const;
 	Node* right() const;
-	Pattern pattern() const;
+
+	// Spatial
+	Pattern pattern() const { return MERGE; }
+	// const Mask& inputReach(Coord coord) const;
+	// const Mask& outputReach(Coord coord) const;
 
 	// Compute
 	void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);

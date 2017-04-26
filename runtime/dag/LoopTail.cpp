@@ -43,13 +43,15 @@ Node* LoopTail::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 LoopTail::LoopTail(const MetaData &meta, Node *prev)
 	: Node(meta)
 {
+	prev_list.reserve(1);
+	this->addPrev(prev);
+	prev->addNext(this); // 'prev' is a 'switch' that points to 'tail'
+
 	owner_loop = nullptr; // 'tail' knows who its 'loop' is
 	twin_head = nullptr; // 'tail' might have a twin 'head'
 
-	prev_list.reserve(1);
-	this->addPrev(prev);
-
-	prev->addNext(this); // 'prev' is a 'switch' that points to 'tail'
+	this->in_spatial_reach = Mask(numdim().unitVec(),true);
+	this->out_spatial_reach = Mask(numdim().unitVec(),true);
 }
 
 LoopTail::LoopTail(const LoopTail *other, const std::unordered_map<Node*,Node*> &other_to_this)

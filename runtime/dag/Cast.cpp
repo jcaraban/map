@@ -51,9 +51,12 @@ Cast::Cast(const MetaData &meta, Node *prev)
 {
 	prev_list.reserve(1);
 	this->addPrev(prev); // [0]
-	this->type = meta.getDataType();
-	
 	prev->addNext(this);
+	
+	this->type = meta.getDataType();
+
+	this->in_spatial_reach = Mask(numdim().unitVec(),true);
+	this->out_spatial_reach = Mask(numdim().unitVec(),true);
 }
 
 Cast::Cast(const Cast *other, const std::unordered_map<Node*,Node*> &other_to_this)
@@ -98,9 +101,9 @@ void Cast::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &ha
 	auto pval = hash.find({prev(),coord})->second.value;
 	auto pfix = hash.find({prev(),coord})->second.fixed;
 	if (pfix) {
-		hash[{this,coord}] = {pval.convert(type),true};
+		hash[{this,coord}] = ValFix(pval.convert(type));
 	} else  {
-		hash[{this,coord}] = {{},false};
+		hash[{this,coord}] = ValFix();
 	}
 }
 

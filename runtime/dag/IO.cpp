@@ -45,7 +45,10 @@ InputNode::InputNode() { }
 
 InputNode::InputNode(SharedFile file)
 	: IONode(file,InputNodeFlag())
-{ }
+{
+	this->in_spatial_reach = Mask(); // Free
+	this->out_spatial_reach = Mask(numdim().unitVec(),true);
+}
 
 bool InputNode::isInput() const {
 	return true;
@@ -60,14 +63,17 @@ OutputNode::OutputNode() { }
 OutputNode::OutputNode(Node *prev, SharedFile file)
 	: IONode(file,OutputNodeFlag())
 {
-	id = prev->id; // OutputNodes shares id with the node that is 'backing' in disk
+	id = prev->id; // shares id with the node being output
 	ref = 0;
 	meta = prev->metadata();
 	stats = prev->datastats();
 
-	prev_list.resize(1);
-	prev_list[0] = prev;
+	prev_list.reserve(1);
+	this->addPrev(prev);
 	prev->addNext(this);
+
+	this->in_spatial_reach = Mask(numdim().unitVec(),true);
+	this->out_spatial_reach = Mask(numdim().unitVec(),true); // @ shall be empty ?
 }
 
 bool OutputNode::isOutput() const {

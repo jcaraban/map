@@ -1,8 +1,8 @@
 /**
- * @file    SpreadingTask.hpp 
+ * @file    SpreadTask.hpp 
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * Note: atm Spreading-GPU is done with an specific SpreadingTask, in the future it could be composed by a succession of Focals
+ * Note: atm Spread-GPU is done with an specific SpreadTask, in the future it could be composed by a succession of Focals
  */
 
 #ifndef MAP_RUNTIME_TASK_SPREAD_HPP_
@@ -17,14 +17,14 @@ namespace map { namespace detail {
 
 typedef std::array<std::array<bool,3>,3> stable_vec;
 
-struct SpreadingTask : public Task
+struct SpreadTask : public Task
 {	
-	SpreadingTask(Group *group);	
+	SpreadTask(Program &prog, Clock &clock, Config &conf, Group *group);	
 
 	void createVersions();
 
-	void blocksToLoad(Coord coord, InKeyList &in_keys) const;
-	void blocksToStore(Coord coord, OutKeyList &out_keys) const;
+	void blocksToLoad(Coord coord, KeyList &in_keys) const;
+	void blocksToStore(Coord coord, KeyList &out_keys) const;
 
 	void initialJobs(std::vector<Job> &job_vec);
 	void askJobs(Job done_job, std::vector<Job> &job_vec);

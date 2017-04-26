@@ -63,4 +63,24 @@ std::string NumDim::toString() const {
 	}
 }
 
+Coord NumDim::unitVec() const {
+	switch (dim) {
+		case D0 : return Coord(0);
+		case D1 : return Coord{1};
+		case D2 : return Coord{1,1};
+		case D3 : assert(0);
+		default : assert(0);
+	}
+}
+
+NumDim DataSize2NumDim(const DataSize &ds) {
+	switch (ds.size()) {
+		case 0: return D0;
+		case 1: return D1;
+		case 2: return D2;
+		case 3: return D3;
+		default: assert(0);
+	}
+}
+
 } } // namespace map::detail

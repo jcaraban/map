@@ -1,38 +1,39 @@
 /**
- * @file	Cast.hpp 
+ * @file	Summary.hpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * Node representing a type Cast to another data type (e.g. (int)x, (float)y)
+ * Node that manually computes the statistics. Returns the input node, now including the statistics
+ *
+ * TODO: remove STATS from the patterns
  */
 
-#ifndef MAP_RUNTIME_DAG_CAST_HPP_
-#define MAP_RUNTIME_DAG_CAST_HPP_
+#ifndef MAP_RUNTIME_DAG_STATS_HPP_
+#define MAP_RUNTIME_DAG_STATS_HPP_
 
 #include "Node.hpp"
 
 
 namespace map { namespace detail {
 
-struct Cast : public Node
+struct Summary : public Node
 {
 	// Internal declarations
 	struct Content {
-		Content(Cast *node);
+		Content(Summary *node);
 		bool operator==(const Content& k) const;
 		Node *prev;
-		DataType type;
 	};
 	struct Hash {
 		std::size_t operator()(const Content& k) const;
 	};
 
 	// Factory
-	static Node* Factory(Node *prev, DataType new_type);
+	static Node* Factory(Node *prev, Node *min, Node *max, Node *mean, Node *std);
 	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
-	Cast(const MetaData &meta, Node *prev);
-	Cast(const Cast *other, const std::unordered_map<Node*,Node*> &other_to_this);
+	Summary(const MetaData &meta, Node *prev, Node *min, Node *max, Node *mean, Node *std);
+	Summary(const Summary *other, const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);
@@ -40,18 +41,21 @@ struct Cast : public Node
 	std::string signature() const;
 	char classSignature() const;
 	Node* prev() const;
-	
+	Node* min() const;
+	Node* max() const;
+	Node* mean() const;
+	Node* std() const;
+
 	// Spatial
-	Pattern pattern() const { return LOCAL; }
+	Pattern pattern() const { return STATS; }
 	// const Mask& inputReach(Coord coord) const;
 	// const Mask& outputReach(Coord coord) const;
-	
-	// Compute
-	void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
-	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
 
+	// Compute
+	//void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
+	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
+	
 	// Variables
-	DataType type; //!< Enum corresponding to the type of cast
 };
 
 } } // namespace map::detail

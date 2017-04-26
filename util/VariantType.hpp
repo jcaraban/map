@@ -66,8 +66,13 @@ class VariantType {
   	bool isEqual(VariantType other) const;
   	bool operator==(VariantType other) const;
   	bool operator!=(VariantType other) const;
+  	operator bool() const;
   	size_t hash() const;
   	std::string toString() const;
+
+  	bool isNone() const;
+  	bool isZero() const;
+  	bool isOne() const;
 
   	VariantUnion& ref();
   	VariantUnion get() const;
@@ -76,11 +81,8 @@ class VariantType {
 	template <DataTypeEnum T> Ctype<T> get() const;
   	template <typename T> void set(T val, DataType dt);
   	
-  	VariantType convert(DataType dt);
-
-  	bool isNone() const;
-  	bool isZero() const;
-  	bool isOne() const;
+  	VariantType convert(DataType dt) const;
+  	void fill(void *mem, size_t num) const;
 
   	friend std::ostream& operator<<(std::ostream &strm, const VariantType &var);
 };
@@ -91,8 +93,12 @@ static_assert( std::is_standard_layout< VariantType >::value , "VariantType must
  *
  */
 struct ValFix {
-	VariantType value;
+	VariantType value, min, max, mean, std;
 	bool fixed;
+
+	ValFix() : value(), min(), max(), mean(), std(), fixed(false) { }
+	ValFix(VariantType val) : value(val), min(val), max(val), mean(val), std(val), fixed(true) { } 
+	ValFix(VariantType val, bool fix) : value(val), min(val), max(val), mean(val), std(val), fixed(fix) { } 
 };
 
 } } // namespace map::detail

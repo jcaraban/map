@@ -19,14 +19,15 @@ struct ZonalSkeleton : public Skeleton
 {
   // constructor and main function
 	ZonalSkeleton(Version *ver);
-	void generate();
+	std::string generate();
 
   // methods
 	std::string versionCode();
 
   // visit
 	DECLARE_VISIT(ZonalReduc)
-	DECLARE_VISIT(Stats)
+	DECLARE_VISIT(Summary)
+	DECLARE_VISIT(BlockSummary)
   
   // vars
 	std::vector<ZonalReduc*> reduc; //!< Stores ZonalReduc nodes

@@ -13,6 +13,7 @@
 #include <type_traits>
 #include <climits>
 #include <cstring>
+#include <functional>
 using namespace std;
 
 
@@ -485,6 +486,14 @@ Device::Device() :
 	father(nullptr),
 	ref(-1)
 { }
+
+bool Device::operator==(Device other) const {
+	return father==other.father && ref==other.ref;
+}
+
+size_t Device::hash() const {
+	return std::hash<void*>()(father) ^ std::hash<int>()(ref);
+}
 
 int Device::init(const char* str...) {
     va_list args;

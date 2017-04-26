@@ -56,7 +56,11 @@ struct LoopCond : public Node
 	const HeadList& headList() const;
 	const TailList& tailList() const;
 	Node* prev() const;
+	
+	// Spatial
 	Pattern pattern() const { return LOOP; }
+	// const Mask& inputReach(Coord coord) const;
+	// const Mask& outputReach(Coord coord) const;
 
 	// Variables
 	HeadList head_list; //!< Head nodes acting as inputs for the body

@@ -28,6 +28,7 @@ std::size_t Constant::Hash::operator()(const Content& k) const {
 // Factory
 
 Node* Constant::Factory(VariantType var, DataSize ds, DataType dt, MemOrder mo, BlockSize bs) {
+	assert(var.datatype() == dt);
 	MetaData meta(ds,dt,mo,bs);
 	return new Constant(meta,var);
 }
@@ -42,16 +43,16 @@ Constant::Constant(const MetaData &meta, VariantType val)
 	: Node(meta)
 {
 	this->cnst = val;
+	
 	this->value = this->cnst;
-	assert(val.datatype() == meta.getDataType());
+	this->in_spatial_reach = Mask(); // empty
+	this->out_spatial_reach = Mask(numdim().unitVec(),true);
 }
 
 Constant::Constant(const Constant *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 {
 	this->cnst = other->cnst;
-	this->value = this->cnst;
-	assert(cnst.datatype() == meta.getDataType());
 }
 
 // Methods
@@ -82,7 +83,7 @@ void Constant::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash)
 }
 
 void Constant::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
-	hash[{this,coord}] = {cnst,true};
+	hash[{this,coord}] = ValFix(cnst);
 }
 
 } } // namespace map::detail

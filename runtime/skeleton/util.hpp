@@ -9,7 +9,6 @@
 #define MAP_RUNTIME_SKELETON_UTIL_HPP_
 
 #include "../../util/util.hpp"
-#include "../Direction.hpp"
 #include <string>
 #include <algorithm>
 
@@ -111,23 +110,23 @@ std::string global_cond_radial(int N);
 std::string equal_coord_cond(int N, Coord c);
 std::string zero_cond_spread(int N);
 
-/*************
-   Functions
- *************/
+/***************
+   Definitions
+ ***************/
 
 std::string defines_local();
-std::string defines_local_type(DataType data_type);
+std::string defines_local_type(DataType dt);
 std::string defines_local_diver(DataType dt);
 std::string defines_focal();
-std::string defines_focal_type(DataType data_type);
+std::string defines_focal_type(DataType dt);
 std::string defines_focal_flow();
 std::string defines_zonal_reduc(ReductionType rt, DataType dt);
 std::string defines_radial();
-std::string defines_radial_type(DataType data_type);
+std::string defines_radial_type(DataType dt);
 std::string defines_radial_const(Direction fst, Direction snd);
 std::string defines_radial_idx();
 std::string defines_spread();
-std::string defines_spread_type(DataType data_type);
+std::string defines_spread_type(DataType dt);
 
 } } // namespace map::detail
 

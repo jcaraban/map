@@ -3,7 +3,7 @@
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  * Sample 6
- * Spreading operations
+ * Spread operations
  *
  * Calculates the flow accumulation in a DEM for a constant water body of 1xCell
  */

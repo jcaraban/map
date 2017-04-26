@@ -4,18 +4,18 @@
  *
  * Task base class
  *
- * TODO: TASK UNIFICATION
+ * TODO: TASK UNIFICATION ... doing ...
  * TODO: selfJobs() should take a 'Key done_block', but atm it is only used for Radial and is ok
  */
 
 #ifndef MAP_RUNTIME_TASK_HPP_
 #define MAP_RUNTIME_TASK_HPP_
 
+#include "../dag/Group.hpp"
 #include "../Job.hpp"
 #include "../Version.hpp"
 #include "../Block.hpp"
 #include "../ThreadId.hpp"
-#include "../dag/Group.hpp"
 #include "../../util/util.hpp"
 #include <string>
 #include <vector>
@@ -26,21 +26,13 @@
 
 namespace map { namespace detail {
 
+class Program; // Forward declaration
+class Clock; // Forward declaration
+class Config; // Forward declaration
+
 struct Task; // forward declaration
-
-/*********
-   Utils
- *********/
-
 typedef std::vector<Task*> TaskList;
 
-struct task_hash {
-	std::size_t operator()(const Task *t) const;
-};
-
-/********
-   Task
- ********/
 
 /*
  *
@@ -48,14 +40,13 @@ struct task_hash {
 struct Task
 {
   // Constructors
-	static Task* Factory(Group *group);
+	static Task* Factory(Program &prog, Clock &clock, Config &conf, Group *group);
 
-	Task(Group *group);
+	Task(Program &prog, Clock &clock, Config &conf, Group *group);
 	virtual ~Task() { }; 
 	
-  // methods
+  // Methods
 	int id() const;
-	
 	const Group* group() const;
 	const NodeList& nodeList() const;
 	const NodeList& inputList() const;
@@ -66,44 +57,51 @@ struct Task
 	const TaskList& forwList() const;
 	bool isPrev(const Task *task) const; // @ unnecessary?
 	bool isNext(const Task *task) const; // @ unnecessary?
-
+  // Meta
 	NumDim numdim() const;
 	const DataSize& datasize() const;
 	const BlockSize& blocksize() const;
 	const NumBlock& numblock() const;
-
-	virtual void createVersions() = 0;
+  // Spatial
+	virtual Pattern pattern() const;
+	virtual const Mask& inputReach(Node *node, Coord coord) const;
+	virtual const Mask& outputReach(Node *node, Coord coord) const;
+  // Versions
+	virtual void createVersions();
 	const VersionList& versionList() const;
-	const Version* version(DeviceType dev_type, std::string detail) const;
-
-	virtual void blocksToLoad(Coord coord, InKeyList &in_keys) const;
-	virtual void blocksToStore(Coord coord, OutKeyList &out_keys) const;
-
+	const Version* getVersion(DeviceType dev_type, GroupSize group, std::string detail) const;
+  // Blocks
+	virtual void blocksToLoad(Coord coord, KeyList &in_keys) const;
+	virtual void blocksToStore(Coord coord, KeyList &out_keys) const;
+  // Jobs
 	virtual void initialJobs(std::vector<Job> &job_vec);
 	virtual void askJobs(Job done_job, std::vector<Job> &job_vec);
-	virtual void selfJobs(Job done_job, std::vector<Job> &job_vec) = 0;
-	virtual void nextJobs(Key done_block, std::vector<Job> &job_vec) = 0;
+	virtual void selfJobs(Job done_job, std::vector<Job> &job_vec);
+	virtual void nextJobs(Key done_block, std::vector<Job> &job_vec);
 	void notify(Coord coord, std::vector<Job> &job_vec);
 	void notifyAll(std::vector<Job> &job_vec);
-
+  // Dependencies
 	int prevDependencies(Coord coord) const;
 	int nextDependencies(Node *node, Coord coood) const;
-	virtual int prevInterDepends(Node *node, Coord coord) const = 0;
-	virtual int nextInterDepends(Node *node, Coord coord) const = 0;
-	virtual int prevIntraDepends(Node *node, Coord coord) const = 0;
-	virtual int nextIntraDepends(Node *node, Coord coord) const = 0;
-
-	virtual void preLoad(Coord coord);
+	virtual int prevInterDepends(Node *node, Coord coord) const;
+	virtual int nextInterDepends(Node *node, Coord coord) const;
+	virtual int prevIntraDepends(Node *node, Coord coord) const;
+	virtual int nextIntraDepends(Node *node, Coord coord) const;
+	int nextInputDepends(Node *node, Coord coord) const; // @
+  // Compute
+	virtual void preLoad(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
 	virtual void preCompute(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
 	virtual void postCompute(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
-	virtual void postStore(Coord coord);
+	virtual void postStore(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
 
 	virtual void compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
 	virtual void computeVersion(Coord coord, const BlockList &in_blk, const BlockList &out_blk, const Version *ver);
-	
-	virtual Pattern pattern() const = 0;
 
   // vars
+	Program &prog; // Aggregate
+  	Clock &clock; // Aggregate
+  	Config &conf; // Aggregate
+
 	Group *base_group; //!< Group that founded the task
 	
 	TaskList prev_list; //!< Prev tasks on which this one depends
@@ -116,6 +114,8 @@ struct Task
 	std::unordered_map<Coord,int,coord_hash,coord_equal> dep_hash; // Structure holding the job dependencies met so far
 	int prev_jobs_count, self_jobs_count;//, next_jobs_count;
 	ThreadId last;
+
+	std::unordered_map<Node*,Mask> accu_reach_of; // Accumulated 'spatial reach' of input nodes for a job to execute
 
 	mutable std::mutex mtx;
 

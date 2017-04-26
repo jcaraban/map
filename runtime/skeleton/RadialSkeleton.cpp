@@ -1,11 +1,11 @@
 /**
- * @file	RadiatingSkeleton.cpp 
+ * @file	RadialSkeleton.cpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  * TODO: the version's variables should be filled during the version creation, not here
  */
 
-#include "RadiatingSkeleton.hpp"
+#include "RadialSkeleton.hpp"
 #include "util.hpp"
 #include "../Version.hpp"
 #include "../task/Task.hpp"
@@ -22,14 +22,15 @@ namespace { // anonymous namespace
    Constructor
  ***************/
 
-RadiatingSkeleton::RadiatingSkeleton(Version *ver)
+RadialSkeleton::RadialSkeleton(Version *ver)
 	: Skeleton(ver)
 	, radia()
 {
 	indent_count = 4;
 }
 
-void RadiatingSkeleton::generate() {
+string RadialSkeleton::generate() {
+	tag(); // tag the nodes
 	fill(); // fill structures
 	compact(); // compact structures
 
@@ -37,17 +38,14 @@ void RadiatingSkeleton::generate() {
 	RadialCase rcase = str2radia(ver->detail);
 	radia2dir(rcase,fst,snd);
 
-	ver->shared_size = -1;
-	ver->group_size = BlockSize{256,1}; // @
-	ver->num_group = (ver->task->blocksize() - 1) / ver->groupsize() + 1;	
-	ver->code = versionCode(rcase,fst,snd);
+	return versionCode(rcase,fst,snd);
 }
 
 /***********
    Methods
  ***********/
 
-string RadiatingSkeleton::versionCode(RadialCase rcase, Direction fst, Direction snd) {
+string RadialSkeleton::versionCode(RadialCase rcase, Direction fst, Direction snd) {
 	//// Variables ////
 	const int N = 2;
 	string cond, comma;
@@ -56,7 +54,7 @@ string RadiatingSkeleton::versionCode(RadialCase rcase, Direction fst, Direction
 	indent_count = 0;
 	
 	// Includes
-	for (auto &incl : includes)
+	for (auto &incl : include)
 		add_line( "#include " + incl );
 	add_line( "" );
 	
@@ -98,7 +96,7 @@ string RadiatingSkeleton::versionCode(RadialCase rcase, Direction fst, Direction
 	for (auto &node : ver->task->outputList()) {
 		if (node->pattern().is(RADIAL))
 			add_line( "TYPE_VAR_LIST(" + node->datatype().ctypeString() + ",OUT_" + node->id + ")," );
-		else
+		else //if (tag_hash[node].is(INPUT_OUTPUT))
 			add_line( out_arg(node) );
 	}
 	for (int n=0; n<N; n++) {
@@ -132,7 +130,7 @@ string RadiatingSkeleton::versionCode(RadialCase rcase, Direction fst, Direction
 		}
 	}
 
-	// Declaring radiating shared memory
+	// Declaring Radial shared memory
 	for (auto &node : radia) {
 		add_line( shared_decl(node,prod(ver->groupsize())+1) );
 	}
@@ -152,15 +150,15 @@ string RadiatingSkeleton::versionCode(RadialCase rcase, Direction fst, Direction
 	add_line( "{" );
 	indent_count++;
 
-	// Adds PRECORE input-nodes
+	// Adds PRE_RADIAL input-nodes
 	for (auto &node : ver->task->inputList()) {
-		if (tag_hash[node] == PRECORE) {
+		if (tag_hash[node].is(PRE_RADIAL)) {
 			add_line( var_name(node) + " = " + in_var(node) + ";" );
 		}
 	}
 
 	// Adds accumulated 'precore' to 'all'
-	code[ALL_POS] += code[PRECORE];
+	full_code += code_hash[{PRE_RADIAL,1}];
 
 	indent_count--;
 	add_line( "}" ); // Closes global-if
@@ -192,7 +190,7 @@ string RadiatingSkeleton::versionCode(RadialCase rcase, Direction fst, Direction
 	add_line( "int c0 = bc0 - fst_unit0;" );
 	add_line( "int c1 = bc1 - fst_unit1;" );
 
-	// Filling radiating shared memory
+	// Filling Radial shared memory
 	for (auto &node : radia) {
 		string svar = var_name(node,SHARED) + "[gc+1]";
 		string type = node->datatype().toString();
@@ -227,7 +225,7 @@ string RadiatingSkeleton::versionCode(RadialCase rcase, Direction fst, Direction
 	indent_count++;
 
 	// Adds accumulated 'core' to 'all'
-	code[ALL_POS] += code[CORE];
+	full_code += code_hash[{RADIAL_CORE,1}];
 
 	indent_count--;
 	add_line( "}" ); // Closes global-if
@@ -237,7 +235,7 @@ string RadiatingSkeleton::versionCode(RadialCase rcase, Direction fst, Direction
 	add_line( "{" );
 	indent_count++;
 
-	// Radiating output
+	// Radial output
 	for (auto &node : ver->task->outputList()) {
 		if (node->pattern().is(RADIAL)) {
 			string ovar = string("OUT_") + node->id + "[" + global_proj(N) + "]";
@@ -257,19 +255,19 @@ string RadiatingSkeleton::versionCode(RadialCase rcase, Direction fst, Direction
 	add_line( "{" ); // Global-if
 	indent_count++;
 
-	// Adds POSCORE input-nodes
+	// Adds LOCAL_CORE input-nodes
 	for (auto &node : ver->task->inputList()) {
-		if (tag_hash[node] == POSCORE) {
+		if (tag_hash[node].is(INPUT_OUTPUT)) {
 			add_line( var_name(node) + " = " + in_var(node) + ";" );
 		}
 	}
 
 	// Adds accumulated 'poscode' to 'all'
-	code[ALL_POS] += code[POSCORE];
+	full_code += code_hash[{LOCAL_CORE,1}];
 
-	// Adds POSCORE output-nodes
+	// Adds LOCAL_CORE output-nodes
 	for (auto &node : ver->task->outputList()) {
-		if (tag_hash[node] == POSCORE && node->pattern().isNot(RADIAL)) {
+		if (node->pattern().isNot(RADIAL)) {
 			add_line( out_var(node) + " = " + var_name(node) + ";" );
 		}
 	}
@@ -285,17 +283,17 @@ string RadiatingSkeleton::versionCode(RadialCase rcase, Direction fst, Direction
 
 	//// Printing ////
 	if (rcase == 0)
-		std::cout << "***\n" << code[ALL_POS] << "***" << std::endl;
+		std::cout << "***\n" << full_code << "***" << std::endl;
 
-	return code[ALL_POS];
+	return full_code;
 }
 
 /*********
    Visit
  *********/
 
-void RadiatingSkeleton::visit(RadialScan *node) {
-	// Adds radiating code
+void RadialSkeleton::visit(RadialScan *node) {
+	// Adds Radial code
 	{
 		const int N = node->numdim().toInt();
 		string var = var_name(node);

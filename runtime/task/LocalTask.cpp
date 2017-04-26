@@ -11,12 +11,10 @@
 
 namespace map { namespace detail {
 
-LocalTask::LocalTask(Group *group)
-	: Task(group)
-{
-	createVersions();
-}
-
+LocalTask::LocalTask(Program &prog, Clock &clock, Config &conf, Group *group)
+	: Task(prog,clock,conf,group)
+{ }
+/*
 void LocalTask::createVersions() {
 	cle::OclEnv& env = Runtime::getOclEnv();
 	// All devices are accepted
@@ -27,11 +25,11 @@ void LocalTask::createVersions() {
 	}
 }
 
-void LocalTask::blocksToLoad(Coord coord, InKeyList &in_keys) const {
+void LocalTask::blocksToLoad(Coord coord, KeyList &in_keys) const {
 	Task::blocksToLoad(coord,in_keys);
 }
 
-void LocalTask::blocksToStore(Coord coord, OutKeyList &out_keys) const {
+void LocalTask::blocksToStore(Coord coord, KeyList &out_keys) const {
 	Task::blocksToStore(coord,out_keys);
 }
 
@@ -67,8 +65,8 @@ int LocalTask::nextIntraDepends(Node *node, Coord coord) const {
 }
 
 void LocalTask::compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
-	const Version *ver = version(DEV_ALL,""); // Any device, No detail
+	const Version *ver = getVersion(DEV_ALL,{},""); // Any device, No detail
 	Task::computeVersion(coord,in_blk,out_blk,ver);
 }
-
+*/
 } } // namespace map::detail

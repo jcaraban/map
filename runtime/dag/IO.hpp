@@ -26,6 +26,7 @@ struct IONode : public Node
 
 	IFile* file();
 	const IFile* file() const;
+	Pattern pattern() const { return FREE; }
 
   // vars
 	SharedFile io_file; //!< File serving as input or output

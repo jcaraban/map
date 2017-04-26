@@ -82,8 +82,10 @@ Rand::Rand(const MetaData &meta, Node *seed)
 {
 	prev_list.reserve(1);
 	this->addPrev(seed); // [0]
-
 	seed->addNext(this);
+
+	this->in_spatial_reach = Mask(numdim().unitVec(),true);
+	this->out_spatial_reach = Mask(numdim().unitVec(),true);
 }
 
 Rand::Rand(const Rand *other, const std::unordered_map<Node*,Node*> &other_to_this)
@@ -216,9 +218,8 @@ void Rand::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
 	}
 }
 
-void Rand::computeFixed(Coord cooord, std::unordered_map<Key,ValFix,key_hash> &hash) {
-	Coord coord = {0,0};
-	hash[{this,coord}] = {{},false}; // never fixed
+void Rand::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
+	hash[{this,coord}] = ValFix(); // @ something more? max / min ?
 }
 
 } } // namespace map::detail

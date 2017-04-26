@@ -95,10 +95,6 @@ Mask FocalPercent::mask() const {
 	return smask;
 }
 
-BlockSize FocalPercent::halo() const {
-	return smask.datasize() / 2;
-}
-
 // Compute
 
 } } // namespace detail, map

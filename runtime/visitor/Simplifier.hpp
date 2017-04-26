@@ -1,8 +1,8 @@
 /**
- * @file	SimplifierOnline.hpp 
+ * @file	Simplifier.hpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * Visitor of the DAG that erases redundant nodes from the main list of nodes
+ * Visitor of the graph that erases redundant nodes from the main list of nodes
  *
  * Note: meant to be used 'online', this is, on the fly while adding nodes. This imposes restrictions:
  *   - The callee node has the latest/greatest id number
@@ -15,8 +15,8 @@
  *       special attention too with associative operations, like ADD and MUL
  */
 
-#ifndef MAP_RUNTIME_VISITOR_SIMPLIFIER_ONLINE_HPP_
-#define MAP_RUNTIME_VISITOR_SIMPLIFIER_ONLINE_HPP_
+#ifndef MAP_RUNTIME_VISITOR_SIMPLIFIER_HPP_
+#define MAP_RUNTIME_VISITOR_SIMPLIFIER_HPP_
 
 #include "Visitor.hpp"
 #include <unordered_map>
@@ -31,10 +31,10 @@ namespace map { namespace detail {
 /*
  * Simplifies the DAG by eliminating duplicated nodes
  */
-struct SimplifierOnline : public Visitor
+struct Simplifier : public Visitor
 {
   // constructor and main function
-	SimplifierOnline(OwnerNodeList &node_list);
+	Simplifier(OwnerNodeList &node_list);
 	Node* simplify(Node *node);
 	void drop(Node *node);
 
@@ -56,7 +56,7 @@ struct SimplifierOnline : public Visitor
 	DECLARE_MAP(Conditional)
 	DECLARE_MAP(Diversity)
 	DECLARE_MAP(Neighbor)
-	DECLARE_MAP(BoundedNbh)
+	DECLARE_MAP(BoundedNeighbor)
 	DECLARE_MAP(SpreadNeighbor)
 	DECLARE_MAP(Convolution)
 	DECLARE_MAP(FocalFunc)
@@ -75,8 +75,9 @@ struct SimplifierOnline : public Visitor
 	DECLARE_MAP(Write)
 	DECLARE_MAP(Scalar)
 	DECLARE_MAP(Checkpoint)
-	DECLARE_MAP(Stats)
 	DECLARE_MAP(Barrier)
+	DECLARE_MAP(Summary)
+	DECLARE_MAP(BlockSummary)
 
   // visit
 	//void static_visit(Node *node);
@@ -90,7 +91,7 @@ struct SimplifierOnline : public Visitor
 	DECLARE_VISIT(Conditional)
 	DECLARE_VISIT(Diversity)
 	DECLARE_VISIT(Neighbor)
-	DECLARE_VISIT(BoundedNbh)
+	DECLARE_VISIT(BoundedNeighbor)
 	DECLARE_VISIT(SpreadNeighbor)
 	DECLARE_VISIT(Convolution)
 	DECLARE_VISIT(FocalFunc)
@@ -109,8 +110,9 @@ struct SimplifierOnline : public Visitor
 	DECLARE_VISIT(Write)
 	DECLARE_VISIT(Scalar)
 	DECLARE_VISIT(Checkpoint)
-	DECLARE_VISIT(Stats)
 	DECLARE_VISIT(Barrier)
+	DECLARE_VISIT(Summary)
+	DECLARE_VISIT(BlockSummary)
 	
 	DECLARE_VISIT(Temporal)
 
@@ -127,4 +129,4 @@ struct SimplifierOnline : public Visitor
 
 #endif
 
-#include "SimplifierOnline.tpl"
+#include "Simplifier.tpl"

@@ -30,18 +30,16 @@ ZonalSkeleton::ZonalSkeleton(Version *ver)
 	indent_count = 3;
 }
 
-void ZonalSkeleton::generate() {
+string ZonalSkeleton::generate() {
+	tag(); // tag the nodes
 	fill(); // fill structures
 	compact(); // compact structures
-
-	ver->shared_size = -1;
-	ver->group_size = BlockSize{16,16}; // @
-	ver->num_group = (ver->task->blocksize() - 1) / ver->groupsize() + 1;
-	ver->code = versionCode();
 
 	// Gives numgroup() as extra_argument
 	for (int i=0; i<ver->task->numdim().toInt(); i++)
 		ver->extra_arg.push_back( ver->numgroup()[i] );
+
+	return versionCode();
 }
 
 /***********
@@ -57,7 +55,7 @@ string ZonalSkeleton::versionCode() {
 	indent_count = 0;
 
 	// Includes
-	for (auto &incl : includes)
+	for (auto &incl : include)
 		add_line( "#include " + incl );
 	add_line( "" );
 
@@ -96,11 +94,6 @@ string ZonalSkeleton::versionCode() {
 	for (auto &node : ver->task->outputList()) {
 		add_line( out_arg(node) );
 	}
-	// @ for the Stats functionality
-	for (auto &node : ver->task->nodeList())
-		if (node->pattern().is(ZONAL) && node->nextList()[0]->pattern().is(STATS)) // @@ nextList can be empty
-			add_line( out_arg(node) );
-	//
 	for (int n=0; n<N; n++) {
 		add_line( string("const int BS") + n + "," );
 	}
@@ -160,15 +153,15 @@ string ZonalSkeleton::versionCode() {
 	add_line( "{" );
 	indent_count++;
 
-	// Adds PRECORE input-nodes
+	// Adds PRE_ZONAL input-nodes
 	for (auto &node : ver->task->inputList()) {
-		if (tag_hash[node] == PRECORE) {
+		if (tag_hash[node].is(PRE_ZONAL)) {
 			add_line( var_name(node) + " = " + in_var(node) + ";" );
 		}
 	}
 
 	// Adds accumulated 'precore' to 'all'
-	code[ALL_POS] += code[PRECORE];
+	full_code += code_hash[{PRE_ZONAL,1}];
 
 	// Filling shared memory
 	for (auto &node : reduc) {
@@ -207,7 +200,7 @@ string ZonalSkeleton::versionCode() {
 	indent_count++;
 	
 	// Adds accumulated 'core' to 'all'
-	code[ALL_POS] += code[CORE];
+	full_code += code_hash[{ZONAL_CORE,1}];
 
 	indent_count--;
 	add_line( "}" ); // Closes if
@@ -240,17 +233,17 @@ string ZonalSkeleton::versionCode() {
 	add_line( "{" );
 	indent_count++;
 
-	// Adds POSCORE input-nodes
+	// Adds LOCAL_CORE input-nodes
 	for (auto &node : ver->task->inputList()) {
-		if (tag_hash[node] == POSCORE) {
+		if (tag_hash[node].is(LOCAL_CORE)) {
 			add_line( var_name(node) + " = " + in_var(node) + ";" );
 		}
 	}
 
 	// Adds accumulated 'poscore' to 'all'
-	code[ALL_POS] += code[POSCORE];
+	full_code += code_hash[{LOCAL_CORE,1}];
 
-	// Adds POSCORE output-nodes
+	// Adds LOCAL_CORE output-nodes
 	for (auto &node : ver->task->outputList()) {
 		if (node->pattern().isNot(ZONAL) && node->numdim() != D0) {
 			add_line( out_var(node) + " = " + var_name(node) + ";" );
@@ -263,9 +256,9 @@ string ZonalSkeleton::versionCode() {
 	add_line( "}" ); // Closes kernel body
 
 	//// Printing ////
-	std::cout << "***\n" << code[ALL_POS] << "***" << std::endl;
+	std::cout << "***\n" << full_code << "***" << std::endl;
 
-	return code[ALL_POS];
+	return full_code;
 }
 
 /*********
@@ -287,7 +280,11 @@ void ZonalSkeleton::visit(ZonalReduc *node) {
 	reduc.push_back(node);
 }
 
-void ZonalSkeleton::visit(Stats *node) {
+void ZonalSkeleton::visit(Summary *node) {
+	add_line( var_name(node) + " = " + var_name(node->prev())+ + ";" );
+}
+
+void ZonalSkeleton::visit(BlockSummary *node) {
 	add_line( var_name(node) + " = " + var_name(node->prev())+ + ";" );
 }
 

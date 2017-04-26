@@ -2,7 +2,7 @@
  * @file	SpreadNeighbor.hpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * Node representing a Focal SpreadNeighbor operation with static coordinate
+ * Node representing a Spread operation that writes to the neighborhood atomically
  */
 
 #ifndef MAP_RUNTIME_DAG_SPREADNEIGHBOR_HPP_
@@ -43,8 +43,11 @@ struct SpreadNeighbor : public Node
 	//Node*& prev();
 	Node* prev() const;
 	Node* dir() const;
-	Pattern pattern() const { return FOCAL; }
-	BlockSize halo() const;
+
+	// Spatial
+	Pattern pattern() const { return SPREAD; }
+	// const Mask& inputReach(Coord coord) const;
+	// const Mask& outputReach(Coord coord) const;
 
 	// Compute
 	//void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);

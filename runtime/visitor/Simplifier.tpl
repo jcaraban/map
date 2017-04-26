@@ -1,16 +1,16 @@
 /** 
- * @file    SimplifierOnline.tpl 
+ * @file    Simplifier.tpl 
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  */
 
-#ifndef MAP_RUNTIME_VISITOR_SIMPLIFIER_ONLINE_TPL_
-#define MAP_RUNTIME_VISITOR_SIMPLIFIER_ONLINE_TPL_
+#ifndef MAP_RUNTIME_VISITOR_SIMPLIFIER_TPL_
+#define MAP_RUNTIME_VISITOR_SIMPLIFIER_TPL_
 
 
 namespace map { namespace detail {
 
 template <typename T>
-void SimplifierOnline::helper(T *node, std::unordered_map<typename T::Content,T*,typename T::Hash> &map) {
+void Simplifier::helper(T *node, std::unordered_map<typename T::Content,T*,typename T::Hash> &map) {
 	typename T::Content key(node);
 	auto i = map.find(key);
 	if (i == map.end()) // No other similar Node found
@@ -39,7 +39,7 @@ void SimplifierOnline::helper(T *node, std::unordered_map<typename T::Content,T*
 }
 
 template <typename T>
-void SimplifierOnline::drop_helper(T *node, std::unordered_map<typename T::Content,T*,typename T::Hash> &map) {
+void Simplifier::drop_helper(T *node, std::unordered_map<typename T::Content,T*,typename T::Hash> &map) {
 	typename T::Content key(node);
 	map.erase(key); // @ reconsider the whole 'drop' idea
 }

@@ -30,6 +30,14 @@ struct key_hash {
 	std::size_t operator()(const Key& k) const;
 };
 
+enum HoldType { NONE_HOLD, HOLD_0, HOLD_1, HOLD_N, N_HOLD };
+enum DependType { DEPEND_UNKNOWN = -1, DEPEND_ZERO = 0 };
+
+//typedef std::vector<Key> Depend;
+typedef int Depend;
+
+typedef std::vector<std::tuple<Key,HoldType,Depend>> KeyList;
+
 } } // namespace map::detail
 
 #endif

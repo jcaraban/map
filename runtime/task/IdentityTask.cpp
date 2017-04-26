@@ -11,21 +11,19 @@
 
 namespace map { namespace detail {
 
-IdentityTask::IdentityTask(Group *group)
-	: Task(group)
-{
-	createVersions();
-}
+IdentityTask::IdentityTask(Program &prog, Clock &clock, Config &conf, Group *group)
+	: Task(prog,clock,conf,group)
+{ }
 
 void IdentityTask::createVersions() {
 	return; // No versions needed for IdentityTask
 }
-
-void IdentityTask::blocksToLoad(Coord coord, InKeyList &in_keys) const {
+/*
+void IdentityTask::blocksToLoad(Coord coord, KeyList &in_keys) const {
 	Task::blocksToLoad(coord,in_keys);
 }
 
-void IdentityTask::blocksToStore(Coord coord, OutKeyList &out_keys) const {
+void IdentityTask::blocksToStore(Coord coord, KeyList &out_keys) const {
 	Task::blocksToStore(coord,out_keys);
 }
 
@@ -59,7 +57,7 @@ int IdentityTask::prevIntraDepends(Node *node, Coord coord) const {
 int IdentityTask::nextIntraDepends(Node *node, Coord coord) const {
 	return 0; // Identity does not present intra dependencies
 }
-
+*/
 void IdentityTask::compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
 	assert(in_blk.size() == out_blk.size());
 

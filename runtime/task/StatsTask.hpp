@@ -8,19 +8,19 @@
 #define MAP_RUNTIME_TASK_STATS_HPP_
 
 #include "Task.hpp"
-#include "../dag/Stats.hpp"
+#include "../dag/Summary.hpp"
 
 
 namespace map { namespace detail {
 
 struct StatsTask : public Task
 {
-	StatsTask(Group *group);
-
+	StatsTask(Program &prog, Clock &clock, Config &conf, Group *group);
+	/*
 	void createVersions();
 
-	void blocksToLoad(Coord coord, InKeyList &in_keys) const;
-	void blocksToStore(Coord coord, OutKeyList &out_keys) const;
+	void blocksToLoad(Coord coord, KeyList &in_keys) const;
+	void blocksToStore(Coord coord, KeyList &out_keys) const;
 	
 	void initialJobs(std::vector<Job> &job_vec);
 	void selfJobs(Job done_job, std::vector<Job> &job_vec);
@@ -34,11 +34,11 @@ struct StatsTask : public Task
 	void preCompute(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
 	void postCompute(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
 	void compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
-
+	*/
 	Pattern pattern() const { return STATS+ZONAL; }
 
   // vars
-	Stats *stats;
+	Summary *summ;
 };
 
 } } // namespace map::detail

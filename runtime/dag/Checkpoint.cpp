@@ -91,8 +91,7 @@ std::string Checkpoint::signature() const {
 void Checkpoint::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
 	auto *node = this;
 
-	auto prev = hash.find({node->prev(),coord})->second;
-	hash[{node,coord}] = {prev.value,prev.fixed};
+	hash[{node,coord}] = hash.find({node->prev(),coord})->second;
 }
 
 } } // namespace map::detail

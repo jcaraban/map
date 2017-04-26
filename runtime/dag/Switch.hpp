@@ -42,12 +42,16 @@ struct Switch : public Node
 	char classSignature() const;
 	Node* cond() const;
 	Node* prev() const;
-	Pattern pattern() const;
 
 	const NodeList& trueList() const;
 	const NodeList& falseList() const;
 	void addTrue(Node *node);
 	void addFalse(Node *node);
+
+	// Spatial
+	Pattern pattern() const { return SWITCH; }
+	// const Mask& inputReach(Coord coord) const;
+	// const Mask& outputReach(Coord coord) const;
 
 	// Compute
 	void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);

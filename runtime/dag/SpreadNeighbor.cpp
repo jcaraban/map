@@ -56,10 +56,14 @@ SpreadNeighbor::SpreadNeighbor(const MetaData &meta, Node *prev, Node *dir, Redu
 	prev_list.reserve(2);
 	this->addPrev(prev);
 	this->addPrev(dir);
-	this->type = type;
-	
 	prev->addNext(this);
 	dir->addNext(this);
+
+	this->type = type;
+	
+	this->in_spatial_reach = Mask(numdim().unitVec(),true);
+	Array<bool> tmask = { 1,1,1,1,1,1,1,1,1 };
+	this->out_spatial_reach = Mask({3,3},tmask);
 }
 
 SpreadNeighbor::SpreadNeighbor(const SpreadNeighbor *other, const std::unordered_map<Node*,Node*> &other_to_this)
@@ -95,10 +99,6 @@ Node* SpreadNeighbor::prev() const {
 
 Node* SpreadNeighbor::dir() const {
 	return prev_list[1];
-}
-
-BlockSize SpreadNeighbor::halo() const {
-	return {1,1}; // @ depends on the 'direction' type
 }
 
 // Compute

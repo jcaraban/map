@@ -2,7 +2,6 @@
  * @file	Skeleton.cpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * TODO: think about making every PatternSkeleton accept a Task of their own pattern
  */
 
 #include "Skeleton.hpp"
@@ -11,8 +10,8 @@
 #include "CpuFocalSkeleton.hpp"
 #include "ZonalSkeleton.hpp"
 #include "FocalZonalSkeleton.hpp"
-#include "RadiatingSkeleton.hpp"
-#include "SpreadingSkeleton.hpp"
+#include "RadialSkeleton.hpp"
+#include "SpreadSkeleton.hpp"
 #include "util.hpp"
 #include "../Version.hpp"
 #include "../task/Task.hpp"
@@ -24,6 +23,37 @@ namespace map { namespace detail {
 
 namespace { // anonymous namespace
 	using std::string;
+}
+
+/***********
+   SkelTag
+ ***********/
+
+void SkelTag::add(SkelPos pos) {
+	this->pos = static_cast<SkelPos>(static_cast<int>(this->pos) | static_cast<int>(pos));
+};
+
+bool SkelTag::is(SkelPos pos) const {
+	return (this->pos & pos) == pos;
+};
+
+bool SkelTag::operator==(SkelTag tag) const {
+	return this->pos == tag.pos && this->pds == tag.pds;
+};
+
+bool SkelTag::operator<(SkelTag tag) const {
+	if (this->pds > tag.pds)
+		return 1;
+	else if (this->pds < tag.pds)
+		return 0;
+	else if (this->pos < tag.pos)
+		return 1;
+	else // this->pos > tag.pos
+		return 0;
+};
+
+std::size_t SkelTag::Hash::operator()(const SkelTag& k) const {
+	return ((size_t)k.pos & 0x00000000ffffffff) | ((size_t)k.pds << 32);
 }
 
 /***************
@@ -47,11 +77,11 @@ Skeleton* Skeleton::Factory(Version *ver) {
 	}
 	else if ( pat.is(SPREAD) )
 	{
-		return new SpreadingSkeleton(ver);
+		return new SpreadSkeleton(ver);
 	}
 	else if ( pat.is(RADIAL) )
 	{
-		return new RadiatingSkeleton(ver);
+		return new RadialSkeleton(ver);
 	}
 	else if ( pat.is(FOCAL+ZONAL) )
 	{
@@ -79,82 +109,112 @@ Skeleton* Skeleton::Factory(Version *ver) {
 		return new LocalSkeleton(ver);
 	}
 	else {
-		assert(0);
+		return new Skeleton(ver);
 	}
 }
 
 Skeleton::Skeleton(Version *ver)
 	: ver(ver)
-	, node_pos(ALL_POS)
-	, code()
-	, scalar()
-	, shared()
-	, diver()
-	, includes()
 	, indent_count(-1)
 { }
+
+string Skeleton::generate() {
+	tag(); // tag the nodes
+	fill(); // fill structures
+	compact(); // compact structures
+
+	return versionCode();
+}
 
 /***********
    Methods
  ***********/
 
-void Skeleton::tag(Node *node) {
-	bool is_input = is_included(node,ver->task->inputList());
-	bool visited = wasVisited(node);
-	setVisited(node);
-	Pattern pat = node->pattern();
-	bool is_core = !is_input && (pat.is(FOCAL) || pat.is(ZONAL) || pat.is(RADIAL) || pat.is(SPREAD));
+void Skeleton::tag() {
+	// Puts in + body + out nodes into 'all_list', in order
+	auto all_list = full_join(ver->task->inputList(),ver->task->nodeList());
+	all_list = full_unique_join(all_list,ver->task->outputList());
 
-	if (visited && !(node_pos==PRECORE && tag_hash[node]==POSCORE))
-		return;
+	// Walks nodes backward and accumulate their 'tag = { SkelPos , prod_data_size }'
+	for (auto it=all_list.rbegin(); it!=all_list.rend(); it++) {
+		Node *node = *it;
+		Mask reach = ver->task->inputReach(node,Coord());
+		Pattern pat = node->pattern();
+		SkelTag tag;
 
-	if (is_core)
-		node_pos = PRECORE;
+		tag.pds = prod(reach.datasize());
+		tag.pos = NONE_SKEL_POS;
 
-	if (!is_input) // Recursively goes up if the node is not an input
-		for (auto prev : node->prevList())
-			tag(prev);
+		auto next_inside = inner_join(node->nextList(),ver->task->nodeList());
+		for (auto next : next_inside) {
+			auto next_tag = tag_hash.find(next)->second;
+			// Augments reach
+			tag.pds = std::max(tag.pds,next_tag.pds);
+			// Augments tag
+			if (next_tag.is(PRE_FOCAL) || next_tag.is(FOCAL_CORE))
+				tag.add(PRE_FOCAL);
+			if (next_tag.is(PRE_ZONAL) || next_tag.is(ZONAL_CORE))
+				tag.add(PRE_ZONAL);
+			if (next_tag.is(PRE_RADIAL) || next_tag.is(RADIAL_CORE))
+				tag.add(PRE_RADIAL);
+		}
+		
+		if (is_included(node,ver->task->inputList()))
+			tag.add(INPUT_OUTPUT);
+		else if (node->pattern().is(FOCAL))
+			tag.add(FOCAL_CORE);
+		else if (node->pattern().is(ZONAL))
+			tag.add(ZONAL_CORE);
+		else if (node->pattern().is(RADIAL))
+			tag.add(RADIAL_CORE);
+		else if (tag.pos == NONE_SKEL_POS)
+			tag.add(LOCAL_CORE);
+		
+		tag_hash[node] = tag;
+	}
 
-	if (is_core)
-		node_pos = CORE;
+	// Register the different tag categories in order from max to min 'pds'
 
-	tag_hash[node] = node_pos;
-
-	if (is_core)
-		node_pos = POSCORE;
+	for (auto it=tag_hash.begin(); it!=tag_hash.end(); it++)
+		tag_vec.push_back(it->second);
+	sort_unique(tag_vec);
+	
 }
 
 void Skeleton::fill() {
-	visited.clear();
-	node_pos = POSCORE;
+	code_hash.clear();
+	full_code.clear();
 
-	// Goes up, node by node, tagging nodes with their relative position to the core
-	NodeList list = full_join(ver->task->nodeList(),ver->task->outputList());
-
-	for (auto it=list.rbegin(); it!=list.rend(); it++)
-		tag(*it);
-	visited.clear();
+	// Reserves some decent length for the strings
+	const int avg_skel_len = 4096;	
+	for (auto tag : tag_vec)
+		code_hash[tag].reserve(avg_skel_len);
 
 	// Walks nodes sequentially, filling the code structures
 	for (auto node : ver->task->nodeList()) {
-		node_pos = tag_hash[node];
+		curr_tag = tag_hash.find(node)->second;
 		node->accept(this);
 	}
 
 	// Fill scalars
 	for (auto node : full_join(ver->task->inputList(),ver->task->nodeList()))
-		if (!node->isOutput())
-			scalar[ node->datatype().get() ].push_back(node->id);
+		scalar[ node->datatype().get() ].push_back(node->id);
 
-	node_pos = ALL_POS;
+	curr_tag = SkelTag{ALL_SKEL_POS,0};
 }
 
 void Skeleton::compact() {
 	//for (int i=F32; i<N_DATATYPE; i++)
-	//	sort_unique(scalar[i]);
+	//	sort_unique( scalar[i] );
 
 	sort_unique(shared,node_id_less(),node_id_equal());
 	sort_unique(diver,node_id_less(),node_id_equal());
+}
+
+std::string Skeleton::versionCode() {
+	assert(0);
+
+	... continue ... SKEL Unification, then TASK Unification
 }
 
 string Skeleton::indent() {
@@ -165,17 +225,20 @@ string Skeleton::indent() {
 }
 
 void Skeleton::add_line(string line) {
-	code[node_pos] += indent() + line + "\n";
+	if (curr_tag.pos == ALL_SKEL_POS)
+		full_code += indent() + line + "\n";
+	else
+		code_hash[curr_tag] += indent() + line + "\n";
 }
 
 void Skeleton::add_section(string section) {
-	code[node_pos] += section;
+	full_code += section;
 }
 
 void Skeleton::add_include(string file) {
 	// Because the OpenCL kernels are composed at runtime and the user's program could execute anywhere,
 	// the includes need to be accessible from any possible path. Copying the header files around with the
-	// executables sounds stupid. Defining an absolute path like /usr/include/CL/cl.h seems professiona.
+	// executables sounds stupid. Defining an absolute path like /usr/include/CL/cl.h seems more elegant.
 	// The easiest way now is to 1) paste the include into the kernel, 2) cp it to a tmp in the curr dir.
 
 	// TODO
@@ -228,7 +291,7 @@ void Skeleton::visit(Rand *node) {
 		add_line( var + " = *("+ut+"*)& " + ctr +" / ("+type.ctypeString()+")"+max_str+";" );
 	}
 
-	includes.push_back("<Random123/philox.h>");
+	include.push_back("<Random123/philox.h>");
 	rand.push_back(node);
 }
 
@@ -302,6 +365,93 @@ void Skeleton::visit(Diversity *node) {
 	diver.push_back(node);
 }
 
+void Skeleton::visit(Neighbor *node) {
+	// Adds Neighbor code
+	{
+		const int N = node->numdim().toInt();
+		Coord nbh = node->coord();
+		string var = var_name(node);
+		string svar = var_name(node->prev(),SHARED) + "[" + local_proj_focal_nbh(N,nbh) + "]";
+
+		add_line( var + " = " + svar + ";" );
+	}
+
+	shared.push_back(node->prev());
+}
+
+void Skeleton::visit(BoundedNeighbor *node) {
+	assert(0);
+}
+
+void Skeleton::visit(SpreadNeighbor *node) {
+	assert(0);
+}
+
+void Skeleton::visit(Convolution *node) {
+	// Adds convolution code
+	{
+		const int N = node->numdim().toInt();
+		string var = var_name(node);
+		string svar = var_name(node->prev(),SHARED) + "[" + local_proj_focal_Hi(N) + "]";
+		string mvar = node->mask().datatype().toString() + "L_" + std::to_string(node->id);
+
+		add_line( var + " = 0;" );
+
+		for (int n=N-1; n>=0; n--) {
+			int h = 1;
+			string i = string("i") + n;
+			add_line( "for (int "+i+"=-"+h+"; "+i+"<="+h+"; "+i+"++) {" );
+			indent_count++;
+		}
+
+		for (int n=N-1; n>=0; n--)
+			mvar += string("[")+"i"+n+"+H"+n+"]";
+
+		add_line( var + " += " + svar + " * " + mvar + ";" );
+
+		for (int n=N-1; n>=0; n--) {
+			indent_count--;
+			add_line( "}" );
+		}
+	}
+	
+	shared.push_back(node->prev());
+	//mask.push_back( std::make_pair(node->mask(),node->id) );
+}
+
+void Skeleton::visit(FocalFunc *node) {
+	assert(0);
+}
+
+void Skeleton::visit(FocalPercent *node) {
+	assert(0);
+}
+
+void Skeleton::visit(ZonalReduc *node) {
+	const int N = node->prev()->numdim().toInt();
+	string lvar = var_name(node,SHARED) + "[" + local_proj_zonal(N) + "]";
+	string rvar = var_name(node,SHARED) + "[" + local_proj_zonal(N) + " + i]";
+
+	if (node->type.isOperator())
+		add_line( lvar + " = " + lvar + " " + node->type.code() + " " + rvar + ";" );
+	else if (node->type.isFunction())
+		add_line( lvar + " = " + node->type.code() + "(" + lvar + ", " + rvar + ");" );
+	else 
+		assert(0);
+}
+
+void Skeleton::visit(RadialScan *node) {
+	assert(0);
+}
+
+void Skeleton::visit(SpreadScan *node) {
+	assert(0);
+}
+
+void Skeleton::visit(LoopCond *node) {
+	assert(0);
+}
+
 void Skeleton::visit(LoopHead *node) {
 	string var = var_name(node);
 	string pvar = var_name(node->prev());
@@ -313,6 +463,14 @@ void Skeleton::visit(LoopTail *node) {
 	string var = var_name(node);
 	string pvar = var_name(node->prev());
 	add_line( var + " = " + pvar+ + ";" );
+}
+
+void Skeleton::visit(Merge *node) {
+	assert(0);
+}
+
+void Skeleton::visit(Switch *node) {
+	assert(0);
 }
 
 void Skeleton::visit(LhsAccess *node) {
@@ -349,12 +507,20 @@ void Skeleton::visit(Temporal *node) {
 	// nothing to do
 }
 
-void Skeleton::visit(Stats *node) {
+void Skeleton::visit(Checkpoint *node) {
 	assert(0);
 }
 
 void Skeleton::visit(Barrier *node) {
 	add_line( var_name(node) + " = " + var_name(node->prev())+ + ";" );
+}
+
+void Skeleton::visit(Summary *node) {
+	assert(0);
+}
+
+void Skeleton::visit(BlockSummary *node) {
+	assert(0);
 }
 
 } } // namespace map::detail

@@ -5,6 +5,7 @@
  * Node representing a Focal Generic operation with static mask and configurable RedOP and BinOP
  *
  * TODO: a FocalFuncType should be added to allow more ops. than multiplication with the mask
+ *       http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/statistics-function.htm
  */
 
 #ifndef MAP_RUNTIME_DAG_FOCALFUNC_HPP_
@@ -45,8 +46,11 @@ struct FocalFunc : public Node
 	char classSignature() const;
 	Node* prev() const;
 	Mask mask() const;
+
+	// Spatial
 	Pattern pattern() const { return FOCAL; }
-	BlockSize halo() const;
+	// const Mask& inputReach(Coord coord) const;
+	// const Mask& outputReach(Coord coord) const;
 
 	// Compute
 	//void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);

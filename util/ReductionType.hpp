@@ -35,8 +35,8 @@ class ReductionType {
   	bool operator==(ReductionType type) const;
   	bool operator!=(ReductionType type) const;
 
-  	bool isOperator() const; // @ this does not make sense
-  	bool isFunction() const; // @ this does not make sense
+  	bool isOperator() const;
+  	bool isFunction() const;
 	std::string toString() const;
 	std::string code() const;
 	std::string neutralString(DataType dt) const;

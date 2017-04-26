@@ -3,6 +3,8 @@
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  * Node representing a Reduction operation that reduces multi-dimensional data to one scalar
+ *
+ * TODO: implement 'Kahan summation algorithm' or 'Welford online variance'
  */
 
 #ifndef MAP_RUNTIME_DAG_ZONALREDUC_HPP_
@@ -40,7 +42,11 @@ struct ZonalReduc : public Node
 	std::string signature() const;
 	char classSignature() const;
 	Node* prev() const;
+
+	// Spatial
 	Pattern pattern() const { return ZONAL; }
+	// const Mask& inputReach(Coord coord) const;
+	// const Mask& outputReach(Coord coord) const;
 
 	// Compute
 	//void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);

@@ -191,8 +191,14 @@ Rerr info(Raster data) {
 	return 0;
 }
 
-Raster stats(Raster data) {
-	return Raster( ma_stats(data.node) );
+Raster stats(Raster data, Raster min, Raster max, Raster mean, Raster std) {
+	if (not min.node && not max.node && not mean.node && not std.node) {
+		min = Raster( ma_blockStats(data.node,MIN) );
+		max = Raster( ma_blockStats(data.node,MAX) );
+		mean.node = nullptr; // @
+		std.node = nullptr; // @
+	}
+	return Raster( ma_stats(data.node,min.node,max.node,mean.node,std.node) );
 }
 
 Raster barrier(Raster data) {
@@ -299,8 +305,8 @@ Raster con(Raster cond, VariantType lhs, VariantType rhs) {
 }
 
 Raster convolve(Raster data, const Mask &mask) {
-	VariantType *ptr = const_cast<VariantType*>(&mask.mask[0]);
-	int size = mask.mask.size();
+	VariantType *ptr = const_cast<VariantType*>(&mask.array[0]);
+	int size = mask.array.size();
 	DataSize ds = mask.datasize();
 	return Raster( ma_convolution(data.node,ptr,size,ds) );
 }
@@ -426,8 +432,8 @@ Raster convolve(Raster data, const Mask &mask) {
 
 #define DEFINE_FOCAL(name,type) \
 	Raster focal##name(Raster data, const Mask &mask) { \
-		VariantType *ptr = const_cast<VariantType*>(&mask.mask[0]); \
-		int size = mask.mask.size(); \
+		VariantType *ptr = const_cast<VariantType*>(&mask.array[0]); \
+		int size = mask.array.size(); \
 		DataSize ds = mask.datasize(); \
 		return Raster( ma_focalFunc(data.node,ptr,size,ds,type) ); \
 	}
@@ -440,8 +446,8 @@ Raster convolve(Raster data, const Mask &mask) {
 
 #define DEFINE_PERCENT(name,type) \
 	Raster name(Raster data, const Mask &mask) { \
-		VariantType *ptr = const_cast<VariantType*>(&mask.mask[0]); \
-		int size = mask.mask.size(); \
+		VariantType *ptr = const_cast<VariantType*>(&mask.array[0]); \
+		int size = mask.array.size(); \
 		DataSize ds = mask.datasize(); \
 		return Raster( ma_focalPercent(data.node,ptr,size,ds,type) ); \
 	}
@@ -583,7 +589,7 @@ Raster flowAccuGather(Raster water, Raster dir) { // Gathering nbh
 	};
 
 	auto acu = zeros_like(water);
-	while (value(zonalSum(water)).convert(B8).get<B8>())
+	while (value(zonalSum(water)))
 	{
 		acu = acu + water;
 		auto new_water = zeros();
@@ -600,13 +606,13 @@ Raster flowAccuGather(Raster water, Raster dir) { // Gathering nbh
 	return acu;
 }
 
-Raster flowAccuSpread(Raster water, Raster dir) { // Spreading-Atomic
+Raster flowAccuSpread(Raster water, Raster dir) { // Spread-Atomic
 	assert( water.numdim() == D2 );
 	assert( dir.numdim() == D2 );
 	assert( dir.datatype() == U8 );
 
 	auto acu = zeros_like(water);
-	while (value(zonalSum(water)).convert(B8).get<B8>()) {
+	while (value(zonalSum(water))) {
 		acu = acu + water;
 		water = water(dir,SUM);
 	}
@@ -644,7 +650,7 @@ Raster pitFill(Raster dem, Raster stream) {
 	auto acti = stream || border;
 	auto elev = con(acti, orig, 9999); // +inf
 
-	while (value(zonalSum(acti)).convert(B8).get<B8>())
+	while (value(zonalSum(acti)))
 	{
 		Raster elev_v[9];
 		Raster acti_v[9];

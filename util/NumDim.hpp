@@ -8,6 +8,7 @@
 #ifndef MAP_UTIL_NUMDIM_HPP_
 #define MAP_UTIL_NUMDIM_HPP_
 
+#include "Array4.hpp"
 #include <string>
 
 
@@ -33,6 +34,8 @@ class NumDim {
 
 	int toInt() const;
 	std::string toString() const;
+
+	Coord unitVec() const;
 };
 
 // Util
@@ -40,6 +43,8 @@ class NumDim {
 constexpr NumDimEnum operator+(const NumDimEnum& lhs, const NumDimEnum& rhs) {
 	return static_cast<NumDimEnum>( static_cast<int>(lhs) | static_cast<int>(rhs) );
 }
+
+NumDim DataSize2NumDim(const DataSize &ds);
 
 } } // namespace map::detail
 

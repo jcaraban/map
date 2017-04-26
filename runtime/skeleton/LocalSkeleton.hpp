@@ -19,7 +19,7 @@ struct LocalSkeleton : public Skeleton
 {
   // constructor and main function
 	LocalSkeleton(Version *ver);
-	void generate();
+	std::string generate();
 
   // methods
 	std::string versionCode();

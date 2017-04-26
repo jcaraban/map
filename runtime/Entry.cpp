@@ -11,15 +11,13 @@
 namespace map { namespace detail {
 
 Entry::Entry(cl_mem dev_mem)
-	: dev_mem(dev_mem)
-	, host_mem(nullptr)
-	, block(nullptr)
+	: block(nullptr)
+	, dev_mem(dev_mem)
 	, used(0)
 	, dirty(false)
 { }
 
 void Entry::reset() {
-	host_mem = nullptr;
 	block = nullptr;
 	used = 0;
 	dirty = false;

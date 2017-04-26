@@ -512,7 +512,7 @@ Ferr tiff::readBlock(Block &block) const {
 	uint32 x_pos_abs = block.key.coord[0] * meta.block_size[0]; // libTIFF takes an absolute index
 	uint32 y_pos_abs = block.key.coord[1] * meta.block_size[1]; // see TIFF reference page for more info
 
-	tsize_t ret = TIFFReadTile(handler, block.entry->host_mem, x_pos_abs, y_pos_abs, 0, 0);
+	tsize_t ret = TIFFReadTile(handler, block.host_mem, x_pos_abs, y_pos_abs, 0, 0);
 
 	return (ret < 0) ? ret : 0;
 }
@@ -521,7 +521,7 @@ Ferr tiff::writeBlock(const Block &block) {
 	uint32 x_pos_abs = block.key.coord[0] * meta.block_size[0]; // libTIFF takes an absolute index
 	uint32 y_pos_abs = block.key.coord[1] * meta.block_size[1]; // see TIFF reference page for more info
 
-	tsize_t ret = TIFFWriteTile(handler, const_cast<void*>(block.entry->host_mem), x_pos_abs, y_pos_abs, 0, 0);
+	tsize_t ret = TIFFWriteTile(handler, const_cast<void*>(block.host_mem), x_pos_abs, y_pos_abs, 0, 0);
 
 	return (ret < 0) ? ret : 0;
 }

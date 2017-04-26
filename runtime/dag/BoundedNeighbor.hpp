@@ -1,11 +1,12 @@
 /**
- * @file	BoundedNbh.hpp 
+ * @file	BoundedNeighbor.hpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  * Node representing a Focal Neighbor operation with dynamic coordinate
  * The coordinate is 'bounded' to a certain distance or neighborhood
  *
- * TODO: find a better name
+ * TODO: needs to know the worst-case neighborhood size
+ * TODO: merge it with Neighbor ? Would need a 'tuple' node for the coords
  */
 
 #ifndef MAP_RUNTIME_DAG_BOUNDEDNBH_HPP_
@@ -16,11 +17,11 @@
 
 namespace map { namespace detail {
 
-struct BoundedNbh : public Node
+struct BoundedNeighbor : public Node
 {
 	// Internal declarations
 	struct Content {
-		Content(BoundedNbh *node);
+		Content(BoundedNeighbor *node);
 		bool operator==(const Content& k) const;
 		Node *prev;
 		Node *cx, *cy;
@@ -34,8 +35,8 @@ struct BoundedNbh : public Node
 	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
-	BoundedNbh(const MetaData &meta, Node *prev, Node *cx, Node *cy);
-	BoundedNbh(const BoundedNbh *other, const std::unordered_map<Node*,Node*> &other_to_this);
+	BoundedNeighbor(const MetaData &meta, Node *prev, Node *cx, Node *cy);
+	BoundedNeighbor(const BoundedNeighbor *other, const std::unordered_map<Node*,Node*> &other_to_this);
 	
 	// Methods
 	void accept(Visitor *visitor);
@@ -45,8 +46,11 @@ struct BoundedNbh : public Node
 	Node* prev() const;
 	Node* coordx() const;
 	Node* coordy() const;
+	
+	// Spatial
 	Pattern pattern() const { return FOCAL; }
-	BlockSize halo() const;
+	// const Mask& inputReach(Coord coord) const;
+	// const Mask& outputReach(Coord coord) const;
 
 	// Compute
 	//void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);

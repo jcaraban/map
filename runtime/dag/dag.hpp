@@ -20,7 +20,7 @@
 #include "Conditional.hpp"
 #include "Diversity.hpp" 
 #include "Neighbor.hpp"
-#include "BoundedNbh.hpp"
+#include "BoundedNeighbor.hpp"
 #include "SpreadNeighbor.hpp"
 #include "Convolution.hpp"
 #include "FocalFunc.hpp"
@@ -41,7 +41,8 @@
 #include "Scalar.hpp"
 #include "Temporal.hpp"
 #include "Checkpoint.hpp"
-#include "Stats.hpp"
 #include "Barrier.hpp"
+#include "Summary.hpp"
+#include "BlockSummary.hpp"
 
 #endif

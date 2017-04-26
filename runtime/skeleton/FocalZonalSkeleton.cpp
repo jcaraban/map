@@ -28,7 +28,7 @@ FocalZonalSkeleton::FocalZonalSkeleton(Version *ver)
 	, conv()
 	, func()
 	, percent()
-	, halo()
+	//, halo()
 	, reduc()
 	, zonal_code()
 {
@@ -36,18 +36,16 @@ FocalZonalSkeleton::FocalZonalSkeleton(Version *ver)
 	level = 0;
 }
 
-void FocalZonalSkeleton::generate() {
+string FocalZonalSkeleton::generate() {
+	tag(); // tag the nodes
 	fill(); // fill structures
 	compact(); // compact structures
-
-	ver->shared_size = -1;
-	ver->group_size = BlockSize{16,16}; // @
-	ver->num_group = (ver->task->blocksize() - 1) / ver->groupsize() + 1;
-	ver->code = versionCode();
 
 	// Gives numgroup() as extra_argument
 	for (int i=0; i<ver->task->numdim().toInt(); i++)
 		ver->extra_arg.push_back( ver->numgroup()[i] );
+
+	return versionCode();
 }
 
 /***********
@@ -71,7 +69,7 @@ string FocalZonalSkeleton::versionCode() {
 	indent_count = 0;
 
 	// Includes
-	for (auto &incl : includes)
+	for (auto &incl : include)
 		add_line( "#include " + incl );
 	add_line( "" );
 
@@ -112,9 +110,9 @@ string FocalZonalSkeleton::versionCode() {
 	add_line( "(" );
 	indent_count++;
 	for (auto &node : ver->task->inputList()) { // keeps the order IN_0, IN_8, ...
-		if (tag_hash[node] == PRECORE && isInputOf(node,group).is(FOCAL))
+		if (tag_hash[node].is(PRE_FOCAL))
 			add_line( "TYPE_VAR_LIST(" + node->datatype().ctypeString() + ",IN_" + node->id + ")," );
-		else //if (tag_hash[node] == POSCORE || node->numdim() == D0)
+		else if (tag_hash[node].is(INPUT_OUTPUT))
 			add_line( in_arg(node) );
 	}
 	for (auto &node : ver->task->outputList()) {
@@ -147,14 +145,10 @@ string FocalZonalSkeleton::versionCode() {
 			add_line( scalar_decl(scalar[i],static_cast<DataTypeEnum>(i)) );
 		}
 	}
-
-	BlockSize full_halo = {0,0};
-	for (auto h : halo)
-		full_halo += h;
 	
 	// Declaring focal shared memory
 	for (auto &node : shared) {
-		add_line( shared_decl(node,prod(ver->groupsize()+2*full_halo)) );
+		add_line( shared_decl(node,prod(ver->groupsize()+2*1)) );
 	}
 
 	// Declaring zonal shared memory
@@ -175,7 +169,7 @@ string FocalZonalSkeleton::versionCode() {
 		add_line( string("int bc")+n+" = get_global_id("+n+");" );
 	}
 	for (int n=0; n<N; n++) {
-		add_line( std::string("int H")+n + " = " + halo_sum(n,halo) + ";" );
+		add_line( std::string("int H")+n + " = " + "1" + ";" );
 	}
 	for (int n=0; n<N; n++) {
 		add_line( string("int GS")+n+" = 16; // @" );
@@ -213,9 +207,9 @@ string FocalZonalSkeleton::versionCode() {
 	}
 	add_line( "" );
 
-	// Adds PRECORE input-nodes
-	for (auto &node : ver->task->inputList()) {  // @ erroneus, needs two PRECORE to differentiate FOCAL / ZONAL
-		if (tag_hash[node] == PRECORE) {
+	// Adds PRE_FOCAL input-nodes
+	for (auto &node : ver->task->inputList()) {  // @ erroneus, needs two PRE_FOCAL to differentiate FOCAL / ZONAL
+		if (tag_hash[node].is(PRE_FOCAL)) {
 			if (isInputOf(node,group).is(FOCAL)) {
 				add_line( var_name(node) + " = " + in_var_focal(node) + ";" );
 			} else {
@@ -225,7 +219,7 @@ string FocalZonalSkeleton::versionCode() {
 	}
 
 	// Adds accumulated 'precore' to 'all'
-	code[ALL_POS] += code[PRECORE];
+	full_code += code_hash[{PRE_FOCAL,9}];
 
 	// Filling focal shared memory
 	for (auto &node : shared) {
@@ -253,7 +247,7 @@ string FocalZonalSkeleton::versionCode() {
 	indent_count++;
 
 	// Adds accumulated 'core' to 'all'
-	code[ALL_POS] += code[CORE];
+	full_code += code_hash[{FOCAL_CORE,1}];
 
 	indent_count--;
 	add_line( "}" ); // Closes global-if
@@ -266,13 +260,13 @@ string FocalZonalSkeleton::versionCode() {
 	add_line( "if ("+global_cond(N)+") {" );
 	indent_count++;
 
-	// Adds POSCORE input-nodes
+	// Adds LOCAL_CORE input-nodes
 	for (auto &node : ver->task->inputList()) {
-		if (tag_hash[node] != POSCORE)
+		if (tag_hash[node].pos != LOCAL_CORE)
 			continue;
 		if (is_included(node,shared)) {
 			add_line( var_name(node) + " = " + var_name(node,SHARED) + "[" + local_proj_focal_H(N) + "];" );
-		} else if (tag_hash[node] == PRECORE) {
+		} else if (tag_hash[node].is(PRE_FOCAL)) {
 			add_line( var_name(node) + " = IN_" + node->id + "[" + global_proj(N) + "];" );
 		} else {
 			add_line( var_name(node) + " = " + in_var(node) + ";" );
@@ -280,11 +274,11 @@ string FocalZonalSkeleton::versionCode() {
 	}
 
 	// Adds accumulated 'poscore' to 'all'
-	code[ALL_POS] += code[POSCORE];
+	full_code += code_hash[{LOCAL_CORE,1}];
 
-	// Adds POSCORE output-nodes
+	// Adds LOCAL_CORE output-nodes
 	for (auto &node : ver->task->outputList()) {
-		if (tag_hash[node]==POSCORE && node->pattern().isNot(ZONAL) && node->numdim() != D0) {
+		if (node->pattern().isNot(ZONAL) && node->numdim() != D0) {
 			add_line( out_var(node) + " = " + var_name(node) + ";" );
 		}
 	}
@@ -338,7 +332,7 @@ string FocalZonalSkeleton::versionCode() {
 	indent_count++;
 	
 	// Adds accumulated 'core' to 'all'
-	code[ALL_POS] += zonal_code;
+	full_code += zonal_code;
 
 	indent_count--;
 	add_line( "}" ); // Closes if
@@ -367,9 +361,9 @@ string FocalZonalSkeleton::versionCode() {
 	add_line( "}" ); // Closes kernel body
 
 	//// Printing ////
-	std::cout << "***\n" << code[ALL_POS] << "***" << std::endl;
+	std::cout << "***\n" << full_code << "***" << std::endl;
 
-	return code[ALL_POS];
+	return full_code;
 }
 
 /*********
@@ -387,12 +381,6 @@ void FocalZonalSkeleton::visit(Neighbor *node) {
 		add_line( var + " = " + svar + ";" );
 	}
 
-	if (halo.size() > level) {
-		halo[level] = cond(node->halo() > halo[level], node->halo(), halo[level]);
-	} else {
-		halo.push_back(node->halo());
-	}
-
 	shared.push_back(node->prev());
 }
 
@@ -407,7 +395,7 @@ void FocalZonalSkeleton::visit(Convolution *node) {
 		add_line( var + " = 0;" );
 
 		for (int n=N-1; n>=0; n--) {
-			int h = node->halo()[n];
+			int h = 1;
 			string i = string("i") + n;
 			add_line( "for (int "+i+"=-"+h+"; "+i+"<="+h+"; "+i+"++) {" );
 			indent_count++;
@@ -424,12 +412,6 @@ void FocalZonalSkeleton::visit(Convolution *node) {
 		}
 	}
 
-	if (halo.size() > level) {
-		halo[level] = cond(node->halo() > halo[level], node->halo(), halo[level]);
-	} else {
-		halo.push_back(node->halo());
-	}
-
 	shared.push_back(node->prev());
 	mask.push_back( std::make_pair(node->mask(),node->id) );
 }
@@ -444,8 +426,9 @@ void FocalZonalSkeleton::visit(FocalFunc *node) {
 		add_line( var + " = " + node->type.neutralString(node->datatype()) + ";" );
 
 		for (int n=N-1; n>=0; n--) {
+			int h = 1;
 			string i = string("i") + n;
-			add_line( "for (int "+i+"=0; "+i+"<"+(node->halo()[n]*2+1)+"; "+i+"++) {" );
+			add_line( "for (int "+i+"=-"+h+"; "+i+"<="+h+"; "+i+"++) {" );
 			indent_count++;
 		}
 
@@ -458,12 +441,6 @@ void FocalZonalSkeleton::visit(FocalFunc *node) {
 			indent_count--;
 			add_line( "}" );
 		}
-	}
-	
-	if (halo.size() > level) {
-		halo[level] = cond(node->halo() > halo[level], node->halo(), halo[level]);
-	} else {
-		halo.push_back(node->halo());
 	}
 
 	shared.push_back(node->prev());
@@ -481,8 +458,9 @@ void FocalZonalSkeleton::visit(FocalPercent *node) {
 		add_line( var + " = 0;" );
 
 		for (int n=N-1; n>=0; n--) {
+			int h = 1;
 			string i = string("i") + n;
-			add_line( "for (int "+i+"=0; "+i+"<"+(node->halo()[n]*2+1)+"; "+i+"++) {" );
+			add_line( "for (int "+i+"=-"+h+"; "+i+"<="+h+"; "+i+"++) {" );
 			indent_count++;
 		}
 

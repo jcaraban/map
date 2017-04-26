@@ -31,10 +31,10 @@ Node* ZonalReduc::Factory(Node *arg, ReductionType type) {
 	assert(arg != nullptr);
 	assert(arg->numdim() != D0);
 
-	DataSize ds = DataSize(); // == D0
+	DataSize ds = DataSize(0); // == D0
 	DataType dt = arg->datatype();
 	MemOrder mo = arg->memorder();
-	BlockSize bs = BlockSize();
+	BlockSize bs = BlockSize(0);
 	MetaData meta(ds,dt,mo,bs);
 
 	return new ZonalReduc(meta,arg,type);
@@ -49,17 +49,19 @@ Node* ZonalReduc::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 ZonalReduc::ZonalReduc(const MetaData &meta, Node *prev, ReductionType type) : Node(meta) {
 	prev_list.reserve(1);
 	this->addPrev(prev);
-	this->type = type;
-	this->value = type.neutral(datatype()); // @
-	
 	prev->addNext(this);
+
+	this->type = type;
+	
+	this->value = type.neutral(datatype()); // @
+	this->in_spatial_reach = Mask(prev->numdim().unitVec(),true);
+	this->out_spatial_reach = Mask(numdim().unitVec(),true); // @ shall be empty ?
 }
 
 ZonalReduc::ZonalReduc(const ZonalReduc *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 {
 	this->type = other->type;
-	this->value = other->value;
 }
 
 // Methods
@@ -89,12 +91,12 @@ Node* ZonalReduc::prev() const {
 
 void ZonalReduc::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
 	auto *node = this;
-	ValFix vf = {{},false};
+	ValFix vf = ValFix();
 
 	auto prev = hash.find({node->prev(),coord})->second;
 	if (prev.fixed) {
 		if (node->type == MAX || node->type == MIN) {
-			vf = {prev.value,true};
+			vf = ValFix(prev.value);
 		}
 		// @ SUM could be implemented as a multiplication by the block_size
 		// @ PROD could be implemented as a exponentiation by the block_size

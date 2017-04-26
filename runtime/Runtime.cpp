@@ -54,8 +54,8 @@ Runtime::Runtime()
 	, conf()
 	, clock(conf)
 	, program(clock,conf)
-	, cache(program,clock,conf)
-	, scheduler(program,clock,conf)
+	, cache(clock,conf)
+	, scheduler(clock,conf)
 	, workers()
 	, threads()
 	, node_list()
@@ -338,10 +338,10 @@ void Runtime::workflow(NodeList list) {
 	program.compile();
 
 	// Allocation of cache entries
-	cache.allocEntries();
+	cache.allocEntries(program);
 	
 	// Adding initial jobs
-	scheduler.initialJobs();
+	scheduler.initialJobs(program);
 
 	// Make workers work
 	this->work();
@@ -394,10 +394,16 @@ void Runtime::reportEval() {
 	std::cerr << " FreeE:   " << clock.get(FREE_E)/V << "%" << std::endl;
 
 	std::cerr << "  get job: " << clock.get(GET_JOB)/W/E << "%" << std::endl;
+	std::cerr << "  get blk: " << clock.get(GET_BLOCK)/W/E << "%" << std::endl;
+	std::cerr << "  pre:     " << clock.get(PRE_LOAD)/W/E << "%" << std::endl;
 	std::cerr << "  load:    " << clock.get(LOAD)/W/E << "%" << std::endl;
+	//std::cerr << "  pre:     " << clock.get(PRE_COMP)/W/E << "%" << std::endl;
 	std::cerr << "  compute: " << clock.get(COMPUTE)/W/E << "%" << std::endl;
+	//std::cerr << "  post:    " << clock.get(POST_COMP)/W/E << "%" << std::endl;
 	std::cerr << "  store:   " << clock.get(STORE)/W/E << "%" << std::endl;
-	std::cerr << "  notify:  " << clock.get(NOTIFY)/W/E << "%" << std::endl;
+	std::cerr << "  post:    " << clock.get(PRE_LOAD)/W/E << "%" << std::endl;
+	std::cerr << "  ret blk:  " << clock.get(RET_BLOCK)/W/E << "%" << std::endl;
+	std::cerr << "  ret job:  " << clock.get(RET_JOB)/W/E << "%" << std::endl;
 	
 	std::cerr << "    read:  " << clock.get(READ)/W/E << "%" << std::endl;
 	std::cerr << "    send:  " << clock.get(SEND)/W/E << "%" << std::endl;

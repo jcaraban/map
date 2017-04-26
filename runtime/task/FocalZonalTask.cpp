@@ -11,12 +11,10 @@
 
 namespace map { namespace detail {
 
-FocalZonalTask::FocalZonalTask(Group *group)
-	: Task(group)
-{
-	createVersions();
-}
-
+FocalZonalTask::FocalZonalTask(Program &prog, Clock &clock, Config &conf, Group *group)
+	: Task(prog,clock,conf,group)
+{ }
+/*
 void FocalZonalTask::createVersions() {
 	cle::OclEnv& env = Runtime::getOclEnv();
 	// All devices are accepted
@@ -27,26 +25,11 @@ void FocalZonalTask::createVersions() {
 	}
 }
 
-void FocalZonalTask::blocksToLoad(Coord coord, InKeyList &in_keys) const {
-	in_keys.clear();
-	for (int i=0; i<inputList().size(); i++)
-	{
-		Node *node = inputList()[i];
-		HoldType hold = (node->numdim() == D0) ? HOLD_1 : HOLD_N;
-		const int N = (node->numdim() == D0) ? 0 : is_input_of[i].is(FOCAL) ? 1 : 0;
-		
-		for (int y=-N; y<=N; y++) {
-			for (int x=-N; x<=N; x++) {
-				auto nbc = coord + Coord{x,y};
-				HoldType hold_nbc = (any(nbc < 0) || any(nbc >= numblock())) ? HOLD_0 : hold;
-				int depend = node->isInput() ? nextInterDepends(node,nbc) : -1; // @
-				in_keys.push_back( std::make_tuple(Key(node,nbc),hold_nbc,depend) );
-			}
-		}
-	}
+void FocalZonalTask::blocksToLoad(Coord coord, KeyList &in_keys) const {
+	Task::blocksToLoad(coord,in_keys);
 }
 
-void FocalZonalTask::blocksToStore(Coord coord, OutKeyList &out_keys) const {
+void FocalZonalTask::blocksToStore(Coord coord, KeyList &out_keys) const {
 	Task::blocksToStore(coord,out_keys);
 }
 
@@ -65,39 +48,35 @@ void FocalZonalTask::nextJobs(Key done_block, std::vector<Job> &job_vec) {
 	}
 	else // Case when prev=D2, self=D2
 	{
-		int pos = value_position(done_block.node,inputList());
-		const int N = (done_block.node->numdim() == D0) ? 0 : is_input_of[pos].is(FOCAL) ? 1 : 0;
+		auto reach = spatial_reach_of.find(done_block.node)->second;
+		auto space = reach.blockSpace(blocksize());
 
-		for (int y=-N; y<=N; y++) {
-			for (int x=-N; x<=N; x++) {
-				auto nbc = done_block.coord + Coord{x,y};
-				if (all(nbc >= 0) && all(nbc < numblock())) {
-					notify(nbc,job_vec);
-				}
+		for (auto offset : space) {	
+			auto nbc = done_block.coord + offset;
+			if (all(in_range(nbc,numblock()))) {
+				notify(nbc,job_vec);
 			}
 		}
 	}
 }
 
 int FocalZonalTask::prevInterDepends(Node *node, Coord coord) const {
-	int pos = value_position(node,inputList());
-	if (!is_input_of[pos].is(FOCAL) || node->numdim() == D0)
-		return node->pattern() == FREE ? 0 : 1;
-	
-	// Focal inputs depend on their neighborhood
+	auto reach = spatial_reach_of.find(node)->second;
+	auto space = reach.blockSpace(blocksize());
 	int depend = 0;
-	for (int y=-1; y<=1; y++) {
-		for (int x=-1; x<=1; x++) {
-			Coord nbc = coord + Coord{x,y};
-			if (all(nbc >= 0) && all(nbc < numblock()))
-				depend += node->isInput() ? 0 : 1;
+
+	for (auto offset : space) {
+		Coord nbc = coord + offset;
+		if (all(in_range(nbc,numblock()))) {
+			depend += node->pattern()==FREE ? 0 : 1;
 		}
 	}
+	
 	return depend;
 }
 
 int FocalZonalTask::nextInterDepends(Node *node, Coord coord) const {
-	return prevInterDepends(node,coord); // @ reusing prevInterDepends, but would need own code
+	return prevInterDepends(node,coord);
 }
 
 int FocalZonalTask::prevIntraDepends(Node *node, Coord coord) const {
@@ -112,7 +91,7 @@ void FocalZonalTask::preCompute(Coord coord, const BlockList &in_blk, const Bloc
 	// @ same code than ZonalTask::
 	Task::preCompute(coord,in_blk,out_blk);
 
-	const Version *ver = version(DEV_ALL,""); // Any device, No detail
+	const Version *ver = getVersion(DEV_ALL,{},""); // Any device, No detail
 	cle::Task tsk = ver->tsk;
 	cle::Queue que = tsk.C().D(Tid.dev()).Q(Tid.rnk());
 	const Config &conf = Runtime::getConfig();
@@ -148,7 +127,7 @@ void FocalZonalTask::postCompute(Coord coord, const BlockList &in_blk, const Blo
 	// @ same code than ZonalTask::
 	Task::postCompute(coord,in_blk,out_blk);
 
-	const Version *ver = version(DEV_ALL,""); // Any device, No detail
+	const Version *ver = getVersion(DEV_ALL,{},""); // Any device, No detail
 	cle::Task tsk = ver->tsk;
 	cle::Queue que = tsk.C().D(Tid.dev()).Q(Tid.rnk());
 	const Config &conf = Runtime::getConfig();
@@ -166,8 +145,8 @@ void FocalZonalTask::postCompute(Coord coord, const BlockList &in_blk, const Blo
 }
 
 void FocalZonalTask::compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
-	const Version *ver = version(DEV_ALL,""); // Any device, No detail
+	const Version *ver = getVersion(DEV_ALL,{},""); // Any device, No detail
 	Task::computeVersion(coord,in_blk,out_blk,ver);
 }
-
+*/
 } } // namespace map::detail

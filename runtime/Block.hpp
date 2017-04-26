@@ -2,7 +2,7 @@
  * @file	Block.hpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * TODO: study if Block should be divided in Block0, Block1, BlockN depending on the HoldType
+ * TODO: speciallizing Block by 'datatype' and 'holdtype' could reduce the runtime overhead
  */
 
 #ifndef MAP_RUNTIME_BLOCK_HPP_
@@ -22,20 +22,28 @@ typedef int Berr; // Should be enum
 class Node; // forward declaration
 class IFile; // forward declaration
 
-enum HoldType { NONE_HOLD, HOLD_0, HOLD_1, HOLD_N, N_HOLD };
-enum DependType { DEPEND_UNKNOWN = -1, DEPEND_ZERO = 0 };
+struct Block;
+typedef std::vector<Block*> BlockList;
+
 
 /*
- *
+ * @class BlockStats
  */
 struct BlockStats {
 	//typedef Ctype<F64> type;
 	typedef VariantUnion type;
+
 	bool active;
+
 	type max;
 	type mean;
 	type min;
 	type std;
+
+	std::vector<type> ming;
+	std::vector<type> maxg;
+	std::vector<type> meang;
+	std::vector<type> stdg;
 
 	BlockStats();
 };
@@ -43,12 +51,12 @@ struct BlockStats {
 /*
  * @class Block
  */
-struct Block 
+struct Block
 {
   // Constructors
 	Block();
 	Block(Key key);
-	Block(Key key, cl_mem scalar_page);
+	Block(Key key, cl_mem scalar_page, cl_mem group_page);
 	Block(Key key, int total_size, int depend);
 	~Block();
 
@@ -66,12 +74,13 @@ struct Block
 	Berr load(IFile *file);
 	Berr store(IFile *file);
 
-	void fixValue(VariantType value);
+	void fixValue(ValFix valfix);
 
 	void notify();
 	bool discardable() const;
 
 	void setReady();
+	void unsetReady();
 	bool isReady();
 	
 	void setDirty();
@@ -82,27 +91,13 @@ struct Block
 	void unsetUsed();
 	bool isUsed();
 
-	void setLoading();
-	void unsetLoading();
-	bool isLoading();
-
-	void setWriting();
-	void unsetWriting();
-	bool isWriting();
-
-	void waitForLoader();
-	void notifyLoaders();
-
-	void waitForWriter();
-	void notifyWriters();
-
   // Variables
 	Key key;
-	std::mutex mtx;
-	std::condition_variable cv_load, cv_write; //cv_evict
 
 	Entry *entry;
-	cl_mem scalar_page; //!< Points to the page reserved for scalars
+	void *host_mem;
+	cl_mem scalar_page; //!< Page reserved for scalar reductions
+	cl_mem group_page; //!< Page reserved for group statistics
 
 	VariantType value;
 	bool fixed; // Value of the block is fixed to a scalar (stored in 'value')
@@ -112,14 +107,11 @@ struct Block
 	int total_size; //!< The total size of a single block cannot overflow an int
 	int dependencies;
 	HoldType hold_type;
+	short used;
+	bool dirty;
 
-	char used;
-	bool dirty, loading, writing;
+	std::mutex mtx;
 };
-
-typedef std::vector<Block*> BlockList;
-typedef std::vector<std::tuple<Key,HoldType,int>> InKeyList; // Key-Holding-Dependencies List
-typedef std::vector<std::tuple<Key,HoldType,int>> OutKeyList; // Key-Holding-Dependencies list
 
 } } // namespace map::detail
 

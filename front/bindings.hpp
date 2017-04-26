@@ -74,8 +74,9 @@ Node* ma_zonalReduc(Node *node, ReductionEnum type);
 Node* ma_radialScan(Node *node, ReductionEnum type, Coord coord);
 Node* ma_spreadScan(Node *node, Node *dir, ReductionEnum type);
 
-Node* ma_stats(Node *node);
 Node* ma_barrier(Node *node);
+Node* ma_stats(Node *node, Node *min, Node *max, Node *mean, Node *std);
+Node* ma_blockStats(Node *node, ReductionEnum type);
 
 /*****************
    Symbolic Loop

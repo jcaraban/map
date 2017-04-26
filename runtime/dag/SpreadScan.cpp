@@ -57,7 +57,7 @@ SpreadScan::SpreadScan(const MetaData &meta, Node *prev, Node *dir, ReductionTyp
 	this->addPrev(prev);
 	this->addPrev(dir);
 	this->type = type;
-	// Temporal node for the spreading raster (e.g. water)
+	// Temporal node for the Spread raster (e.g. water)
 	// @ TODO: spread = Copy::Factory(prev);
 	Node *spread = new Temporal(prev->metadata());
 //	prev_list[2] = addNode(spread);

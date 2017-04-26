@@ -2,9 +2,9 @@
  * @file	Fusioner.cpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * Note: pipe-gently is not lossless, it could hide the optimal fusion when considering the data type (e.g. B8)
- * Note: pipeFusing groups does not accurately reflect the pattern than one group sees of another (notebook)
- * Note: sorting has to go after linking or will break Radiating (out cl_mem arguments are moved if sorted)
+ * Note: pipe-gently is not lossless, it could hide the optimal fusion when ignoring the data type (e.g. B8)
+ * Note: pipeFusing groups may over-qualify the pattern that one group sees of another (see drawings)
+ * Note: sorting has to go after linking or will break Radial (out cl_mem arguments are moved if sorted)
  *
  * TODO: revise Bottom-Up approach. What about overlapping groups?
  */
@@ -520,7 +520,7 @@ void Fusioner::processBU(Group *group) { // @
 
 void Fusioner::processLoop(Node *node) {
 	if (node->pattern().isNot(HEAD) && node->pattern().isNot(TAIL))
-		return; // Only spread nodes
+		return; // Only 'heads' and 'tails' now
 
 	Node *mark = nullptr; // marks the group to fuse with
 
@@ -543,7 +543,9 @@ void Fusioner::processLoop(Node *node) {
 void Fusioner::forwarding(std::function<bool(Node*)> for_pred) {
 	std::map<std::pair<Group*,Group*>,std::vector<Node*>> forward;
 	auto all_nodes = [](Group *group){
-		return full_join(group->inputList(),full_join(group->nodeList(),group->outputList()));
+		auto body_out = full_join(group->nodeList(),group->outputList());
+		std::unique(body_out.begin(),body_out.end());
+		return full_join(group->inputList(),body_out);
 	};
 
 	// Node forwarding phase
@@ -625,20 +627,15 @@ void Fusioner::linking() {
 		}
 	}
 
-	// Nodes withs patterns presenting intra-denepdencies (e.g. Radiating, Spreading) become output of their group
+	// Some patterns (e.g. Radial, Spread, Stats) require their nodes to become output of their group
 
-	for (auto &i : group_list) {  // For every Radiating / Spreading 'group' in group_list...
+	for (auto &i : group_list) {  // For every 'group' in group_list...
 		Group *group = i.get();
-		Pattern pat = group->pattern();
-		if (!pat.is(RADIAL) && !pat.is(SPREAD))
-			continue;
-
-		for (auto &node : group->nodeList()) { // For every Radiating / Spreading 'node' in 'group'
+		for (auto &node : group->nodeList()) { // For every 'node' in 'group'
 			Pattern pat = node->pattern();
-			if (!pat.is(RADIAL) && !pat.is(SPREAD))
-				continue;
-
-			group->addOutputNode(node); // 'node' becomes an output of its 'group'
+			if (pat.is(RADIAL) || pat.is(SPREAD) || pat.is(STATS)) {
+				group->addOutputNode(node); // 'node' becomes an output of its 'group'
+			}
 		}
 	}
 
@@ -684,7 +681,7 @@ void Fusioner::sorting() {
 
 void Fusioner::print() {
 	for (auto &i : group_list) {
-		std::cout << i->pattern() << "  " << i.get() << "  " << std::endl;
+		std::cout << i->pattern() << "  " << i.get() << std::endl;
 		for (auto j : i->inputList())
 			std::cout << "    " << j->getName() << " : " << j->id << std::endl;
 		std::cout << "    --" << std::endl;

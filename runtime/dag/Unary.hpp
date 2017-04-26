@@ -40,7 +40,11 @@ struct Unary : public Node
 	std::string signature() const;
 	char classSignature() const;
 	Node* prev() const;
+	
+	// Spatial
 	Pattern pattern() const { return LOCAL; }
+	// const Mask& inputReach(Coord coord) const;
+	// const Mask& outputReach(Coord coord) const;
 	
 	// Compute
 	void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);

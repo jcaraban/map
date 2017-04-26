@@ -24,7 +24,7 @@ struct FocalSkeleton : public Skeleton
 {
   // constructor and main function
 	FocalSkeleton(Version *ver);
-	void generate();
+	std::string generate();
 
   // methods
 	void compact();
@@ -43,7 +43,7 @@ struct FocalSkeleton : public Skeleton
 	std::vector<FocalFunc*> func; //!< Stores FocalFunc nodes
 	std::vector<FocalPercent*> percent; //!< Stores FocalPercent nodes
 	int level;
-	std::vector<BlockSize> halo; //< Stores the halo of each level
+	std::unordered_map<Node*,Mask> spatial_reach; //< Stores the halo of each level
 };
 
 #undef DECLARE_VISIT

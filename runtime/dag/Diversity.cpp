@@ -72,10 +72,13 @@ Diversity::Diversity(const MetaData &meta, NodeList prev_list, DiversityType typ
 	: Node(meta)
 {
 	this->prev_list = prev_list;
-	this->type = type;
-
 	for (auto prev : prev_list)
 		prev->addNext(this);
+
+	this->type = type;
+
+	this->in_spatial_reach = Mask(numdim().unitVec(),true);
+	this->out_spatial_reach = Mask(numdim().unitVec(),true);
 }
 
 Diversity::Diversity(const Diversity *other, const std::unordered_map<Node*,Node*> &other_to_this)
@@ -123,13 +126,13 @@ void Diversity::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash
 }
 
 void Diversity::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
-	ValFix vf = {{},false};
-	ValFix vf0 = {VariantType(0,datatype()),true};
+	ValFix vf = ValFix();
+	ValFix vf0 = ValFix(VariantType(0,datatype()));
 	
 	for (auto prev : prevList()) {
 		auto p = hash[{prev,coord}];
 		if (!p.fixed) {
-			hash[{this,coord}] = {{},false};
+			hash[{this,coord}] = ValFix();
 			return;
 		}
 	}
@@ -138,7 +141,7 @@ void Diversity::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash
 		auto p = hash[{prev,coord}];
 		vec.push_back(p.value);
 	}
-	hash[{this,coord}] = {type.apply(vec),true};
+	hash[{this,coord}] = ValFix(type.apply(vec));
 }
 
 } } // namespace map::detail

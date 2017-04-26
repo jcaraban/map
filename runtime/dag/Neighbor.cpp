@@ -1,6 +1,8 @@
 /**
  * @file	Neighbor.cpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
+ *
+ * TODO: inputReach() should be filled according to 'scoord'
  */
 
 #include "Neighbor.hpp"
@@ -55,9 +57,13 @@ Neighbor::Neighbor(const MetaData &meta, Node *prev, const Coord &coord)
 {
 	prev_list.reserve(1);
 	this->addPrev(prev);
-	this->scoord = coord;
-	
 	prev->addNext(this);
+	
+	this->scoord = coord;
+
+	Array<bool> tmask = { 1,1,1,1,1,1,1,1,1 }; // @
+	this->in_spatial_reach = Mask({3,3},tmask);
+	this->out_spatial_reach = Mask(numdim().unitVec(),true);
 }
 
 Neighbor::Neighbor(const Neighbor *other, const std::unordered_map<Node*,Node*> &other_to_this)
@@ -93,10 +99,6 @@ Coord Neighbor::coord() const {
 	return scoord;
 }
 
-BlockSize Neighbor::halo() const {
-	return abs(scoord);
-}
-
 // Compute
 
 void Neighbor::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
@@ -104,10 +106,10 @@ void Neighbor::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash>
 
 	auto prev = hash.find({node->prev(),coord})->second;
 	auto neig = hash.find({node->prev(),coord+node->coord()})->second;
-	ValFix vf = {{},false};
+	ValFix vf = ValFix();
 
 	if (prev.fixed && neig.fixed && prev.value == neig.value)
-		vf = {prev.value,true};
+		vf = ValFix(prev.value);
 	hash[{node,coord}] = vf;
 }
 

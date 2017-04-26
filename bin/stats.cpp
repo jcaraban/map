@@ -41,8 +41,8 @@ int main(int argc, char **argv) {
 	auto rang = maxv - minv;
 
 	auto mean = zonalSum(dem) / N;
-	auto geom = pow(zonalProd(dem),1.0/N);
-	auto harm = N / zonalSum(1.0/dem);
+	auto geom = pow(zonalProd(dem),1.0f/N);
+	auto harm = N / zonalSum(1.0f/dem);
 	auto quam = sqrt(zonalSum(pow(dem,2))/N);
 	auto cubm = cbrt(zonalSum(pow(dem,3))/N);
 

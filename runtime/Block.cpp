@@ -22,6 +22,10 @@ BlockStats::BlockStats()
 	, mean()
 	, min()
 	, std()
+	, ming()
+	, maxg()
+	, meang()
+	, stdg()
 { }
 
 /*********
@@ -31,6 +35,7 @@ BlockStats::BlockStats()
 Block::Block()
 	: key()
 	, entry(nullptr)
+	, host_mem(nullptr)
 	, scalar_page(nullptr)
 	, value()
 	, fixed(false)
@@ -41,13 +46,13 @@ Block::Block()
 	, hold_type()
 	, used(0)
 	, dirty(false)
-	, loading(false)
-	, writing(false)
+	, mtx()
 { }
 
 Block::Block(Key key)
 	: key(key)
 	, entry(nullptr)
+	, host_mem(nullptr)
 	, scalar_page(nullptr)
 	, value()
 	, fixed(false)
@@ -58,14 +63,15 @@ Block::Block(Key key)
 	, hold_type(HOLD_0)
 	, used(0)
 	, dirty(false)
-	, loading(false)
-	, writing(false)
+	, mtx()
 { }
 
-Block::Block(Key key, cl_mem scalar_page)
+Block::Block(Key key, cl_mem scalar_page, cl_mem group_page)
 	: key(key)
 	, entry(nullptr)
+	, host_mem(nullptr)
 	, scalar_page(scalar_page)
+	, group_page(group_page)
 	, value()
 	, fixed(false)
 	, ready(false)
@@ -75,8 +81,7 @@ Block::Block(Key key, cl_mem scalar_page)
 	, hold_type(HOLD_1)
 	, used(0)
 	, dirty(false)
-	, loading(false)
-	, writing(false)
+	, mtx()
 {
 	assert(numdim() == D0);
 }
@@ -84,6 +89,7 @@ Block::Block(Key key, cl_mem scalar_page)
 Block::Block(Key key, int max_size, int depend)
 	: key(key)
 	, entry(nullptr)
+	, host_mem(nullptr)
 	, scalar_page(nullptr)
 	, value()
 	, fixed(false)
@@ -94,8 +100,7 @@ Block::Block(Key key, int max_size, int depend)
 	, hold_type(HOLD_N)
 	, used(0)
 	, dirty(false)
-	, loading(false)
-	, writing(false)
+	, mtx()
 {
 	assert(numdim() != D0);
 	
@@ -137,7 +142,7 @@ Berr Block::send() {
 	cl_int clerr;
 
 	if (!fixed) {
-		clerr = clEnqueueWriteBuffer(*que, entry->dev_mem, CL_TRUE, 0, size(), entry->host_mem, 0, nullptr, nullptr);
+		clerr = clEnqueueWriteBuffer(*que, entry->dev_mem, CL_TRUE, 0, size(), host_mem, 0, nullptr, nullptr);
 		cle::clCheckError(clerr);
 	}
 
@@ -151,24 +156,11 @@ Berr Block::recv() {
 	cl_int clerr;
 
 	if (!fixed) {
-		clerr = clEnqueueReadBuffer(*que, entry->dev_mem, CL_TRUE, 0, size(), entry->host_mem, 0, nullptr, nullptr);
+		clerr = clEnqueueReadBuffer(*que, entry->dev_mem, CL_TRUE, 0, size(), host_mem, 0, nullptr, nullptr);
 		cle::clCheckError(clerr);
 	} else {
-		const int n = prod(key.node->blocksize());
-		switch (datatype().get()) {
-			case F32 : std::fill_n((Ctype<F32>*)entry->host_mem,n,value.get<F32>()); break;
-			case F64 : std::fill_n((Ctype<F64>*)entry->host_mem,n,value.get<F64>()); break;
-			case B8  : std::fill_n((Ctype<B8 >*)entry->host_mem,n,value.get<B8 >()); break;
-			case U8  : std::fill_n((Ctype<U8 >*)entry->host_mem,n,value.get<U8 >()); break;
-			case U16 : std::fill_n((Ctype<U16>*)entry->host_mem,n,value.get<U16>()); break;
-			case U32 : std::fill_n((Ctype<U32>*)entry->host_mem,n,value.get<U32>()); break;
-			case U64 : std::fill_n((Ctype<U64>*)entry->host_mem,n,value.get<U64>()); break;
-			case S8  : std::fill_n((Ctype<S8 >*)entry->host_mem,n,value.get<S8 >()); break;
-			case S16 : std::fill_n((Ctype<S16>*)entry->host_mem,n,value.get<S16>()); break;
-			case S32 : std::fill_n((Ctype<S32>*)entry->host_mem,n,value.get<S32>()); break;
-			case S64 : std::fill_n((Ctype<S64>*)entry->host_mem,n,value.get<S64>()); break;
-			default: assert(0);
-		}
+		const size_t num = prod(key.node->blocksize());
+		value.fill(host_mem,num); // @
 	}
 
 	return berr;
@@ -180,9 +172,9 @@ Berr Block::load(IFile *file) {
 	NumDim dim = key.node->numdim();
 
 	assert(dir == IN || dir == IO);
-	assert(dim != D0 || scalar_page != nullptr); //D0 --> scalar_page
-	assert(dim == D0 || entry->dev_mem != nullptr); // !D0 --> entry
-	assert(dim == D0 || entry->host_mem != nullptr); // !D0 --> entry
+	//assert(dim != D0 || scalar_page != nullptr); //D0 --> scalar_page
+	//assert(dim == D0 || entry->dev_mem != nullptr); // !D0 --> entry
+	//assert(dim == D0 || host_mem != nullptr); // !D0 --> entry
 
 	Ferr ferr = file->readBlock(*this);
 
@@ -198,9 +190,9 @@ Berr Block::store(IFile *file) {
 	NumDim dim = key.node->numdim();
 
 	assert(dir == OUT || dir == IO);
-	assert(dim != D0 || scalar_page != nullptr); // D0 --> scalar_page
-	assert(dim == D0 || entry->dev_mem != nullptr); // !D0 --> entry
-	assert(dim == D0 || entry->host_mem != nullptr); // !D0 --> entry
+	//assert(dim != D0 || scalar_page != nullptr); // D0 --> scalar_page
+	//assert(dim == D0 || entry->dev_mem != nullptr); // !D0 --> entry
+	//assert(dim == D0 || host_mem != nullptr); // !D0 --> entry
 
 	Ferr ferr = file->writeBlock(*this);
 
@@ -210,17 +202,24 @@ Berr Block::store(IFile *file) {
 	return berr;
 }
 
-void Block::fixValue(VariantType var) {
-	assert(not var.isNone());
-	fixed = true;
-	ready = true;
-	value = var;
+void Block::fixValue(ValFix vf) {
+
+	fixed = vf.fixed;
+	if (fixed) {
+		ready = true;
+		value = vf.value;
+		stats.active = true;
+		stats.max = vf.max.get();
+		stats.min = vf.min.get();
+		stats.mean = vf.mean.get();
+		stats.std = vf.std.get();
+	}
 }
 
 void Block::notify() {
 	if (dependencies >= 0)
 		dependencies--;
-	// Note: blocks with DEPEND_UNKNOWN are never discarded
+	// DEPEND_UNKNOWN blocks are only discarded by eviction
 }
 
 bool Block::discardable() const {
@@ -232,6 +231,11 @@ void Block::setReady() {
 	ready = true;
 }
 
+void Block::unsetReady() {
+	assert(ready);
+	ready = false;
+}
+
 bool Block::isReady() {
 	return ready;
 }
@@ -239,84 +243,40 @@ bool Block::isReady() {
 void Block::setDirty() {
 	assert(not dirty);
 	dirty = true;
-	entry->setDirty();
+	if (entry != nullptr)
+		entry->setDirty();
 }
 
 void Block::unsetDirty() {
 	assert(dirty);
 	dirty = false;
-	entry->unsetDirty();	
+	if (entry != nullptr)
+		entry->unsetDirty();	
 }
 
 bool Block::isDirty() {
-	assert(dirty == entry->dirty);
+	if (entry != nullptr)
+		assert(dirty == entry->dirty);
 	return dirty;
 }
 
 void Block::setUsed() {
 	used++;
-	if (entry)
+	if (entry != nullptr)
 		entry->setUsed();
 }
 
 void Block::unsetUsed() {
 	assert(used > 0);
 	used--;
-	if (entry)
+	if (entry != nullptr)
 		entry->unsetUsed();
 }
 
 bool Block::isUsed() {
-	if (entry)
+	if (entry != nullptr)
 		assert(used == entry->used);
 	return used > 0;
 }
 
-void Block::setLoading() {
-	assert(not loading);
-	loading = true;
-}
-
-void Block::unsetLoading() {
-	assert(loading);
-	loading = false;
-}
-
-bool Block::isLoading() {
-	return loading;
-}
-
-void Block::setWriting() {
-	assert(not writing);
-	writing = true;
-}
-
-void Block::unsetWriting() {
-	assert(writing);
-	writing = false;
-}
-
-bool Block::isWriting() {
-	return writing;
-}
-
-void Block::waitForLoader() {
-	std::unique_lock<std::mutex> lock(mtx,std::adopt_lock);
-	cv_load.wait(lock,[&]{ return !isLoading(); }); // exit-condition = !loading
-	lock.release();
-}
-
-void Block::notifyLoaders() {
-	cv_load.notify_all();
-}
-
-void Block::waitForWriter() {
-	std::unique_lock<std::mutex> lock(mtx,std::adopt_lock);
-	cv_write.wait(lock,[&]{ return !isWriting(); }); // exit-condition = !writing
-	lock.release();
-}
-
-void Block::notifyWriters() {
-	cv_write.notify_all();
-}
 } } // namespace map::detail

@@ -3,7 +3,7 @@
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  * Sample 5
- * Radiating operations
+ * Radial operations
  *
  * Calculates the viewshed of a map for a given observer coordinates and height
  */

@@ -44,7 +44,11 @@ struct LoopTail : public Node
 	char classSignature() const;
 	LoopCond* loop() const;
 	Node* prev() const;
+
+	// Spatial
 	Pattern pattern() const { return TAIL; }
+	// const Mask& inputReach(Coord coord) const;
+	// const Mask& outputReach(Coord coord) const;
 
 	// Variables
 	LoopCond *owner_loop;

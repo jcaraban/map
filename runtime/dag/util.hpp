@@ -32,6 +32,7 @@ bool is_included(const Group *group, const GroupList &list);
 
 NodeList inner_join(const NodeList &lhs, const NodeList &rhs);
 NodeList full_join(const NodeList &lhs, const NodeList &rhs);
+NodeList full_unique_join(const NodeList &lhs, const NodeList &rhs);
 NodeList left_join(const NodeList &lhs, const NodeList &rhs);
 
 template <typename T>

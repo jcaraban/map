@@ -28,14 +28,12 @@ LocalSkeleton::LocalSkeleton(Version *ver)
 	indent_count = 2;
 }
 
-void LocalSkeleton::generate() {
+string LocalSkeleton::generate() {
+	tag(); // tag the nodes
 	fill(); // fill structures
 	compact(); // compact structures
 
-	ver->shared_size = -1;
-	ver->group_size = BlockSize{16,16};
-	ver->num_group = (ver->task->blocksize() - 1) / ver->groupsize() + 1;	
-	ver->code = versionCode();
+	return versionCode();
 }
 
 /***********
@@ -51,7 +49,7 @@ string LocalSkeleton::versionCode() {
 	indent_count = 0;
 
 	// Includes
-	for (auto &incl : includes)
+	for (auto &incl : include)
 		add_line( "#include " + incl );
 	add_line( "" );
 
@@ -152,21 +150,19 @@ string LocalSkeleton::versionCode() {
 	add_line( "if ("+global_cond(N)+") {" );
 	indent_count++;
 
-	// Adds POSCORE input-nodes
+	// Adds LOCAL_CORE input-nodes
 	for (auto &node : ver->task->inputList()) {
-		if (tag_hash[node] == POSCORE) {
+		if (tag_hash[node].pos == INPUT_OUTPUT) {
 			add_line( var_name(node) + " = " + in_var(node) + ";" );
 		}
 	}
 
 	// Adds accumulated 'poscore' to 'all'
-	code[ALL_POS] += code[POSCORE];
+	full_code += code_hash[{LOCAL_CORE,1}];
 
-	// Adds POSCORE output-nodes
+	// Adds LOCAL_CORE output-nodes
 	for (auto &node : ver->task->outputList()) {
-		if (tag_hash[node] == POSCORE) {
-			add_line( out_var(node) + " = " + var_name(node) + ";" );
-		}
+		add_line( out_var(node) + " = " + var_name(node) + ";" );
 	}
 
 	indent_count--;
@@ -175,9 +171,9 @@ string LocalSkeleton::versionCode() {
 	add_line( "}" ); // Closes kernel body
 
 	//// Printing ////
-	std::cout << "***\n" << code[ALL_POS] << "***" << std::endl;
+	std::cout << "***\n" << full_code << "***" << std::endl;
 
-	return code[ALL_POS];
+	return full_code;
 }
 
 /*********

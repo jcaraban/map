@@ -349,7 +349,7 @@ Ferr binary::readBlock(Block &block) const {
 	size_t offset = proj(block.key.coord,meta.num_block) * total_block_size;
 	Ferr ferr = 0;
 	size_t ret, len = 0;
-	char *mem = (char*)block.entry->host_mem;
+	char *mem = (char*)block.host_mem;
 
 	offset += initial_offset;
 	while (len < total_block_size) {
@@ -373,7 +373,7 @@ Ferr binary::writeBlock(const Block &block) {
 	size_t offset = proj(block.key.coord,meta.num_block) * total_block_size;
 	Ferr ferr = 0;
 	size_t ret, len = 0;
-	char *mem = (char*)block.entry->host_mem;
+	char *mem = (char*)block.host_mem;
 
 	offset += initial_offset;
 	while (len < total_block_size) {

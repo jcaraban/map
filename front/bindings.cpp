@@ -51,7 +51,7 @@ void ma_eval(Node **vec, int num) {
 
 VariantType ma_value(Node *node) {
 	assert(node->numdim() == D0);
-	if (node->value.datatype() == NONE_DATATYPE)
+	if (node->value.isNone())
 		assert(0); // @ ma_eval(&node,1);
 	return node->value;
 }
@@ -170,7 +170,7 @@ Node* ma_neighbor(Node *prev, Coord coord) {
 }
 
 Node* ma_boundedNbh(Node *prev, Node *cx, Node *cy) {
-	Node *node = BoundedNbh::Factory(prev,cx,cy);
+	Node *node = BoundedNeighbor::Factory(prev,cx,cy);
 	return Runtime::getInstance().addNode(node);
 }
 
@@ -229,13 +229,18 @@ Node* ma_spreadScan(Node *prev, Node *dir, ReductionEnum type) {
 
 /* Others */
 
-Node* ma_stats(Node *prev) {
-	Node *node = Stats::Factory(prev);
+Node* ma_barrier(Node *prev) {
+	Node *node = Barrier::Factory(prev);
 	return Runtime::getInstance().addNode(node);
 }
 
-Node* ma_barrier(Node *prev) {
-	Node *node = Barrier::Factory(prev);
+Node* ma_stats(Node *prev, Node *min, Node *max, Node *mean, Node *std) {
+	Node *node = Summary::Factory(prev,min,max,mean,std);
+	return Runtime::getInstance().addNode(node);
+}
+
+Node* ma_blockStats(Node *prev, ReductionEnum type) {
+	Node *node = BlockSummary::Factory(prev,type);
 	return Runtime::getInstance().addNode(node);
 }
 

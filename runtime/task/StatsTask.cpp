@@ -14,21 +14,18 @@ namespace map { namespace detail {
    Stats
  *********/
 
-StatsTask::StatsTask(Group *group)
-	: Task(group)
+StatsTask::StatsTask(Program &prog, Clock &clock, Config &conf, Group *group)
+	: Task(prog,clock,conf,group)
 {
-	// @ TODO: fix this somehow
 	for (auto node : group->nodeList()) {
-		auto *stats = dynamic_cast<Stats*>(node);
-		if (stats != nullptr) {
-			this->stats = stats;
+		auto *summ = dynamic_cast<Summary*>(node);
+		if (summ != nullptr) {
+			this->summ = summ;
 			break;
 		}
 	}
-
-	createVersions();
 }
-
+/*
 void StatsTask::createVersions() {
 	cle::OclEnv& env = Runtime::getOclEnv();
 	// All devices are accepted
@@ -39,18 +36,12 @@ void StatsTask::createVersions() {
 	}
 }
 
-void StatsTask::blocksToLoad(Coord coord, InKeyList &in_keys) const {
+void StatsTask::blocksToLoad(Coord coord, KeyList &in_keys) const {
 	Task::blocksToLoad(coord,in_keys);
 }
 
-void StatsTask::blocksToStore(Coord coord, OutKeyList &out_keys) const {
+void StatsTask::blocksToStore(Coord coord, KeyList &out_keys) const {
 	Task::blocksToStore(coord,out_keys);
-
-	// Adds max, mean, min, std output blocks
-	out_keys.push_back( std::make_tuple(Key(stats->max(),coord),HOLD_1,0) );
-	out_keys.push_back( std::make_tuple(Key(stats->min(),coord),HOLD_1,0) );
-
-	assert(out_keys.size() == 3);
 }
 
 void StatsTask::initialJobs(std::vector<Job> &job_vec) {
@@ -87,7 +78,7 @@ int StatsTask::nextIntraDepends(Node *node, Coord coord) const {
 void StatsTask::preCompute(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
 	Task::preCompute(coord,in_blk,out_blk);
 
-	const Version *ver = version(DEV_ALL,""); // Any device, No detail
+	const Version *ver = getVersion(DEV_ALL,{},""); // Any device, No detail
 	cle::Task tsk = ver->tsk;
 	cle::Queue que = tsk.C().D(Tid.dev()).Q(Tid.rnk());
 	const Config &conf = Runtime::getConfig();
@@ -107,7 +98,7 @@ void StatsTask::preCompute(Coord coord, const BlockList &in_blk, const BlockList
 			rtype = zn->type;
 
 		int index = sizeof(double)*(conf.max_out_block*Tid.rnk() + sidx++);
-		VariantType neutral = rtype.neutral(stats->datatype());
+		VariantType neutral = rtype.neutral(summ->datatype());
 		b->value = neutral;
 
 		cl_int clerr = clEnqueueFillBuffer(*que,b->scalar_page,&neutral.ref(),neutral.datatype().sizeOf(),index,b->datatype().sizeOf(),0,nullptr,nullptr);
@@ -118,12 +109,10 @@ void StatsTask::preCompute(Coord coord, const BlockList &in_blk, const BlockList
 void StatsTask::postCompute(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
 	Task::postCompute(coord,in_blk,out_blk);
 
-	const Version *ver = version(DEV_ALL,""); // Any device, No detail
+	const Version *ver = getVersion(DEV_ALL,{},""); // Any device, No detail
 	cle::Task tsk = ver->tsk;
 	cle::Queue que = tsk.C().D(Tid.dev()).Q(Tid.rnk());
 	const Config &conf = Runtime::getConfig();
-
-	assert(out_blk.size() == 3);
 
 	// Transfers back the output-zonal-scalars
 	int sidx = 0;
@@ -138,17 +127,17 @@ void StatsTask::postCompute(Coord coord, const BlockList &in_blk, const BlockLis
 	auto max = out_blk[1]->value;
 	auto min = out_blk[2]->value;
 
-	// Fills 'block' stats
-	out_blk[0]->stats.active = true;
-	out_blk[0]->stats.max = max.get();
-	out_blk[0]->stats.min = min.get();
+	// Fills 'block' summ
+	out_blk[0]->summ.active = true;
+	out_blk[0]->summ.max = max.get();
+	out_blk[0]->summ.min = min.get();
 	if (max == min) {
 		out_blk[0]->fixValue(max);
 	}
 
-	// Fills 'node' stats
-	stats->stats.maxb[proj(coord,stats->numblock())] = max.get();
-	stats->stats.minb[proj(coord,stats->numblock())] = min.get();
+	// Fills 'node' summ
+	summ->summ.maxb[proj(coord,summ->numblock())] = max.get();
+	summ->summ.minb[proj(coord,summ->numblock())] = min.get();
 
 	// Writes global statistics
 	if (Tid == last) {
@@ -157,8 +146,8 @@ void StatsTask::postCompute(Coord coord, const BlockList &in_blk, const BlockLis
 }
 
 void StatsTask::compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
-	const Version *ver = version(DEV_ALL,""); // Any device, No detail
+	const Version *ver = getVersion(DEV_ALL,{},""); // Any device, No detail
 	Task::computeVersion(coord,in_blk,out_blk,ver);
 }
-
+*/
 } } // namespace map::detail

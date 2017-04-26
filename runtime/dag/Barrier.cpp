@@ -47,8 +47,10 @@ Node* Barrier::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 Barrier::Barrier(const MetaData &meta, Node *prev) : Node(meta) {
 	prev_list.reserve(1);
 	this->addPrev(prev);
+	prev->addNext(this);
 
-	this->prev()->addNext(this);
+	this->in_spatial_reach = Mask(numdim().unitVec(),true);
+	this->out_spatial_reach = Mask(numdim().unitVec(),true);
 }
 
 Barrier::Barrier(const Barrier *other, const std::unordered_map<Node*,Node*> &other_to_this)
@@ -82,8 +84,7 @@ Node* Barrier::prev() const {
 void Barrier::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
 	auto *node = this;
 
-	auto prev = hash.find({node->prev(),coord})->second;
-	hash[{node,coord}] = {prev.value,prev.fixed};
+	hash[{node,coord}] = hash.find({node->prev(),coord})->second;
 }
 
 } } // namespace map::detail

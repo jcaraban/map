@@ -43,13 +43,15 @@ Node* LoopHead::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 LoopHead::LoopHead(const MetaData &meta, Node *prev)
 	: Node(meta)
 {
+	prev_list.reserve(1);
+	this->addPrev(prev);
+	prev->addNext(this);
+
 	owner_loop = nullptr; // 'head' knows who its 'loop' is
 	twin_tail = nullptr; // 'head' might have a twin 'tail'
 	
-	prev_list.reserve(1);
-	this->addPrev(prev);
-
-	prev->addNext(this);
+	this->in_spatial_reach = Mask(numdim().unitVec(),true);
+	this->out_spatial_reach = Mask(numdim().unitVec(),true);
 }
 
 LoopHead::LoopHead(const LoopHead *other, const std::unordered_map<Node*,Node*> &other_to_this)

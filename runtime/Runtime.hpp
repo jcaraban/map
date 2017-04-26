@@ -18,7 +18,7 @@
 #include "Clock.hpp"
 #include "Config.hpp"
 #include "LoopAssembler.hpp"
-#include "visitor/SimplifierOnline.hpp"
+#include "visitor/Simplifier.hpp"
 #include "../cle/cle.hpp"
 
 #include <string>
@@ -94,7 +94,7 @@ class Runtime
 	OwnerTaskList task_list; //!< 1 task list is valid for 1 evaluation
 	OwnerVersionList ver_list; //!< List of code versions required by the tasks
 
-	SimplifierOnline simplifier; //!<
+	Simplifier simplifier; //!<
 	LoopAssembler assembler;
 };
 

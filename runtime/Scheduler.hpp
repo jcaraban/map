@@ -10,7 +10,6 @@
 #ifndef MAP_RUNTIME_SCHEDULER_HPP_
 #define MAP_RUNTIME_SCHEDULER_HPP_
 
-#include "Config.hpp"
 #include "Job.hpp"
 #include <vector>
 #include <queue>
@@ -23,6 +22,7 @@ namespace map { namespace detail {
 
 class Program; // Forward declaration
 class Clock; // Forward declaration
+class Config; // Forward declaration
 
 
 /*
@@ -31,12 +31,12 @@ class Clock; // Forward declaration
 class Scheduler
 {
   public:
-  	Scheduler(Program &prog, Clock &clock, Config &conf);
+  	Scheduler(Clock &clock, Config &conf);
 
   	void clear();
 	void print();
 	
-	void initialJobs();
+	void initialJobs(const Program &prog);
 	Job requestJob();
 	void returnJob(Job job);
 
@@ -45,14 +45,13 @@ class Scheduler
 	void addJobs(const std::vector<Job> &job);
 
   private:
-  	Program &prog; // Aggregate
   	Clock &clock; // Aggregate
   	Config &conf; // Aggregate
 
   	std::vector<std::vector<Job>> job_vec_vec; // Allocates one job_vec per thread
 
-	std::priority_queue<Job,std::vector<Job>,job_cmp> job_queue; // Jobs ready to be issued
-	std::unordered_set<Job,job_hash,job_cmp> job_set; // Tracks uniqueness (necessary for Spreading)
+	std::priority_queue<Job,std::vector<Job>,job_greater> job_queue; // Jobs ready to be issued
+	std::unordered_set<Job,job_hash,job_equal> job_set; // Tracks uniqueness (necessary for loops)
 
 	std::mutex mtx;
 	std::condition_variable cv_job;

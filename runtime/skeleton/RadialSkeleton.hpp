@@ -1,5 +1,5 @@
 /**
- * @file	RadiatingSkeleton.hpp 
+ * @file	RadialSkeleton.hpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  * Visitor of the dag that composes the kernels from skeletons
@@ -13,18 +13,18 @@
 #define MAP_RUNTIME_SKELETON_RADIAL_HPP_
 
 #include "Skeleton.hpp"
-#include "../Direction.hpp"
+#include "../../util/Direction.hpp"
 
 
 namespace map { namespace detail {
 
 #define DECLARE_VISIT(class) virtual void visit(class *node);
 
-struct RadiatingSkeleton : public Skeleton
+struct RadialSkeleton : public Skeleton
 {
   // constructor and main function
-	RadiatingSkeleton(Version *ver);
-	void generate();
+	RadialSkeleton(Version *ver);
+	std::string generate();
 
   // methods
 	std::string versionCode(RadialCase rcase, Direction fst, Direction snd);

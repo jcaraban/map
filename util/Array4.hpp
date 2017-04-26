@@ -12,14 +12,14 @@
 #define MAP_UTIL_ARRAY4_HPP_
 
 #include "promote.hpp"
-#include "NumDim.hpp"
 #include <iostream>
+#include <vector>
 #include <array>
 #include <algorithm>
 #include <initializer_list>
 #include <type_traits>
  
-#define NDEBUG
+//#define NDEBUG
 #include <cassert>
 
 
@@ -60,7 +60,7 @@ class Array4
 	/*
 	 *
 	 */
-	//Array4(int n, const T &val);
+	Array4(int n, const T &val);
 
 	/*
 	 *
@@ -87,6 +87,12 @@ class Array4
 	/*
 	 *
 	 */
+	template <typename OT>
+	Array4<OT> promote() const;
+
+	/*
+	 *
+	 */
 	T& operator[](int i);
 	const T& operator[](int i) const;
 
@@ -106,10 +112,12 @@ static_assert( std::is_standard_layout< Array4<int> >::value , "Array4 must be C
 /*
  * This types are public because they can be utilized by the user
  */
-using DataSize = Array4<int>; // @ change to 64
-using BlockSize = Array4<int>; // is 32 ok?
-using NumBlock = Array4<int>; // should be 64?
-using Coord = Array4<int>; // data_coord -> 64, block_coord -> 32
+using DataSize = Array4<int>; // @ change to 64b?
+using BlockSize = Array4<int>; // is 32b ok?
+using NumBlock = Array4<int>; // is 32b ok?
+using GroupSize = Array4<int>; // is 16b ok?
+using NumGroup = Array4<int>; // is 16b ok?
+using Coord = Array4<int>; // data_coord -> 64, block_coord -> 32, group_coord -> 16 ?
 
 } } // namespace map::detail
 
@@ -125,7 +133,7 @@ namespace map { namespace detail {
 template <typename T>
 Array4<T>::Array4() :
 	arr{def,def},//,def,def}
-	n(0)
+	n(def)
 { }
 /*
 template <typename T>
@@ -159,7 +167,7 @@ Array4<T>::Array4(int n) :
 {
 	assert(n <= N);
 }
-/*
+
 template <typename T>
 Array4<T>::Array4(int n, const T &val) :
 	arr{},
@@ -169,7 +177,7 @@ Array4<T>::Array4(int n, const T &val) :
 	for (int i=0; i<size(); i++)
 		arr[i] = val;
 }
-*/
+
 template <typename T>
 Array4<T>::Array4(std::initializer_list<T> ini_list) :
 	arr{},
@@ -208,6 +216,15 @@ Array4<T>::operator Array4<OT>() const {
 	return new_array4;
 }
 
+template <typename T>
+template <typename OT>
+Array4<OT> Array4<T>::promote() const {
+	Array4<OT> new_array4(size());
+	for (int i=0; i<size(); i++)
+		new_array4[i] = static_cast<OT>(arr[i]);
+	return new_array4;
+}
+
 // Accessors
 
 template <typename T>
@@ -227,7 +244,7 @@ int Array4<T>::size() const {
 
 template <typename T>
 bool Array4<T>::isNone() const {
-	return size() == 0;
+	return size() < 0;
 }
 
 /*************
@@ -263,35 +280,30 @@ bool Array4<T>::isNone() const {
 #define DEFINE_ARRAY4_BINARY_ARITHMETIC_OPERATOR(op,base_op) \
 	template <typename T, typename OT> \
 	Array4<PROMOTE> operator op (const Array4<T>& lhs, const Array4<OT>& rhs) { \
+		if (lhs.size()==0) \
+			return rhs.operator Array4<PROMOTE>(); \
+		if (rhs.size()==0) \
+			return lhs.operator Array4<PROMOTE>(); \
 		assert(lhs.size()==rhs.size()); \
 		const int size = lhs.size(); \
-		Array4<PROMOTE> left_array4(size), right_array4(size); \
-		for (int i=0; i<size; i++) \
-			left_array4[i] = lhs[i]; \
-		for (int i=0; i<size; i++) \
-			right_array4[i] = rhs[i]; \
+		auto left_array4 = lhs.operator Array4<PROMOTE>(); \
+		auto right_array4 = rhs.operator Array4<PROMOTE>(); \
 		left_array4 base_op right_array4; \
 		return left_array4; \
 	} \
 	template <typename T, typename OT> \
 	Array4<PROMOTE> operator op (const Array4<T>& lhs, const OT& rhs) { \
 		const int size = lhs.size(); \
-		Array4<PROMOTE> left_array4(size), right_array4(size); \
-		for (int i=0; i<size; i++) \
-			left_array4[i] = lhs[i]; \
-		for (int i=0; i<size; i++) \
-			right_array4[i] = rhs; \
+		auto left_array4 = lhs.operator Array4<PROMOTE>(); \
+		auto right_array4 = Array4<PROMOTE>(lhs.size(),rhs); \
 		left_array4 base_op right_array4; \
 		return left_array4; \
 	} \
 	template <typename T, typename OT> \
 	Array4<PROMOTE> operator op (const OT& lhs, const Array4<T>& rhs) { \
 		const int size = rhs.size(); \
-		Array4<PROMOTE> left_array4(size), right_array4(size); \
-		for (int i=0; i<size; i++) \
-			left_array4[i] = lhs; \
-		for (int i=0; i<size; i++) \
-			right_array4[i] = rhs[i]; \
+		auto left_array4 = Array4<PROMOTE>(rhs.size(),lhs); \
+		auto right_array4 = rhs.operator Array4<PROMOTE>(); \
 		left_array4 base_op right_array4; \
 		return left_array4; \
 	}
@@ -481,6 +493,8 @@ std::ostream& operator<<(std::ostream &strm, const Array4<T> &array4) {
  **********/
 
 inline int proj(const Coord &coord, const DataSize &dim_size) {
+	if (coord.size() == 0)
+		return 0; // @
 	// Recursively ((z_coord)*y_size + y_coord)*x_size + x_coord
 	int acu = coord[ coord.size()-1 ];
 	for (int i=coord.size()-2; i>=0; i--) {
@@ -490,26 +504,59 @@ inline int proj(const Coord &coord, const DataSize &dim_size) {
 	return acu;
 }
 
+inline int proj(const Coord &coord, const DataSize &dim_size, const Coord &offset) {
+	if (coord.size() == 0)
+		return 0;
+	// Recursively ((z_coord + z_off)*y_size + y_coord + y_off)*x_size + x_coord + x_off
+	int acu = coord[ coord.size()-1 ] + offset[ coord.size()-1 ];
+	for (int i=coord.size()-2; i>=0; i--) {
+		acu = acu * dim_size[i];
+		acu += coord[i] + offset[i];
+	}
+	return acu;
+}
+
 inline Array4<bool> in_range(const Coord &coord, const DataSize &dim_size) {
+	if (coord.size() == 0)
+		return Array4<bool>(coord.size(),true); // @
+	//
 	Array4<bool> array4(coord.size());
 	for (int i=0; i<coord.size(); i++)
 		array4[i] = (coord[i] >= 0 && coord[i] < dim_size[i]);
 	return array4;
 }
 
-inline Coord next(Coord coord, NumBlock num_block, int step=1) {
-	assert(coord.size() == num_block.size());
-	assert(!coord.isNone());
-	int carry;
+inline Coord next(Coord coord, Coord begin, Coord end, int step=1) {
+	assert(coord.size() == begin.size());
+	assert(begin.size() == end.size());
+	assert(not coord.isNone());
+	assert(all(begin <= end));
+	assert(any(coord < end));
+	int carry = 0;
 
 	for (int i=0; i<coord.size(); i++) {
 		coord[i] += (i == 0) ? step : carry;
-		if (coord[i] < num_block[i])
+		if (coord[i] < end[i])
 			return coord;
-		carry = coord[i] / num_block[i];
-		coord[i] -= num_block[i] * carry;
+		carry = step;
+		coord[i] = begin[i];
 	}
-	return num_block;
+	return end;
+}
+
+inline std::vector<Coord> iterSpace(Coord begin, Coord end) {
+	assert(begin.size() == end.size());
+	if (begin.size() == 0)
+		return std::vector<Coord>(1,Coord(0));
+
+	std::vector<Coord> vec;
+	Coord coord = begin;
+
+	while (all(coord < end)) {
+		vec.push_back(coord);
+		coord = next(coord,begin,end);
+	}
+	return vec;
 }
 
 inline bool neighbors(Coord lhs, Coord rhs, int step=1) {
@@ -537,17 +584,6 @@ struct coord_equal {
 		return all(lhs == rhs);
 	}
 };
-
-// @ How to diferentiate D3 from D2+T
-inline NumDim DataSize2NumDim(const DataSize &ds) {
-	switch (ds.size()) {
-		case 0: return D0;
-		case 1: return D1;
-		case 2: return D2;
-		case 3: return D3;
-		default: assert(0);
-	}
-}
 
 } } // namespace map::detail
 

@@ -14,11 +14,12 @@ int main(int argc, char **argv) {
 	
 	std::cout << " Is Variant standard-layout? " << std::is_standard_layout<VariantType>::value << std::endl;
 	std::cout << " Is DataType standard-layout? " << std::is_standard_layout<DataType>::value << std::endl;
-	std::cout << " Is ReductionType standard-layout? " << std::is_standard_layout<ReductionType>::value << std::endl;
+	//std::cout << " Is ReductionType standard-layout? " << std::is_standard_layout<ReductionType>::value << std::endl;
 	std::cout << " Is Union standard-layout? " << std::is_standard_layout<map::detail::VariantUnion>::value << std::endl;
 	std::cout << " Is DataType standard-layout? " << std::is_standard_layout<map::detail::DataType>::value << std::endl;
 	std::cout << " Is BlockaSize standard-layout? " << std::is_standard_layout<map::detail::BlockSize>::value << std::endl;
-
+	std::cout << "cl_mem " << sizeof(cl_mem) << std::endl;
+	
 	setupDevices("Intel",DEV_CPU,"");
 	std::cout << value( (Raster(1) + Raster(3)) * Raster(4) ) << std::endl;
 

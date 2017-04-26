@@ -44,7 +44,11 @@ struct LhsAccess : public Node
 	Node* left() const;
 	Node* right() const;
 	Coord coord() const;
+	
+	// Spatial
 	Pattern pattern() const { return LOCAL; }
+	// const Mask& inputReach(Coord coord) const;
+	// const Mask& outputReach(Coord coord) const;
 
 	// Variables
 	Coord cell_coord; //!< LhsAccess coordinate

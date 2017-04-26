@@ -2,6 +2,7 @@
  * @file    Predictor.cpp 
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
+ * TODO: could the statistics (min,max,etc) be propagated down the group too ?
  */
 
 #include "Predictor.hpp"
@@ -24,7 +25,6 @@ void Predictor::predict(Coord coord, const BlockList &in_blk, const BlockList &o
 		return;
 
 	clear();
-	this->coord = coord;
 
 	// Fills inputs first with 'in_blk'
 	for (auto in : in_blk) {
@@ -43,8 +43,7 @@ void Predictor::predict(Coord coord, const BlockList &in_blk, const BlockList &o
 	}
 
 	// Iterates the nodes to fill 'value_list' and 'fixed_list'
-	NodeList nodes_to_fill = full_join(group->nodeList(),group->outputList());
-	std::unique(nodes_to_fill.begin(),nodes_to_fill.end());
+	NodeList nodes_to_fill = full_unique_join(group->nodeList(),group->outputList());
 
 	for (auto node : nodes_to_fill) {
 		node->computeFixed(coord,hash);
@@ -60,12 +59,8 @@ void Predictor::predict(Coord coord, const BlockList &in_blk, const BlockList &o
 			out->stats.active = true;
 			out->stats.max = vf.value.get();
 			out->stats.min = vf.value.get();
-			//out->key.node->value = vf.value; // @ necessary?
-		} else {
-			// @ unnecessary?
-			out->value = VariantType();
-			out->fixed = false;
-			out->stats = BlockStats();
+			out->stats.mean = vf.value.get();
+			out->stats.std = vf.value.get();
 		}
 	}
 }

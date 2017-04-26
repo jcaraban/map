@@ -160,7 +160,7 @@ void mask_helper(string& str, const Mask &mask, BlockSize& idx, int n) {
 	str += "{";
 	for (idx[n]=0; idx[n]<ds[n]; idx[n]++) {
 		if (n == 0) {
-			str += mask[proj(idx,ds)].toString();
+			str += mask.array[proj(idx,ds)].toString();
 		} else {
 			mask_helper(str,mask,idx,n);
 		}

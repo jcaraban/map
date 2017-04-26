@@ -59,10 +59,13 @@ LhsAccess::LhsAccess(const MetaData &meta, Node *lprev, Node *rprev, const Coord
 	prev_list.reserve(2);
 	this->addPrev(lprev);
 	this->addPrev(rprev);
-	this->cell_coord = coord;
-	
 	lprev->addNext(this);
 	rprev->addNext(this);
+
+	this->cell_coord = coord;
+	
+	this->in_spatial_reach = Mask(numdim().unitVec(),true);
+	this->out_spatial_reach = Mask(numdim().unitVec(),true);
 }
 
 LhsAccess::LhsAccess(const LhsAccess *other, const std::unordered_map<Node*,Node*> &other_to_this)

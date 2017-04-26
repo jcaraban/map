@@ -1,6 +1,8 @@
 /**
  * @file	Convolution.cpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
+ *
+ * TODO: inputReach() should be filled according to mask
  */
 
 #include "Convolution.hpp"
@@ -53,9 +55,17 @@ Convolution::Convolution(const MetaData &meta, Node *prev, const Mask &mask)
 {
 	prev_list.reserve(1);
 	this->addPrev(prev);
-	this->smask = mask;
-	
 	prev->addNext(this);
+	
+	this->smask = mask;
+
+	auto mds = mask.datasize();
+	auto marr = Array<bool>(prod(mds));
+	for (int i=0; i<marr.size(); i++)
+		marr[i] = mask.array[i] ? true : false;
+
+	this->in_spatial_reach = Mask(mds,marr);
+	this->out_spatial_reach = Mask(numdim().unitVec(),true);
 }
 
 Convolution::Convolution(const Convolution *other, const std::unordered_map<Node*,Node*> &other_to_this)
@@ -91,38 +101,43 @@ Mask Convolution::mask() const {
 	return smask;
 }
 
-BlockSize Convolution::halo() const {
-	return smask.datasize() / 2;
-}
-
 // Compute
 
 void Convolution::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
 	auto *node = this;
 
-	auto prev = hash[{node->prev(),coord}];
-	auto bt = BinaryType(MUL);
-	auto rt = ReductionType(SUM);
-	auto acu = rt.neutral(node->datatype());
+	auto bt = BinaryType(MUL); // @
+	auto rt = ReductionType(SUM); // @
+	auto reach = inputReach(coord);
+	auto bs = blocksize();
 
+	auto prev = hash.find({node->prev(),coord})->second;
 	if (not prev.fixed) {
-		hash[{node,coord}] = {{},false};
+		hash[{node,coord}] = ValFix();
 		return;
 	}
-	for (int y=-halo()[1]; y<=halo()[1]; y++) {
-		for (int x=-halo()[0]; x<=halo()[0]; x++)
-		{
-			auto neig = hash.find({node->prev(),coord+Coord{x,y}})->second;
-			if (not neig.fixed || prev.value != neig.value) {
-				hash[{node,coord}] = {{},false};
-				return;
-			}
-			int proj = (y + halo()[1]) * (2*halo()[0]+1) + (x + halo()[0]);
-			auto aux = bt.apply(neig.value,node->mask()[proj]);
-			acu = rt.apply(acu,aux);
+
+	for (auto offset : reach.blockSpace(bs)) {
+		Coord nbc = coord + offset;
+		auto neig = hash.find({node->prev(),nbc})->second;
+		if (not neig.fixed || neig.value != prev.value) {
+			hash[{node,coord}] = ValFix();
+			return;
 		}
 	}
-	hash[{node,coord}] = {acu,true};
+
+	// At this point all 'prev blocks' contain the same fixed value
+	auto val = prev.value;
+	auto mask = node->mask();
+	auto acu = rt.neutral(node->datatype());
+
+	for (auto offset : reach.cellSpace())
+	{	
+		auto aux = bt.apply(val,mask[offset]);
+		acu = rt.apply(acu,aux);
+	}
+
+	hash[{node,coord}] = ValFix(acu);
 }
 
 } } // namespace map::detail

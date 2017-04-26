@@ -38,7 +38,7 @@ struct Visitor
 	DECLARE_VISIT(Conditional)
 	DECLARE_VISIT(Diversity)
 	DECLARE_VISIT(Neighbor)
-	DECLARE_VISIT(BoundedNbh)
+	DECLARE_VISIT(BoundedNeighbor)
 	DECLARE_VISIT(SpreadNeighbor)
 	DECLARE_VISIT(Convolution)
 	DECLARE_VISIT(FocalFunc)
@@ -58,8 +58,9 @@ struct Visitor
 	DECLARE_VISIT(Scalar)
 	DECLARE_VISIT(Temporal)
 	DECLARE_VISIT(Checkpoint)
-	DECLARE_VISIT(Stats)
 	DECLARE_VISIT(Barrier)
+	DECLARE_VISIT(Summary)
+	DECLARE_VISIT(BlockSummary)
 };
 
 #undef DECLARE_VISIT

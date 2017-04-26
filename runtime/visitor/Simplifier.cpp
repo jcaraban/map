@@ -1,23 +1,23 @@
 /**
- * @file	SimplifierOnline.cpp 
+ * @file	Simplifier.cpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  */
 
-#include "SimplifierOnline.hpp"
+#include "Simplifier.hpp"
 #include "../Runtime.hpp"
 #include <iostream>
 
 
 namespace map { namespace detail {
 
-SimplifierOnline::SimplifierOnline(OwnerNodeList &node_list)
+Simplifier::Simplifier(OwnerNodeList &node_list)
 	: node_list(node_list)
 {
 	clear();
 }
 
-void SimplifierOnline::clear() {
+void Simplifier::clear() {
 	orig = nullptr;
 	ConstantMap.clear();
 	IndexMap.clear();
@@ -28,7 +28,7 @@ void SimplifierOnline::clear() {
 	ConditionalMap.clear();
 	DiversityMap.clear();
 	NeighborMap.clear();
-	BoundedNbhMap.clear();
+	BoundedNeighborMap.clear();
 	SpreadNeighborMap.clear();
 	ConvolutionMap.clear();
 	FocalFuncMap.clear();
@@ -47,23 +47,24 @@ void SimplifierOnline::clear() {
 	WriteMap.clear();
 	ScalarMap.clear();
 	CheckpointMap.clear();
-	StatsMap.clear();
 	BarrierMap.clear();
+	SummaryMap.clear();
+	BlockSummaryMap.clear();
 }
 
-Node* SimplifierOnline::simplify(Node *node) {
+Node* Simplifier::simplify(Node *node) {
 	dropping = false;
 	node->accept(this); // Simplifies node, stores original in 'orig'
 	return orig;
 }
 
-void SimplifierOnline::drop(Node *node) {
+void Simplifier::drop(Node *node) {
 	dropping = true;
 	node->accept(this); // Drops node
 }
 
 #define DEFINE_VISIT(class) \
-	void SimplifierOnline::visit(class *node) { \
+	void Simplifier::visit(class *node) { \
 		if (dropping) \
 			drop_helper<class>(node,class##Map); \
 		else \
@@ -80,7 +81,7 @@ void SimplifierOnline::drop(Node *node) {
 	DEFINE_VISIT(Conditional)
 	DEFINE_VISIT(Diversity)
 	DEFINE_VISIT(Neighbor)
-	DEFINE_VISIT(BoundedNbh)
+	DEFINE_VISIT(BoundedNeighbor)
 	DEFINE_VISIT(SpreadNeighbor)
 	DEFINE_VISIT(Convolution)
 	DEFINE_VISIT(FocalFunc)
@@ -99,10 +100,11 @@ void SimplifierOnline::drop(Node *node) {
 	DEFINE_VISIT(Write)
 	DEFINE_VISIT(Scalar)
 	DEFINE_VISIT(Checkpoint)
-	DEFINE_VISIT(Stats)
 	DEFINE_VISIT(Barrier)
+	DEFINE_VISIT(Summary)
+	DEFINE_VISIT(BlockSummary)
 #undef DEFINE_VISIT
 
-void SimplifierOnline::visit(Temporal *node) { orig = node; }
+void Simplifier::visit(Temporal *node) { orig = node; }
 
 } } // namespace map::detail

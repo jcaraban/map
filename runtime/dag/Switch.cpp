@@ -54,9 +54,14 @@ Switch::Switch(const MetaData &meta, Node *cond, Node *prev)
 	prev_list.reserve(2);
 	this->addPrev(cond); // condition first, closes the loop before moving up
 	this->addPrev(prev);
-	
 	cond->addNext(this);
 	prev->addNext(this);
+
+	//this->next_true = push_back ...
+	//this->next_false = push_back ...
+
+	this->in_spatial_reach = Mask(numdim().unitVec(),true);
+	this->out_spatial_reach = Mask(numdim().unitVec(),true);
 }
 
 Switch::Switch(const Switch *other, const std::unordered_map<Node*,Node*> &other_to_this)
@@ -120,10 +125,6 @@ void Switch::addFalse(Node *node) {
 	next_false.push_back(node);
 }
 
-Pattern Switch::pattern() const {
-	return SWITCH;
-}
-
 // Compute 
 
 void Switch::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
@@ -139,7 +140,7 @@ void Switch::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &
 	auto *node = this;
 
 	auto prev = hash.find({node->prev(),coord})->second;
-	hash[{node,coord}] = {prev.value,prev.fixed};
+	hash[{node,coord}] = ValFix(prev.value,prev.fixed);
 }
 
 } } // namespace map::detail

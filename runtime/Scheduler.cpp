@@ -2,11 +2,13 @@
  * @file    Scheduler.cpp 
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
+ * TODO: re-check 'conf.num_*' if the scheduler is ever made hierarchical
  */
 
 #include "Scheduler.hpp"
 #include "Program.hpp"
 #include "Clock.hpp"
+#include "Config.hpp"
  
 
 namespace map { namespace detail {
@@ -15,9 +17,8 @@ namespace map { namespace detail {
    Scheduler
  *************/
 
-Scheduler::Scheduler(Program &prog, Clock &clock, Config &conf)
-	: prog(prog)
-	, clock(clock)
+Scheduler::Scheduler(Clock &clock, Config &conf)
+	: clock(clock)
 	, conf(conf)
 { }
 
@@ -29,7 +30,7 @@ void Scheduler::clear() {
 	end = false;
 }
 
-void Scheduler::initialJobs() {
+void Scheduler::initialJobs(const Program &prog) {
 	TimedRegion region(clock,ADD_JOB);
 	std::vector<Job> job_vec;
 
@@ -52,7 +53,6 @@ void Scheduler::initialJobs() {
 
 Job Scheduler::requestJob() {
 	TimedRegion region(clock,GET_JOB);
-	Job job;
 
 	while (true) {
 		std::unique_lock<std::mutex> lock(mtx); // thread-safe
@@ -60,11 +60,10 @@ Job Scheduler::requestJob() {
 		if (job_queue.empty()) {
 			waitForJob(lock);
 			if (end) {
-				job.task = nullptr;
-				return job;
+				return Job();
 			}
 		} else {
-			job = job_queue.top();
+			Job job = job_queue.top();
 			job_queue.pop();
 			job_set.erase(job);
 			return job;
@@ -73,7 +72,7 @@ Job Scheduler::requestJob() {
 }
 
 void Scheduler::returnJob(Job job) {
-	TimedRegion region(clock,NOTIFY);
+	TimedRegion region(clock,RET_JOB);
 	// Prepares the 'job_vec' to be filled with new 'jobs'
 	std::vector<Job> &job_vec = job_vec_vec[Tid.proj()];
 	job_vec.clear();
@@ -99,11 +98,12 @@ void Scheduler::waitForJob(std::unique_lock<std::mutex> &lock) {
 void Scheduler::addJobs(const std::vector<Job> &job_vec) {
 	std::lock_guard<std::mutex> lock(mtx); // thread-safe
 	for (auto job : job_vec) {
+		assert(job_set.find(job) == job_set.end());
 		// Checks uniqueness before inserting
-		if (job_set.find(job) == job_set.end()) {
+		//if (job_set.find(job) == job_set.end()) {
 			job_queue.push(job);
 			job_set.insert(job);
-		}
+		//}
 	}
 	cv_job.notify_all();
 }

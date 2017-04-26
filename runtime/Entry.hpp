@@ -29,10 +29,10 @@ struct Entry {
 
   // Variables
 	std::list<Entry*>::iterator self;
-	cl_mem dev_mem;
-	void *host_mem;
 	Block *block;
-	char used;
+	cl_mem dev_mem;
+
+	short used;
 	bool dirty;
 };
 

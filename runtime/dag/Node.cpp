@@ -21,6 +21,9 @@ Node::Node()
 	, meta()
 	, stats()
 	, value()
+	, spatial_pattern()
+	, in_spatial_reach()
+	, out_spatial_reach()
 { }
 
 Node::Node(const MetaData &meta)
@@ -33,6 +36,9 @@ Node::Node(const MetaData &meta)
 	, meta(meta)
 	, stats()
 	, value()
+	, spatial_pattern()
+	, in_spatial_reach()
+	, out_spatial_reach()
 { }
 
 Node::Node(const Node *other, const std::unordered_map<Node*,Node*> &other_to_this)
@@ -45,6 +51,9 @@ Node::Node(const Node *other, const std::unordered_map<Node*,Node*> &other_to_th
 	, meta(other->meta)
 	, stats(other->stats)
 	, value(other->value)
+	, spatial_pattern(other->spatial_pattern)
+	, in_spatial_reach(other->in_spatial_reach)
+	, out_spatial_reach(other->out_spatial_reach)
 {
 	for (auto other_prev : other->prevList()) {
 		Node *this_prev = other_to_this.find(other_prev)->second;
@@ -147,20 +156,12 @@ void Node::removeBack(Node *node) {
 	decreaseRef();
 }
 
-Pattern Node::pattern() const {
-	return FREE;
-}
-
 bool Node::isInput() const {
 	return false;
 }
 
 bool Node::isOutput() const {
 	return false;
-}
-
-BlockSize Node::halo() const {
-	return BlockSize{0,0};//,0,0};
 }
 
 StreamDir Node::streamdir() const {

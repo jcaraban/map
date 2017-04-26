@@ -1,40 +1,38 @@
 /**
- * @file	Stats.hpp 
+ * @file	BlockSummary.hpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * Node that manually computes the statistics. Returns the input node, now including the statistics
- *
- * TODO: @@ refactor this functionality, perhaps decompose it in multiple operations, think about it...
- * TODO: remove STATS from the patterns
+ * Node representing a Summary operation, i.e. compute and collect per-block statistics of the data
  */
 
-#ifndef MAP_RUNTIME_DAG_STATS_HPP_
-#define MAP_RUNTIME_DAG_STATS_HPP_
+#ifndef MAP_RUNTIME_DAG_BLOCKSUMMARY_HPP_
+#define MAP_RUNTIME_DAG_BLOCKSUMMARY_HPP_
 
 #include "Node.hpp"
 
 
 namespace map { namespace detail {
 
-struct Stats : public Node
+struct BlockSummary : public Node
 {
 	// Internal declarations
 	struct Content {
-		Content(Stats *node);
+		Content(BlockSummary *node);
 		bool operator==(const Content& k) const;
 		Node *prev;
+		ReductionType type;
 	};
 	struct Hash {
 		std::size_t operator()(const Content& k) const;
 	};
 
 	// Factory
-	static Node* Factory(Node *prev);
+	static Node* Factory(Node *prev, ReductionType type);
 	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
-	Stats(const MetaData &meta, Node *prev);
-	Stats(const Stats *other, const std::unordered_map<Node*,Node*> &other_to_this);
+	BlockSummary(const MetaData &meta, Node *prev, ReductionType type);
+	BlockSummary(const BlockSummary *other, const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);
@@ -42,15 +40,18 @@ struct Stats : public Node
 	std::string signature() const;
 	char classSignature() const;
 	Node* prev() const;
-	Node* max() const;
-	Node* min() const;
-	Pattern pattern() const { return STATS; }
+
+	// Spatial
+	Pattern pattern() const { return ZONAL+STATS; }
+	// const Mask& inputReach(Coord coord) const;
+	// const Mask& outputReach(Coord coord) const;
 
 	// Compute
 	//void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
 	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
-	
+
 	// Variables
+	ReductionType type;
 };
 
 } } // namespace map::detail

@@ -82,6 +82,10 @@ bool VariantType::operator!=(VariantType other) const {
 	return ! isEqual(other);
 }
 
+VariantType::operator bool() const {
+	return convert(B8).get<B8>();
+}
+
 size_t VariantType::hash() const {
 	size_t hash = std::hash<int>()(type.get());
 	switch (type.get()) {
@@ -117,37 +121,6 @@ std::string VariantType::toString() const {
 	}
 }
 
-VariantType VariantType::convert(DataType dt) {
-	switch (type.get()) {
-		case F32 : set(get<F32>(),dt); return *this;
-		case F64 : set(get<F64>(),dt); return *this;
-		case B8  : set(get<B8 >(),dt); return *this;
-		case U8  : set(get<U8 >(),dt); return *this;
-		case U16 : set(get<U16>(),dt); return *this;
-		case U32 : set(get<U32>(),dt); return *this;
-		case U64 : set(get<U64>(),dt); return *this;
-		case S8  : set(get<S8 >(),dt); return *this;
-		case S16 : set(get<S16>(),dt); return *this;
-		case S32 : set(get<S32>(),dt); return *this;
-		case S64 : set(get<S64>(),dt); return *this;
-		default: assert(0);
-	}
-}
-
-VariantUnion& VariantType::ref() {
-	return var;
-}
-
-VariantUnion VariantType::get() const {
-	return var;
-}
-
-void VariantType::set(VariantUnion var, DataType dt) {
-	//this->var = var;
-	//return *this;
-	assert(0); // not sure about this function
-}
-
 bool VariantType::isNone() const {
 	return type == NONE_DATATYPE;
 }
@@ -171,6 +144,54 @@ bool VariantType::isZero() const {
 
 bool VariantType::isOne() const {
 	assert(0);
+}
+
+VariantUnion& VariantType::ref() {
+	return var;
+}
+
+VariantUnion VariantType::get() const {
+	return var;
+}
+
+void VariantType::set(VariantUnion var, DataType dt) {
+	//this->var = var;
+	//return *this;
+	assert(0); // not sure about this function
+}
+
+VariantType VariantType::convert(DataType dt) const {
+	switch (type.get()) {
+		case F32 : return VariantType(get<F32>(),dt);
+		case F64 : return VariantType(get<F64>(),dt);
+		case B8  : return VariantType(get<B8 >(),dt);
+		case U8  : return VariantType(get<U8 >(),dt);
+		case U16 : return VariantType(get<U16>(),dt);
+		case U32 : return VariantType(get<U32>(),dt);
+		case U64 : return VariantType(get<U64>(),dt);
+		case S8  : return VariantType(get<S8 >(),dt);
+		case S16 : return VariantType(get<S16>(),dt);
+		case S32 : return VariantType(get<S32>(),dt);
+		case S64 : return VariantType(get<S64>(),dt);
+		default: assert(0);
+	}
+}
+
+void VariantType::fill(void *mem, size_t num) const {
+	switch (type.get()) {
+		case F32 : std::fill_n((Ctype<F32>*)mem,num,get<F32>()); break;
+		case F64 : std::fill_n((Ctype<F64>*)mem,num,get<F64>()); break;
+		case B8  : std::fill_n((Ctype<B8 >*)mem,num,get<B8 >()); break;
+		case U8  : std::fill_n((Ctype<U8 >*)mem,num,get<U8 >()); break;
+		case U16 : std::fill_n((Ctype<U16>*)mem,num,get<U16>()); break;
+		case U32 : std::fill_n((Ctype<U32>*)mem,num,get<U32>()); break;
+		case U64 : std::fill_n((Ctype<U64>*)mem,num,get<U64>()); break;
+		case S8  : std::fill_n((Ctype<S8 >*)mem,num,get<S8 >()); break;
+		case S16 : std::fill_n((Ctype<S16>*)mem,num,get<S16>()); break;
+		case S32 : std::fill_n((Ctype<S32>*)mem,num,get<S32>()); break;
+		case S64 : std::fill_n((Ctype<S64>*)mem,num,get<S64>()); break;
+		default: assert(0);
+	}
 }
 
 std::ostream& operator<<(std::ostream &strm, const VariantType &var) {

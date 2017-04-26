@@ -1,10 +1,10 @@
 /**
- * @file	SpreadingSkeleton.cpp 
+ * @file	SpreadSkeleton.cpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  */
 
-#include "SpreadingSkeleton.hpp"
+#include "SpreadSkeleton.hpp"
 #include "util.hpp"
 #include "../Version.hpp"
 #include "../task/Task.hpp"
@@ -21,29 +21,26 @@ namespace { // anonymous namespace
    Constructor
  ***************/
 
-SpreadingSkeleton::SpreadingSkeleton(Version *ver)
+SpreadSkeleton::SpreadSkeleton(Version *ver)
 	: Skeleton(ver)
 { }
 
-void SpreadingSkeleton::generate() {
+string SpreadSkeleton::generate() {
 	fill(); // fill structures
 	compact(); // compact structures
-
-	ver->shared_size = -1;
-	ver->group_size = BlockSize{16,16}; // @
-	ver->num_group = (ver->task->blocksize() - 1) / ver->groupsize() + 1;	
-	ver->code = versionCode();
 
 	// Gives numgroup() as extra_argument
 	for (int i=0; i<ver->task->numdim().toInt(); i++)
 		ver->extra_arg.push_back( ver->numgroup()[i] );
+
+	return versionCode();
 }
 
 /***********
    Methods
  ***********/
 
-std::string SpreadingSkeleton::versionCode() {
+std::string SpreadSkeleton::versionCode() {
 	//// Variables ////
 	const int N = 2;
 	string cond, comma;
@@ -52,7 +49,7 @@ std::string SpreadingSkeleton::versionCode() {
 	indent_count = 0;
 
 	// Includes
-	for (auto &incl : includes)
+	for (auto &incl : include)
 		add_line( "#include " + incl );
 	add_line( "" );
 	
@@ -70,9 +67,9 @@ std::string SpreadingSkeleton::versionCode() {
 	add_line( "(" );
 	indent_count++;
 	for (auto &node : ver->task->inputList()) {
-		if (tag_hash[node] == PRECORE)
+		if (tag_hash[node].pos == PRE_SPREAD)
 			add_line( string("TYPE_VAR_LIST(IN_") + node->id + "," + node->datatype().ctypeString() + ")," );
-		else if (tag_hash[node] == POSCORE)
+		else if (tag_hash[node].pos == LOCAL_CORE)
 			add_line( in_arg(node) );
 	}
 	for (auto &node : ver->task->outputList()) {
@@ -109,7 +106,7 @@ std::string SpreadingSkeleton::versionCode() {
 		}
 	}
 
-	// Declaring spreading shared memory
+	// Declaring Spread shared memory
 	for (auto &node : shared) {
 		if (node == spread[0]->stable())
 			add_line( shared_decl(node,prod(ver->groupsize())) );
@@ -158,9 +155,9 @@ std::string SpreadingSkeleton::versionCode() {
 	}
 	add_line( "" );
 
-	// Adds PRECORE input-nodes
+	// Adds PRE_SPREAD input-nodes
 	for (auto &node : ver->task->inputList()) {
-		if (tag_hash[node] == PRECORE) {
+		if (tag_hash[node].pos == PRE_SPREAD) {
 			add_line( var_name(node) + " = " + in_var_focal(node) + ";" );
 		}
 	}
@@ -168,7 +165,7 @@ std::string SpreadingSkeleton::versionCode() {
 	//add_line( var_name(spread[0]->spread()) + " = " + in_var_spread(spread[0]->spread()) + ";" );
 
 	// Adds accumulated 'precore' to 'all'
-	code[ALL_POS] += code[PRECORE];
+	full_code += code_hash[{PRE_SPREAD,9}];
 
 	// Filling spread shared memory
 	for (auto &node : shared) {
@@ -205,7 +202,7 @@ std::string SpreadingSkeleton::versionCode() {
 	indent_count++;
 
 	// Adds accumulated 'core' to 'all'
-	code[ALL_POS] += code[CORE];
+	full_code += code_hash[{SPREAD_CORE,1}];
 
 	indent_count--;
 	add_line( "}" ); // Closes global-if
@@ -215,7 +212,7 @@ std::string SpreadingSkeleton::versionCode() {
 	add_line( "{" );
 	indent_count++;
 
-	// Spreading output
+	// Spread output
 	for (auto &node : ver->task->outputList()) {
 		if (node == spread[0]->buffer()) {
 			add_line( out_var(node) + " = " + var_name(node) + ";" );
@@ -247,13 +244,13 @@ std::string SpreadingSkeleton::versionCode() {
 	add_line( "{" );
 	indent_count++;
 
-	// Adds POSCORE input-nodes
+	// Adds LOCAL_CORE input-nodes
 	for (auto &node : ver->task->inputList()) {
-		if (tag_hash[node] != POSCORE)
+		if (tag_hash[node].pos != LOCAL_CORE)
 			continue;
 		if (is_included(node,shared)) {
 			add_line( var_name(node) + " = " + var_name(node,SHARED) + "[" + local_proj_focal_H(N) + "];" );
-		} else if (tag_hash[node] == PRECORE) {
+		} else if (tag_hash[node].pos == PRE_SPREAD) {
 			add_line( var_name(node) + " = IN_" + node->id + "_11[" + global_proj(N) + "];" );
 		} else {
 			add_line( var_name(node) + " = " + in_var(node) + ";" );
@@ -261,11 +258,11 @@ std::string SpreadingSkeleton::versionCode() {
 	}
 
 	// Adds accumulated 'poscode' to 'all'
-	code[ALL_POS] += code[POSCORE];
+	full_code += code_hash[{LOCAL_CORE,1}];
 
-	// Adds POSCORE output-nodes
+	// Adds LOCAL_CORE output-nodes
 	for (auto &node : ver->task->outputList()) {
-		if (tag_hash[node] == POSCORE && node->pattern().isNot(SPREAD)) {
+		if (tag_hash[node].pos == LOCAL_CORE && node->pattern().isNot(SPREAD)) {
 			add_line( out_var(node) + " = " + var_name(node) + ";" );
 		}
 	}
@@ -276,16 +273,16 @@ std::string SpreadingSkeleton::versionCode() {
 	add_line( "}" ); // Closes kernel body
 
 	//// Printing ////
-	std::cout << "***\n" << code[ALL_POS] << "***" << std::endl;
+	std::cout << "***\n" << full_code << "***" << std::endl;
 
-	return code[ALL_POS];
+	return full_code;
 }
 
 /*********
    Visit
  *********/
 
-void SpreadingSkeleton::visit(SpreadScan *node) {
+void SpreadSkeleton::visit(SpreadScan *node) {
 
 	scalar[ node->dir()->datatype().get() ].push_back(node->dir()->id);
 	scalar[ node->spread()->datatype().get() ].push_back(node->spread()->id);
@@ -296,7 +293,7 @@ void SpreadingSkeleton::visit(SpreadScan *node) {
 	//out[node_pos].push_back(node->buffer());
 	//out[node_pos].push_back(node->stable());
 
-	// Adds spreading code
+	// Adds Spread code
 	{
 		const int N = node->numdim().toInt();
 		string scan = in_var_spread(node);

@@ -37,7 +37,7 @@ bool is_included(const Group *group, const GroupList &list) {
 NodeList inner_join(const NodeList &lhs, const NodeList &rhs) {
 	NodeList join;
 	for (auto left : lhs) for (auto right : rhs) // double for
-		if (left->id == right->id) {
+		if (left == right) {
 			join.push_back(left);
 			break; // push & break 2nd for
 		}
@@ -49,6 +49,16 @@ NodeList full_join(const NodeList &lhs, const NodeList &rhs) {
 	join.reserve(lhs.size()+rhs.size());
 	join.insert(join.end(),lhs.begin(),lhs.end());
 	join.insert(join.end(),rhs.begin(),rhs.end());
+	return join;
+}
+
+NodeList full_unique_join(const NodeList &lhs, const NodeList &rhs) {
+	NodeList join;
+	join.reserve(lhs.size()+rhs.size());
+	join.insert(join.end(),lhs.begin(),lhs.end());
+	for (auto right : rhs)
+		if (not is_included(right,join))
+			join.push_back(right);
 	return join;
 }
 

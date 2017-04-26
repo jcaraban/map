@@ -41,6 +41,16 @@ enum DeviceType
 
 //enum DeviceType { NONE_DEVICE, CPU, GPU, PHI, N_DEVICE_TYPE };
 
+inline DeviceType cledev2devtype(cle::Device dev) {
+	cl_device_type type = *(cl_device_type*) dev.get(CL_DEVICE_TYPE);
+	switch (type) {
+		case CL_DEVICE_TYPE_CPU:		 return DEV_CPU;
+		case CL_DEVICE_TYPE_GPU:		 return DEV_GPU;
+		case CL_DEVICE_TYPE_ACCELERATOR: return DEV_ACC;
+		default: assert(0);
+	}
+}
+
 } } // namespace map::detail
 
 #endif

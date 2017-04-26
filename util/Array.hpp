@@ -3,6 +3,8 @@
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  * Note: Array is visible to the user (map::Array)
+ *
+ * TODO: no need for mutability, since the interface is now Python
  */
 
 #ifndef MAP_UTIL_ARRAY_HPP_
@@ -116,12 +118,12 @@ class Array
 	/*
 	 * Accessors
 	 */
-	T& operator[](int i);
+	NoBool<T>& operator[](int i);
 	
 	/*
 	 * Accessors
 	 */
-	const T& operator[](int i) const;
+	const NoBool<T>& operator[](int i) const;
 	
 	/*
 	 * Size
@@ -174,8 +176,11 @@ Array<T>::Array(int n, const T &val)
 
 template <typename T>
 Array<T>::Array(std::initializer_list<T> ini_list)
-	: vec( ini_list )
-{ }
+	//: vec( ini_list ) otherwise NoBools breaks
+{
+	for (auto elem : ini_list)
+		vec.push_back(elem);
+}
 
 template <typename T>
 Array<T>::~Array() { }
@@ -247,14 +252,14 @@ Array<T>::operator Array4<T>() const {
 // Accessors
 
 template <typename T>
-T& Array<T>::operator[](int i) {
+NoBool<T>& Array<T>::operator[](int i) {
 	if (i >= (int)vec.size())
 		vec.resize(i+1);
 	return vec[i];
 }
 
 template <typename T>
-const T& Array<T>::operator[](int i) const {
+const NoBool<T>& Array<T>::operator[](int i) const {
 	if (i >= (int)vec.size())
 		vec.resize(i+1);
 	// vec is mutable because it is resized when new positions are accessed

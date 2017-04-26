@@ -40,6 +40,11 @@ struct Checkpoint : public OutInNode
 	std::string signature() const;
 	char classSignature() const;
 
+	// Spatial
+	// Pattern pattern() const { return GLOBAL; }
+	// const Mask& inputReach(Coord coord) const;
+	// const Mask& outputReach(Coord coord) const;
+
 	// Compute
 	//void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
 	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);

@@ -39,7 +39,11 @@ struct Constant : public Node
 	std::string getName() const;
 	std::string signature() const;
 	char classSignature() const;
+
+	// Spatial
 	Pattern pattern() const { return FREE; }
+	// const Mask& inputReach(Coord coord) const;
+	// const Mask& outputReach(Coord coord) const;
 	
 	// Compute
 	void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);

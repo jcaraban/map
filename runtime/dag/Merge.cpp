@@ -18,6 +18,7 @@ namespace map { namespace detail {
 Merge::Content::Content(Merge *node) {
 	lprev = node->left();
 	rprev = node->right();
+	pat = node->pattern();
 }
 
 bool Merge::Content::operator==(const Content& k) const {
@@ -64,9 +65,9 @@ Node* Merge::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 Merge::Merge(const MetaData &meta, Node *lprev, Node *rprev)
 	: Node(meta)
 {
-	//this->pat = lprev->pattern() + rprev->pattern();
+	//this->spatial_pattern = lprev->pattern() + rprev->pattern();
 
-	if (this->id > rprev->id) // Merge of an structured if-else
+	if (this->id > rprev->id) // Merge of a structured if-else
 	{
 		assert(0); // @ not this yet
 		
@@ -77,7 +78,7 @@ Merge::Merge(const MetaData &meta, Node *lprev, Node *rprev)
 		lprev->addNext(this);
 		rprev->addNext(this);
 	}
-	else if (this->id < rprev->id) // Merge of a structure while loop
+	else if (this->id < rprev->id) // Merge of a structured while loop
 	{
 		prev_list.reserve(1);
 		this->addPrev(lprev);
@@ -88,12 +89,15 @@ Merge::Merge(const MetaData &meta, Node *lprev, Node *rprev)
 		rprev->addBack(this);
 	}
 	assert(lprev->id != rprev->id);
+
+	this->in_spatial_reach = Mask(numdim().unitVec(),true);
+	this->out_spatial_reach = Mask(numdim().unitVec(),true);
 }
 
 Merge::Merge(const Merge *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 {
-	//this->pat = other->pat;
+	//this->spatial_pattern = other->spatial_pattern;
 }
 
 // Methods
@@ -125,10 +129,6 @@ Node* Merge::right() const {
 	return (prev_list.size() == 2) ? prev_list[1] : forw_list[0];
 }
 
-Pattern Merge::pattern() const {
-	return MERGE;
-}
-
 // Compute
 
 void Merge::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
@@ -151,7 +151,7 @@ void Merge::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
 
 void Merge::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
 	auto *node = this;
-	ValFix vf = {{},false};
+	ValFix vf = ValFix();
 
 	bool left_found = hash.find({left(),coord}) != hash.end();
 	bool right_found = hash.find({right(),coord}) != hash.end();
@@ -160,12 +160,12 @@ void Merge::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &h
 	if (left_found) {
 		auto left = hash.find({node->left(),coord})->second;
 		if (left.fixed) {
-			vf = {left.value,true};
+			vf = ValFix(left.value);
 		}
 	} else { // right_found
 		auto right = hash.find({node->right(),coord})->second;
 		if (right.fixed)
-			vf = {right.value,true};
+			vf = ValFix(right.value);
 	}
 	hash[{node,coord}] = vf;
 }

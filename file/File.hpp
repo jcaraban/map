@@ -506,7 +506,7 @@ Ferr FILE_DEC::readBlock(Block &block) const {
 		}
 	}
 
-	if (Format::Support::Parallel::PARAREAD == 0)
+	if (not Format::Support::Parallel::PARAREAD)
 		access_mtx.lock();
 
 	ferr = Format::readBlock(block);
@@ -514,7 +514,7 @@ Ferr FILE_DEC::readBlock(Block &block) const {
 		assert(!"Error reading block, the specific Format::readBlock() method returned an error");
 	}
 
-	if (Format::Support::Parallel::PARAREAD == 0)
+	if (not Format::Support::Parallel::PARAREAD)
 		access_mtx.unlock();
 
 	return ferr;
@@ -590,6 +590,10 @@ Ferr FILE_DEC::create_temp_file(std::string file_path) { // @
 template <FILE_TPL>
 Ferr FILE_DEC::discard(const Block &block) { // @
 	Ferr ferr;
+	
+	if (getStreamDir() == IN) {
+		assert(!"discard not supported in read-only");
+	}
 	
 	ferr = Format::discard(block);
 

@@ -19,7 +19,7 @@ struct FocalZonalSkeleton : public Skeleton
 {
   // constructor and main function
 	FocalZonalSkeleton(Version *ver);
-	void generate();
+	std::string generate();
 
   // methods
 	void compact();
@@ -40,7 +40,7 @@ struct FocalZonalSkeleton : public Skeleton
 	std::vector<FocalFunc*> func; //!< Stores FocalFunc nodes
 	std::vector<FocalPercent*> percent; //!< Stores FocalPercent nodes
 	int level;
-	std::vector<BlockSize> halo; //< Stores the halo of each level
+	//std::vector<BlockSize> halo; //< Stores the halo of each level
 
 	std::vector<ZonalReduc*> reduc; //!< Stores ZonalReduc nodes
 	std::string zonal_code;

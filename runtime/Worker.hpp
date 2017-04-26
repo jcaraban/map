@@ -38,12 +38,17 @@ class Worker
 	Worker& operator=(Worker&&) = default;
 
 	void work(ThreadId thread_id);
-	void get_blocks(Job job);
+	void before_work();
+	void request_blocks(Job job);
 	void pre_load(Job job);
 	void load(Job job);
+	void pre_compute(Job job);
 	void compute(Job job);
+	void post_compute(Job job);
 	void store(Job job);
 	void post_store(Job job);
+	void return_blocks(Job job);
+	void after_work();
 
   private:
 	Cache &cache; // Aggregate
@@ -51,10 +56,8 @@ class Worker
 	Clock &clock; // Aggregate
 	Config &conf; // Aggregate
 
-	InKeyList in_keys;
-	BlockList in_blk;
-	OutKeyList out_keys;
-	BlockList out_blk;
+	KeyList in_key, out_key;
+	BlockList in_blk, out_blk;
 };
 
 } } // namespace map::detail
