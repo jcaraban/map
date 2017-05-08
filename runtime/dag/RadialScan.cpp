@@ -60,9 +60,11 @@ RadialScan::RadialScan(const MetaData &meta, Node *prev, ReductionType type, Coo
 	
 	this->type = type;
 	this->start = start;
+	this->center = Mask(numdim().unitVec(),true);
 
 	this->in_spatial_reach = Mask(numdim().unitVec(),true);
 	this->out_spatial_reach = Mask(numdim().unitVec(),true);
+
 }
 
 RadialScan::RadialScan(const RadialScan *other, const std::unordered_map<Node*,Node*> &other_to_this)
@@ -70,6 +72,7 @@ RadialScan::RadialScan(const RadialScan *other, const std::unordered_map<Node*,N
 {
 	this->type = other->type;
 	this->start = other->start;
+	this->center = other->center;
 }
 
 // Methods

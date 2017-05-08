@@ -42,7 +42,7 @@ void RadialTask::createVersions() {
 
 			Verkey key(this);
 			key.dev = env.D(i);
-			key.group = {256,1}; // @
+			key.group = {std::min(256,blocksize()[0]),1}; // @
 			key.detail = detail;
 			key_list.push_back(key);
 		}
@@ -139,11 +139,11 @@ void RadialTask::nextJobs(Key done_block, std::vector<Job> &job_vec) {
 }
 
 int RadialTask::prevInterDepends(Node *node, Coord coord) const {
-	return node->pattern() == FREE ? 0 : 1;
+	return (node->pattern()==INPUT || node->pattern()==FREE) ? 0 : 1;
 }
 
 int RadialTask::nextInterDepends(Node *node, Coord coord) const {
-	return node->pattern() == FREE ? 0 : 1;
+	return (node->pattern()==INPUT || node->pattern()==FREE) ? 0 : 1;
 }
 
 int RadialTask::prevIntraDepends(Node *node, Coord coord) const {

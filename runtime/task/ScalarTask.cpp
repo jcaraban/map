@@ -82,10 +82,9 @@ void ScalarTask::compute(Coord coord, const BlockList &in_blk, const BlockList &
 		Block *blk = in_blk[i];
 
 		assert(node == blk->key.node);		
-		//assert(node->value.datatype() != NONE_DATATYPE);
-		//assert(node->value == blk->value);
+		assert(node->value.datatype() != NONE_DATATYPE);
+		assert(node->value == blk->value);
 
-		//node->value = blk->value;
 		hash[{node,coord}] = blk->value;
 	}
 	
@@ -101,10 +100,9 @@ void ScalarTask::compute(Coord coord, const BlockList &in_blk, const BlockList &
 		Block *blk = out_blk[i];
 
 		assert(node == blk->key.node);
-		//assert(node->value.datatype() != NONE_DATATYPE);
-		//assert(blk->value.datatype() == NONE_DATATYPE);
+		assert(node->value.datatype() != NONE_DATATYPE);
+		assert(blk->value.datatype() == NONE_DATATYPE);
 
-		//blk->value = node->value;
 		blk->value = hash.find({node,coord})->second;
 	}
 }

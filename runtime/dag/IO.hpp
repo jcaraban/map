@@ -26,7 +26,6 @@ struct IONode : public Node
 
 	IFile* file();
 	const IFile* file() const;
-	Pattern pattern() const { return FREE; }
 
   // vars
 	SharedFile io_file; //!< File serving as input or output
@@ -37,6 +36,7 @@ struct InputNode : public virtual IONode
 	InputNode();
 	InputNode(SharedFile file);
 
+	Pattern pattern() const { return INPUT; }
 	bool isInput() const;
 };
 
@@ -45,6 +45,7 @@ struct OutputNode : public virtual IONode
 	OutputNode();
 	OutputNode(Node *prev, SharedFile file);
 
+	Pattern pattern() const { return OUTPUT; }
 	bool isOutput() const;
 	Node* prev() const;
 };
@@ -60,6 +61,7 @@ struct OutInNode : public InputNode, public OutputNode
 
 	const NodeList& prevList() const;
 	const NodeList& nextList() const;
+	Pattern pattern() const { return INPUT+OUTPUT; }
 	bool isInput() const;
 	bool isOutput() const;
 	void setFilled();

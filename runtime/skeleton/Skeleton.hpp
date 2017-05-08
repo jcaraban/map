@@ -3,6 +3,8 @@
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  * Visitor of the graph that composes OpenCL kernel codes from skeletons
+ *
+ * TODO: rename "tag" to "section", like in <Code Section> ?
  */
 
 #ifndef MAP_RUNTIME_SKELETON_HPP_
@@ -13,6 +15,7 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <queue>
 
 
 namespace map { namespace detail {
@@ -22,27 +25,38 @@ struct Version; // forward declaration
 /*
  *
  */
-enum SkelPos {NONE_SKEL_POS=0x00, ALL_SKEL_POS=0x01, INPUT_OUTPUT=0x02, LOCAL_CORE=0x04,
-				FOCAL_CORE=0x08, PRE_FOCAL=0x10, ZONAL_CORE=0x20, PRE_ZONAL=0x40,
-				RADIAL_CORE=0x80, PRE_RADIAL=0x100, SPREAD_CORE=0x200, PRE_SPREAD=0x400,
-				N_SKEL_POS=0x800};
+enum SkelPos { NONE_SKEL_POS=0x00, INPUT_POS=0x01, OUTPUT_POS=0x02, FREE_POS=0x04, LOCAL_POS=0x08,
+				FOCAL_POS=0x10, ZONAL_POS=0x20, RADIAL_POS=0x40, SPREAD_POS=0x80, N_SKEL_POS=0x100 };
+
+constexpr SkelPos operator+(const SkelPos& lhs, const SkelPos& rhs) {
+	return static_cast<SkelPos>( static_cast<int>(lhs) | static_cast<int>(rhs) );
+}
 
 /*
  * Tag defining the section of the skeleton where an operation occurs
  */
 struct SkelTag {
-	SkelPos pos; //!< PRE, CORE, POS
-	int pds; //!< product of reach data size (e.g. 3x3 Mask = 9)
+	Pattern pat; //!< Absolute position according to the section pattern
+	//Pattern prev, next; //!< Relative position according to prev-next patterns
+	DataSize ext; //!< Extension of the 'spatial reach' needed in this section
 
-	void add(SkelPos pos);
-	bool is(SkelPos pos) const;
-	bool operator==(SkelTag tag) const;
-	bool operator<(SkelTag tag) const;
+	bool extendedReach() const;
+	void add(Pattern pat);
+	void sub(Pattern pat);
+	bool is(Pattern pat) const;
+	bool isNot(Pattern pat) const;
+
+	bool operator==(const SkelTag &tag) const;
+	bool operator<(const SkelTag &tag) const;
+	bool operator>(const SkelTag &tag) const;
 
 	struct Hash {
 		std::size_t operator()(const SkelTag& k) const;
 	};
 };
+
+typedef std::vector<SkelTag> TagList;
+
 
 #define DECLARE_VISIT(class) virtual void visit(class *node);
 
@@ -64,12 +78,28 @@ struct Skeleton : public Visitor
 	void compact();
 	std::string versionCode();
 
+	TagList sort(TagList list);
+
 	std::string indent();
+	std::string indented(std::string code);
 	void add_line(std::string line);
 	void add_section(std::string section);
 	void add_include(std::string file);
 
+  // code
+	void dispatch_section(SkelTag tag);
+	void reach_head_section(SkelTag tag);
+	void reach_tail_section(SkelTag tag);
+	void input_section(SkelTag tag);
+	void output_section(SkelTag tag);
+	void free_section(SkelTag tag);
+	void local_section(SkelTag tag);
+	void focal_section(SkelTag tag);
+	void zonal_section(SkelTag tag);
+
   // visit
+	void visit_input(Node *node);
+	void visit_output(Node *node);
 	DECLARE_VISIT(Constant)
 	DECLARE_VISIT(Index)
 	DECLARE_VISIT(Identity)
@@ -107,21 +137,32 @@ struct Skeleton : public Visitor
   // vars
 	Version *const ver; //!< Aggregation
 
-	std::unordered_map<Node*,SkelTag> tag_hash; //!< Stores the 'tag' assigned to each node
-	std::vector<SkelTag> tag_vec; //!< Stores unique-sorted 'tags' found in the nodes
+	TagList tag_list; //!< Stores unique-sorted 'tags' found in the nodes
+	std::unordered_map<Node*,TagList> tag_hash; //!< Stores the 'tag' assigned to each node
+	std::unordered_set<SkelTag,SkelTag::Hash> tag_set; //!< Keeps a list of unique (not repeated) 'tags'
 
+	std::unordered_map<SkelTag, std::unordered_set<SkelTag,SkelTag::Hash> ,SkelTag::Hash> prev_of; // @
+	std::unordered_map<SkelTag, std::unordered_set<SkelTag,SkelTag::Hash> ,SkelTag::Hash> next_of; // @
+	std::priority_queue<SkelTag,std::vector<SkelTag>,std::greater<SkelTag>> prique; // @
+	std::unordered_map<SkelTag,int,SkelTag::Hash> prev_count; // @
+
+	std::unordered_map<SkelTag,NodeList,SkelTag::Hash> node_list_of; //!< Stores the 'nodes' belonging to a 'tag'
 	std::unordered_map<SkelTag,std::string,SkelTag::Hash> code_hash;
 	SkelTag curr_tag;
 	std::string full_code;
 	int indent_count;
 
-	std::array<std::vector<int>,S64+1> scalar; //!< Stores the necessary scalar declarations of each type
+	std::array<std::vector<int>,N_DATATYPE> scalar; //!< Stores the necessary scalar declarations of each type
 	std::vector<std::string> include;
 	std::vector<std::string> define;
 
-	std::vector<Node*> shared; //!< Stores those nodes whose memory is to be stored on shared-mem
+	std::vector<Node*> ext_shared; //!< Nodes accessed in extended spatial reach require shared-mem, e.g. inputs to Focal
+	std::vector<std::pair<Node*,int>> shared; //!< Stores pairs {node,size} for nodes requiring shared-mem chunks
+	std::vector<std::pair<Mask,int>> mask; //!< Stores pairs {mask,id}
+
 	std::vector<Diversity*> diver; //!< Stores diversity nodes
 	std::vector<Rand*> rand; //!< Stores rand nodes
+	std::vector<ZonalReduc*> reduc; //!< Stores ZonalReduc nodes
 };
 
 #undef DECLARE_VISIT

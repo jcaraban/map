@@ -16,14 +16,19 @@
 
 namespace map { namespace detail {
 
-// Enum
-
+/*
+ *Enum
+ */
 enum ReductionEnum : int {
 	NONE_REDUCTION, SUM, PROD, rAND, rOR, MARK_REDUCTION, MAX, MIN, N_REDUCTION
 };
 
-// Class
+ReductionEnum operator ++ (ReductionEnum& rte);
 
+
+/*
+ * Class
+ */
 class ReductionType {
 	ReductionEnum type;
 

@@ -7,6 +7,7 @@
  * Note: sorting has to go after linking or will break Radial (out cl_mem arguments are moved if sorted)
  *
  * TODO: revise Bottom-Up approach. What about overlapping groups?
+ * TODO: is the toposort working? does it meet the 'strict weak ordering' requirement of std::sort?
  */
 
 #include "Fusioner.hpp"
@@ -73,7 +74,7 @@ void Fusioner::fuse(NodeList list) {
 
 	// ## 3rd fusion stage ## forwards D0-FREE, links dependent groups, sorts
 
-	auto free = [](Node *n){ return n->pattern()==FREE; };
+	auto free = [](Node *n){ return n->pattern()==INPUT || n->pattern()==FREE; };
 	forwarding(free); // Replicates lonely free nodes ## 3rd fusion tage ##
 
 //print(); // @
@@ -542,7 +543,7 @@ void Fusioner::processLoop(Node *node) {
 
 void Fusioner::forwarding(std::function<bool(Node*)> for_pred) {
 	std::map<std::pair<Group*,Group*>,std::vector<Node*>> forward;
-	auto all_nodes = [](Group *group){
+	auto all_nodes = [](Group *group) { // @ change to full_unique_join ?
 		auto body_out = full_join(group->nodeList(),group->outputList());
 		std::unique(body_out.begin(),body_out.end());
 		return full_join(group->inputList(),body_out);
@@ -664,7 +665,7 @@ void Fusioner::sorting() {
 		std::sort(group->out_list.begin(),group->out_list.end(),node_id_less());
 	}
 
-	// Topological sort of group_list, in order of dependencies and last-node id
+	// Topological sort of group_list, in order of dependencies and first-node id
 	auto less = [](const std::unique_ptr<Group> &a, const std::unique_ptr<Group> &b){
 		return a->isNext(b.get()) ? true : a->isPrev(b.get()) ? false : a->nodeList().front()->id < b->nodeList().front()->id;
 	};
@@ -698,10 +699,10 @@ void Fusioner::print() {
 			std::cout << "    " << (*j) << " " << i->nextPattern(j) << std::endl;
 		std::cout << "  back:" << std::endl;
 		for (auto j=i->backList().begin(); j!=i->backList().end(); j++)
-			std::cout << "    " << (*j) << " " << Pattern(NONE_PAT) << std::endl;
+			std::cout << "    " << (*j) << " " << Pattern(NONE_PATTERN) << std::endl;
 		std::cout << "  forw:" << std::endl;
 		for (auto j=i->forwList().begin(); j!=i->forwList().end(); j++)
-			std::cout << "    " << (*j) << " " << Pattern(NONE_PAT) << std::endl;
+			std::cout << "    " << (*j) << " " << Pattern(NONE_PATTERN) << std::endl;
 		std::cout << std::endl;
 	}
 	std::cout << "--------------------" << std::endl;

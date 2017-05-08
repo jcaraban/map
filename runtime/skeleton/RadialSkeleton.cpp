@@ -9,6 +9,7 @@
 #include "util.hpp"
 #include "../Version.hpp"
 #include "../task/Task.hpp"
+#include <stack>
 #include <iostream>
 #include <functional>
 
@@ -48,41 +49,71 @@ string RadialSkeleton::generate() {
 string RadialSkeleton::versionCode(RadialCase rcase, Direction fst, Direction snd) {
 	//// Variables ////
 	const int N = 2;
+	Pattern pattern = ver->task->group()->pattern();
 	string cond, comma;
 
-	//// Header ////
+	//// Defines ////
 	indent_count = 0;
 	
 	// Includes
 	for (auto &incl : include)
 		add_line( "#include " + incl );
 	add_line( "" );
-	
-	// Adding definitions and utilities
+
+	// Definitions, Utilities
 	add_section( defines_local() );
 	add_line( "" );
 	add_section( defines_radial() );
 	add_line( "" );
 
-	std::vector<bool> added_L(N_DATATYPE,false);
-	for (auto &node : ver->task->inputList()) {
+	bool local_types[N_DATATYPE] = {};
+	bool radial_types[N_DATATYPE] = {};
+	
+	auto any_true = [](bool array[], int num){
+		return std::any_of(array,array+num,[](bool b) { return b; });
+	};
+
+	for (auto node : ver->task->inputList()) {
 		DataType dt = node->datatype();
-		if (!added_L[dt.get()]) {
+		local_types[dt.get()] = true;
+	}
+	for (auto node : ver->task->outputList()) {
+		DataType dt = node->datatype();
+		if (node->pattern().is(RADIAL))
+			radial_types[dt.get()] = true;
+	}
+	
+	for (auto dt=NONE_DATATYPE; dt<N_DATATYPE; ++dt)
+		if (local_types[dt])
 			add_section( defines_local_type(dt) );
-			added_L[dt.get()] = true;
-			add_line( "" );
+	if (any_true(local_types,N_DATATYPE))
+		add_line( "" );
+
+	for (auto dt=NONE_DATATYPE; dt<N_DATATYPE; ++dt)
+		if (radial_types[dt])
+			add_section( defines_radial_type(dt) );
+	if (any_true(radial_types,N_DATATYPE))
+		add_line( "" );
+
+	//// Find pre-radial nodes // @ no fusion, no need for pre-radial 
+
+	std::unordered_map<SkelTag,bool,SkelTag::Hash> pre_radial;
+	std::stack<SkelTag> stack;
+
+	for (auto tag : tag_list)
+		if (tag.is(RADIAL))
+			stack.push(tag);
+
+	while (not stack.empty()) {
+		auto tag = stack.top();
+		stack.pop();
+		for (auto prev : prev_of[tag]) {
+			pre_radial[prev] = true;
+			stack.push(prev);
 		}
 	}
 
-	std::vector<bool> added_R(N_DATATYPE,false);
-	for (auto &node : ver->task->nodeList()) {
-		DataType dt = node->datatype();
-		if (!added_R[dt.get()] && node->pattern().is(RADIAL)) {
-			add_section( defines_radial_type(dt) );
-			added_R[dt.get()] = true;
-			add_line( "" );
-		}
-	}
+	//// Header ////
 	
 	// Signature
 	add_line( kernel_sign(ver->signature()) );
@@ -96,7 +127,7 @@ string RadialSkeleton::versionCode(RadialCase rcase, Direction fst, Direction sn
 	for (auto &node : ver->task->outputList()) {
 		if (node->pattern().is(RADIAL))
 			add_line( "TYPE_VAR_LIST(" + node->datatype().ctypeString() + ",OUT_" + node->id + ")," );
-		else //if (tag_hash[node].is(INPUT_OUTPUT))
+		else //if (tag_hash[node].is(INPUT))
 			add_line( out_arg(node) );
 	}
 	for (int n=0; n<N; n++) {
@@ -150,15 +181,10 @@ string RadialSkeleton::versionCode(RadialCase rcase, Direction fst, Direction sn
 	add_line( "{" );
 	indent_count++;
 
-	// Adds PRE_RADIAL input-nodes
-	for (auto &node : ver->task->inputList()) {
-		if (tag_hash[node].is(PRE_RADIAL)) {
-			add_line( var_name(node) + " = " + in_var(node) + ";" );
-		}
-	}
-
 	// Adds accumulated 'precore' to 'all'
-	full_code += code_hash[{PRE_RADIAL,1}];
+	for (auto tag : tag_list)
+		if (pre_radial[tag])
+			dispatch_section(tag); //
 
 	indent_count--;
 	add_line( "}" ); // Closes global-if
@@ -225,7 +251,9 @@ string RadialSkeleton::versionCode(RadialCase rcase, Direction fst, Direction sn
 	indent_count++;
 
 	// Adds accumulated 'core' to 'all'
-	full_code += code_hash[{RADIAL_CORE,1}];
+	for (auto tag : tag_list)
+		if (tag.is(RADIAL))
+			full_code += indented(code_hash[tag]);
 
 	indent_count--;
 	add_line( "}" ); // Closes global-if
@@ -255,22 +283,10 @@ string RadialSkeleton::versionCode(RadialCase rcase, Direction fst, Direction sn
 	add_line( "{" ); // Global-if
 	indent_count++;
 
-	// Adds LOCAL_CORE input-nodes
-	for (auto &node : ver->task->inputList()) {
-		if (tag_hash[node].is(INPUT_OUTPUT)) {
-			add_line( var_name(node) + " = " + in_var(node) + ";" );
-		}
-	}
-
 	// Adds accumulated 'poscode' to 'all'
-	full_code += code_hash[{LOCAL_CORE,1}];
-
-	// Adds LOCAL_CORE output-nodes
-	for (auto &node : ver->task->outputList()) {
-		if (node->pattern().isNot(RADIAL)) {
-			add_line( out_var(node) + " = " + var_name(node) + ";" );
-		}
-	}
+	for (auto tag : tag_list)
+		if (not pre_radial[tag] && not tag.is(RADIAL))
+			full_code += indented(code_hash[tag]);
 
 	indent_count--;
 	add_line( "}" ); // Closes global-if

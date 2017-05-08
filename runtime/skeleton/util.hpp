@@ -55,7 +55,9 @@ std::string& operator+=(std::string &str, int i);
  **********/
 
 std::string kernel_sign(const std::string &signature);
-std::string in_arg(const Node *in);
+std::string in_arg(const Node *in, bool extended=false);
+std::string in_arg_local(const Node *in);
+std::string in_arg_focal(const Node *in);
 std::string out_arg(const Node *out);
 
 /*************
@@ -74,6 +76,7 @@ std::string in_var_focal(const Node *node);
 std::string halo_sum(int n, std::vector<BlockSize> halo);
 std::string in_var_spread(const Node *node);
 std::string out_var_spread(const Node *node);
+std::string diver_decl(const Node *node, int n_arg, int size, DataType dt);
 
 /************
    Indexing
@@ -89,7 +92,7 @@ std::string local_proj_focal_H(int N);
 std::string local_proj_focal_i(int N);
 std::string local_proj_focal_of(int N);
 std::string local_proj_focal_nbh(int N, Coord nbh);
-std::string local_proj_focal_Hi(int N);
+std::string local_proj_focal_Hi(int N, int id);
 std::string group_size_prod_x(int N, std::string x);
 std::string group_size_prod_H(int N);
 std::string nbh_size(int N);
@@ -116,7 +119,7 @@ std::string zero_cond_spread(int N);
 
 std::string defines_local();
 std::string defines_local_type(DataType dt);
-std::string defines_local_diver(DataType dt);
+std::string defines_diver_type(DataType dt);
 std::string defines_focal();
 std::string defines_focal_type(DataType dt);
 std::string defines_focal_flow();

@@ -16,12 +16,17 @@
 
 namespace map { namespace detail {
 
-// Enum
-
+/*
+ * Enum
+ */
 enum DataTypeEnum : int { NONE_DATATYPE, F32, F64, B8, U8, U16, U32, U64, S8, S16, S32, S64, N_DATATYPE };
 
-// Class
+DataTypeEnum operator ++ (DataTypeEnum& dte);
 
+
+/*
+ * Class
+ */
 class DataType {
 	DataTypeEnum type;
 

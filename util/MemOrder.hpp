@@ -12,12 +12,18 @@
 
 namespace map { namespace detail {
 
-// Enum
-
+/*
+ * Enum
+ */
 enum MemOrderEnum : int { NONE_MEMORDER=0x00, BLK=0x01, ROW=0x02, COL=0x04, SFC=0x06, N_MEMORDER=0x08 };
 
-// Class
+constexpr MemOrderEnum operator+(const MemOrderEnum& lhs, const MemOrderEnum& rhs) {
+	return static_cast<MemOrderEnum>( static_cast<int>(lhs) | static_cast<int>(rhs) );
+}
 
+/*
+ * Class
+ */
 class MemOrder {
 	MemOrderEnum order;
 
@@ -32,12 +38,6 @@ class MemOrder {
 
 	std::string toString() const;
 };
-
-// Util
-
-constexpr MemOrderEnum operator+(const MemOrderEnum& lhs, const MemOrderEnum& rhs) {
-	return static_cast<MemOrderEnum>( static_cast<int>(lhs) | static_cast<int>(rhs) );
-}
 
 } } // namespace map::detail
 

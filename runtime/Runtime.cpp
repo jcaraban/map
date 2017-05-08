@@ -303,7 +303,7 @@ void Runtime::evaluate(NodeList list_to_eval) {
 
 	// Transfers scalar values to original nodes
 	for (auto node : graph)
-		if (node->numdim() == D0 && node->pattern().isNot(FREE))
+		if (node->numdim() == D0)
 			map_new_old.find(node)->second->value = node->value;
 
 	// Unlinks the private nodes before they are deleted

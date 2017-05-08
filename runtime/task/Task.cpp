@@ -5,15 +5,10 @@
  */
 
 #include "Task.hpp"
-#include "LocalTask.hpp"
 #include "ScalarTask.hpp"
-#include "FocalTask.hpp"
-#include "ZonalTask.hpp"
-#include "FocalZonalTask.hpp"
 #include "RadialTask.hpp"
 #include "SpreadTask.hpp"
 #include "LoopTask.hpp"
-#include "StatsTask.hpp"
 #include "IdentityTask.hpp"
 #include "../dag/Group.hpp"
 #include "../ThreadId.hpp"
@@ -39,30 +34,10 @@ Task* Task::Factory(Program &prog, Clock &clock, Config &conf, Group *group) {
 	{
 		return new RadialTask(prog,clock,conf,group);
 	}
-	//else if ( pat.is(STATS) )
-	//{
-	//	return new StatsTask(prog,clock,conf,group);
-	//}
-	//else if ( pat.is(FOCAL+ZONAL) )
-	//{
-	//	return new FocalZonalTask(prog,clock,conf,group);
-	//}
-	//else if ( pat.is(ZONAL) )
-	//{
-	//	return new ZonalTask(prog,clock,conf,group);
-	//}
-	//else if ( pat.is(FOCAL) )
-	//{
-	//	return new FocalTask(prog,clock,conf,group);
-	//}
 	else if ( group->numdim() == D0)
 	{
 		return new ScalarTask(prog,clock,conf,group);
 	}
-	//else if ( pat.is(LOCAL) || pat.is(FREE) || pat.is(GLOBAL))
-	//{
-	//	return new LocalTask(prog,clock,conf,group);
-	//}
 	else if ( pat.is(HEAD) || pat.is(TAIL)) {
 		return new IdentityTask(prog,clock,conf,group);
 	}
@@ -145,8 +120,8 @@ Task::Task(Program &prog, Clock &clock, Config &conf, Group *group)
 		auto next_inside = inner_join(node->nextList(),nodeList());
 		for (auto next : next_inside) {
 			auto next_in = next->inputReach(Coord());
-			auto next_reach = accu_reach_of.find(next)->second;
-			reach = flat(reach,pipe(next_in,next_reach)); // combines the spatial reaches
+			auto next_accu = accu_reach_of.find(next)->second;
+			reach = flat(reach,pipe(next_in,next_accu)); // combines the spatial reaches
 		}
 
 		accu_reach_of.insert({node,reach});
@@ -401,7 +376,7 @@ int Task::prevInterDepends(Node *node, Coord coord) const {
 	for (auto offset : space) {
 		Coord nbc = coord + offset;
 		if (all(in_range(nbc,numblock()))) {
-			dep += node->pattern()==FREE ? 0 : 1;
+			dep += (node->pattern()==INPUT || node->pattern()==FREE) ? 0 : 1;
 		}
 	}
 	
@@ -413,11 +388,11 @@ int Task::nextInterDepends(Node *node, Coord coord) const {
 }
 
 int Task::prevIntraDepends(Node *node, Coord coord) const {
-	return 0; // Focal do not present intra dependencies
+	return 0; // Local / Focal / Zonal do not present intra dependencies
 }
 
 int Task::nextIntraDepends(Node *node, Coord coord) const {
-	return 0; // Focal do not present intra dependencies
+	return 0; // Local / Focal / Zonal do not present intra dependencies
 }
 
 int Task::nextInputDepends(Node *node, Coord coord) const { // @

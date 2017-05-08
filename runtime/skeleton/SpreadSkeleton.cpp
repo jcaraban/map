@@ -69,7 +69,7 @@ std::string SpreadSkeleton::versionCode() {
 	for (auto &node : ver->task->inputList()) {
 		if (tag_hash[node].pos == PRE_SPREAD)
 			add_line( string("TYPE_VAR_LIST(IN_") + node->id + "," + node->datatype().ctypeString() + ")," );
-		else if (tag_hash[node].pos == LOCAL_CORE)
+		else if (tag_hash[node].pos == LOCAL_POS)
 			add_line( in_arg(node) );
 	}
 	for (auto &node : ver->task->outputList()) {
@@ -202,7 +202,7 @@ std::string SpreadSkeleton::versionCode() {
 	indent_count++;
 
 	// Adds accumulated 'core' to 'all'
-	full_code += code_hash[{SPREAD_CORE,1}];
+	full_code += code_hash[{SPREAD_POS,1}];
 
 	indent_count--;
 	add_line( "}" ); // Closes global-if
@@ -244,9 +244,9 @@ std::string SpreadSkeleton::versionCode() {
 	add_line( "{" );
 	indent_count++;
 
-	// Adds LOCAL_CORE input-nodes
+	// Adds LOCAL_POS input-nodes
 	for (auto &node : ver->task->inputList()) {
-		if (tag_hash[node].pos != LOCAL_CORE)
+		if (tag_hash[node].pos != LOCAL_POS)
 			continue;
 		if (is_included(node,shared)) {
 			add_line( var_name(node) + " = " + var_name(node,SHARED) + "[" + local_proj_focal_H(N) + "];" );
@@ -258,11 +258,11 @@ std::string SpreadSkeleton::versionCode() {
 	}
 
 	// Adds accumulated 'poscode' to 'all'
-	full_code += code_hash[{LOCAL_CORE,1}];
+	full_code += code_hash[{LOCAL_POS,1}];
 
-	// Adds LOCAL_CORE output-nodes
+	// Adds LOCAL_POS output-nodes
 	for (auto &node : ver->task->outputList()) {
-		if (tag_hash[node].pos == LOCAL_CORE && node->pattern().isNot(SPREAD)) {
+		if (tag_hash[node].pos == LOCAL_POS && node->pattern().isNot(SPREAD)) {
 			add_line( out_var(node) + " = " + var_name(node) + ";" );
 		}
 	}

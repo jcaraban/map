@@ -17,13 +17,11 @@ namespace map { namespace detail {
 /*
  * Enumerate storing the possible different patterns
  */
-enum PatternEnum { NONE_PAT=0x00, FREE=0x01, LOCAL=0x02, FOCAL=0x04, ZONAL=0x08, RADIAL=0x10, SPREAD=0x20,
-				 	STATS=0x40, GLOBAL=0x80, HEAD=0x100, TAIL=0x200, MERGE=0x400, SWITCH=0x800, LOOP=0x1000 };
+enum PatternEnum { NONE_PATTERN=0x00, INPUT=0x01, OUTPUT=0x02, FREE=0x04, LOCAL=0x08, FOCAL=0x10, ZONAL=0x20, RADIAL=0x40, SPREAD=0x80,
+					STATS=0x100, GLOBAL=0x200, HEAD=0x400, TAIL=0x800, MERGE=0x1000, SWITCH=0x2000, LOOP=0x4000, N_PATTERN=0x8000 };
 
 PatternEnum operator + (const PatternEnum& lhs, const PatternEnum& rhs);
-//PatternEnum& operator += (PatternEnum& lhs, const PatternEnum& rhs);
-//PatternEnum operator << (const PatternEnum& lhs, int i);
-PatternEnum& operator <<= (PatternEnum& lhs, int i);
+PatternEnum operator - (const PatternEnum& lhs, const PatternEnum& rhs);
 
 /*
  * Pattern class
@@ -31,17 +29,19 @@ PatternEnum& operator <<= (PatternEnum& lhs, int i);
  */
 struct Pattern {
 	PatternEnum pat; //!< Internal state of the object which reflects the actual pattern
-	Pattern() : pat(NONE_PAT) { }
+	Pattern() : pat(NONE_PATTERN) { }
 	Pattern(PatternEnum pat) : pat(pat) { }
 
-	bool operator==(const Pattern& pattern);
-	bool operator!=(const Pattern& pattern);
+	bool operator==(const Pattern& pattern) const;
+	bool operator!=(const Pattern& pattern) const;
 
 	/*
-	 * Join operators
+	 * Modifier operators
 	 */
 	Pattern operator+(const Pattern& rhs);
 	Pattern& operator+=(const Pattern& rhs);
+	Pattern operator-(const Pattern& rhs);
+	Pattern& operator-=(const Pattern& rhs);
 
 	/*
 	 * Is() differs with == in that Pattern might be more things,like Local+Focal.

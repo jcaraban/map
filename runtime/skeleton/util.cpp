@@ -5,6 +5,7 @@
 
 #include "util.hpp"
 #include "../dag/IO.hpp"
+#include "../dag/Diversity.hpp" // @
 
 
 namespace map { namespace detail {
@@ -38,7 +39,14 @@ string kernel_sign(const string &signature) {
 	return "kernel void krn" + std::to_string(hash);
 }
 
-string in_arg(const Node *node) {
+string in_arg(const Node *node, bool extended) {
+	if (extended)
+		return in_arg_focal(node);
+	else
+		return in_arg_local(node);
+}
+
+string in_arg_local(const Node *node) {
 	bool d0 = (node->numdim() == D0);
 	string type = node->datatype().ctypeString();
 
@@ -51,6 +59,13 @@ string in_arg(const Node *node) {
 		str += string("uchar IN_") + node->id + "f,";
 	}
 
+	return str;
+}
+
+string in_arg_focal(const Node *node) {
+	string str = "TYPE_VAR_LIST(";
+	str += node->datatype().ctypeString();
+	str += string(",IN_") + node->id + "),";
 	return str;
 }
 
@@ -200,6 +215,19 @@ string out_var_spread(const Node *node) {
 	return str;
 }
 
+string diver_decl(const Node *node, int n_arg, int size, DataType dt) {
+	int N = node->numdim().toInt();
+	string type = dt.ctypeString();
+	string elemsa = string("elemSA_") + node->id;
+	string cntsa = string("countSA_") + node->id;
+	string str = "";
+	str += "local " + type + " " + elemsa + "_group[" + size + "];" + "\n";
+	str += "\tlocal int " + cntsa + "_group[" + size + "];" + "\n";
+	str += "\tlocal " + type + "* " + elemsa + " = " + elemsa + "_group + " + n_arg + "*(" + local_proj(N) + ");" + "\n";
+	str += "\tlocal int* " + cntsa + " = " + cntsa + "_group + " + n_arg + "*(" + local_proj(N) + ");" + "\n";
+	return str;
+}
+
 /************
    Indexing
  ************/
@@ -289,12 +317,12 @@ string local_proj_focal_of(int N) {
 	return local_proj_focal_x(N,"of");
 }
 
-string local_proj_focal_Hi(int N) {
+string local_proj_focal_Hi(int N, int id) {
 	// Recursively ((gc2+H2+i2)*(GS1+H1*2) + gc1+H1+i1)*(GS0+H0*2) + gc0+H0+i0
-	string str = string("gc")+(N-1) + "+H"+(N-1)+"+i"+(N-1);
+	string str = string("gc")+(N-1) + "+H"+(N-1)+"_"+id+"+i"+(N-1);
 	for (int n=N-2; n>=0; n--) {
-		str = string("(") + str + ")*(GS"+n+"+H"+n+"*2)";
-		str += string("+gc")+n + "+H"+n+"+i"+n;
+		str = string("(") + str + ")*(GS"+n+"+H"+n+"_"+id+"*2)";
+		str += string("+gc")+n + "+H"+n+"_"+id+"+i"+n;
 	}
 	return str;
 }
@@ -441,7 +469,7 @@ string defines_local_type(DataType data_type) {
 	return str;
 }
 
-string defines_local_diver(DataType data_type) {
+string defines_diver_type(DataType data_type) {
 	string type = data_type.ctypeString();
 	string str =
 	"""" "void addElem_"+type+"("+type+" e, local "+type+" *elemSA, local int *countSA, int *num) {"

@@ -14,7 +14,7 @@ LoopTask::LoopTask(Program &prog, Clock &clock, Config &conf, Group *group)
 	: Task(prog,clock,conf,group)
 {
 	this->cond_node = nullptr;
-	pat = NONE_PAT;
+	pat = NONE_PATTERN;
 
 	for (auto node : group->nodeList()) {
 		// @ better way of extracting the nodes than dynamic_cast?

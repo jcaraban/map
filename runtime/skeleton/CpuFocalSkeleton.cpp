@@ -25,9 +25,9 @@ namespace { // anonymous namespace
 CpuFocalSkeleton::CpuFocalSkeleton(Version *ver)
 	: Skeleton(ver)
 	, mask()
-	, conv()
-	, func()
-	, percent()
+	//, conv()
+	//, func()
+	//, percent()
 	//, halo()
 {
 	indent_count = 2;
@@ -50,9 +50,9 @@ string CpuFocalSkeleton::generate() {
 void CpuFocalSkeleton::compact() {
 	Skeleton::compact();
 	//sort_unique(mask,node_id_less(),node_id_equal());
-	sort_unique(conv,node_id_less(),node_id_equal());
-	sort_unique(func,node_id_less(),node_id_equal());
-	sort_unique(percent,node_id_less(),node_id_equal());
+	//sort_unique(conv,node_id_less(),node_id_equal());
+	//sort_unique(func,node_id_less(),node_id_equal());
+	//sort_unique(percent,node_id_less(),node_id_equal());
 }
 
 string CpuFocalSkeleton::versionCode() {
@@ -99,10 +99,9 @@ string CpuFocalSkeleton::versionCode() {
 	add_line( "(" );
 	indent_count++;
 	for (auto &node : ver->task->inputList()) { // keeps the order IN_0, IN_8, ...
-		if (tag_hash[node].pos == PRE_FOCAL)
-			add_line( "TYPE_VAR_LIST(" + node->datatype().ctypeString() + ",IN_" + node->id + ")," );
-		else if (tag_hash[node].pos == LOCAL_CORE)
-			add_line( in_arg(node) );
+		auto reach = ver->task->inputReach(node,Coord());
+		bool extended = prod(reach.datasize()) > 1;
+		add_line( in_arg(node,extended) );
 	}
 	for (auto &node : ver->task->outputList()) {
 		add_line( out_arg(node) );
@@ -135,11 +134,6 @@ string CpuFocalSkeleton::versionCode() {
 	// Declaring masks
 	for (auto &pair : mask) {
 		add_line( mask_decl(pair.first,pair.second) );
-	}
-
-	// Declaring focal shared memory
-	for (auto &node : shared) {
-		add_line( shared_decl(node,prod(ver->groupsize()+2*1)) );
 	}
 
 	add_line( "" );
@@ -198,13 +192,6 @@ string CpuFocalSkeleton::versionCode() {
 
 		// Adds accumulated 'precore' to 'all'
 		full_code += code_hash[{PRE_FOCAL,9}];
-
-		// Filling focal shared memory
-		for (auto &node : shared) {
-			string svar = var_name(node,SHARED) + "[" + local_proj_focal(N) + "]";
-			string var = var_name(node);
-			add_line( svar + " = " + var + ";" );
-		}
 		
 		// Closes load-loop
 		indent_count--;
@@ -231,7 +218,7 @@ string CpuFocalSkeleton::versionCode() {
 	indent_count++;
 
 	// Adds accumulated 'core' to 'all'
-	full_code += code_hash[{FOCAL_CORE,1}];
+	full_code += code_hash[{FOCAL_POS,1}];
 
 	indent_count--;
 	add_line( "}" ); // Closes inner part
@@ -242,7 +229,7 @@ string CpuFocalSkeleton::versionCode() {
 
 	// Re-walk the focal nodes for the outer-part code
 	inner_part = false;
-	code_hash[{FOCAL_CORE,1}].clear();
+	code_hash[{FOCAL_POS,1}].clear();
 
 	for (auto node : ver->task->nodeList()) {
 		if (node->pattern().is(FOCAL)) {
@@ -250,7 +237,7 @@ string CpuFocalSkeleton::versionCode() {
 		}
 	}
 	// Adds accumulated 'core' to 'all'
-	full_code += code_hash[{FOCAL_CORE,1}];
+	full_code += code_hash[{FOCAL_POS,1}];
 
 	add_line( "}" ); // Closes outer part
 	add_line( "" );
@@ -267,9 +254,9 @@ string CpuFocalSkeleton::versionCode() {
 	add_line( "if ("+global_cond(N)+") {" );
 	indent_count++;
 
-	// Adds LOCAL_CORE input-nodes
+	// Adds LOCAL_POS input-nodes
 	for (auto &node : ver->task->inputList()) {
-		if (tag_hash[node].pos == LOCAL_CORE) {
+		if (tag_hash[node].pos == LOCAL_POS) {
 			add_line( var_name(node) + " = " + in_var(node) + ";" );
 		}
 		if (tag_hash[node].pos == PRE_FOCAL && isInputOf(node,ver->task->group()).is(LOCAL)) {
@@ -280,11 +267,11 @@ string CpuFocalSkeleton::versionCode() {
 
 
 	// Adds accumulated 'poscore' to 'all'
-	full_code += code_hash[{LOCAL_CORE,1}];
+	full_code += code_hash[{LOCAL_POS,1}];
 
-	// Adds LOCAL_CORE output-nodes
+	// Adds LOCAL_POS output-nodes
 	for (auto &node : ver->task->outputList()) {
-		if (tag_hash[node].pos == LOCAL_CORE || tag_hash[node].pos == FOCAL_CORE) {
+		if (tag_hash[node].pos == LOCAL_POS || tag_hash[node].pos == FOCAL_POS) {
 			add_line( out_var(node) + " = " + var_name(node) + ";" );
 		}
 	}
@@ -305,122 +292,105 @@ string CpuFocalSkeleton::versionCode() {
  *********/
 
 void CpuFocalSkeleton::visit(Neighbor *node) {
-	// Adds Neighbor code
-	{
-		const int N = node->numdim().toInt();
-		Coord nbh = node->coord();
-		string var = var_name(node);
-		string svar = var_name(node->prev(),SHARED) + "[" + local_proj_focal_nbh(N,nbh) + "]";
+	const int N = node->numdim().toInt();
+	Coord nbh = node->coord();
+	string type = node->prev()->datatype().toString();
 
-		add_line( var + " = " + svar + ";" );
-	}
+	string var = var_name(node);
+	string load = load = "load_F_" + type + "(VAR_LIST(IN_" + node->prev()->id + "),bc0+"+nbh[0]+",bc1+"+nbh[1]+",BS0,BS1)";
 
-	shared.push_back(node->prev());
+	add_line( var + " = " + load + ";" );
 }
 
 void CpuFocalSkeleton::visit(Convolution *node) {
-		// Adds convolution code
-	{
-		const int N = node->numdim().toInt();
-		string var = var_name(node);
-		string type = node->prev()->datatype().toString();
-		string mvar = node->mask().datatype().toString() + "L_" + std::to_string(node->id);
-		string load;
+	const int N = node->numdim().toInt();
+	string type = node->prev()->datatype().toString();
 
-		if (inner_part)
-			load = "load_L_" + type + "(VAR(IN_" + node->prev()->id + "),bc0+i0,bc1+i1,BS0,BS1)";
-		else // outer_part
-			load = "load_F_" + type + "(VAR_LIST(IN_" + node->prev()->id + "),bc0+i0,bc1+i1,BS0,BS1)";
+	string var = var_name(node);
+	string mvar = node->mask().datatype().toString() + "L_" + std::to_string(node->id);
+	string load;
 
+	if (inner_part)
+		load = "load_L_" + type + "(VAR(IN_" + node->prev()->id + "),bc0+i0,bc1+i1,BS0,BS1)";
+	else // outer_part
+		load = "load_F_" + type + "(VAR_LIST(IN_" + node->prev()->id + "),bc0+i0,bc1+i1,BS0,BS1)";
+
+	indent_count++;
+	add_line( var + " = 0;" );
+
+	for (int n=N-1; n>=0; n--) {
+		int h = 1;
+		string i = string("i") + n;
+		add_line( "for (int "+i+"=-H"+n+"; "+i+"<=+H"+n+"; "+i+"++) {" );
 		indent_count++;
-		add_line( var + " = 0;" );
-
-		for (int n=N-1; n>=0; n--) {
-			int h = 1;
-			string i = string("i") + n;
-			add_line( "for (int "+i+"=-H"+n+"; "+i+"<=+H"+n+"; "+i+"++) {" );
-			indent_count++;
-		}
-
-		for (int n=N-1; n>=0; n--)
-			mvar += string("[")+"i"+n+"+H"+n+"]";
-
-		add_line( var + " += " + load + " * " + mvar + ";" );
-
-		for (int n=N-1; n>=0; n--) {
-			indent_count--;
-			add_line( "}" );
-		}
-		indent_count--;
 	}
 
-	shared.push_back(node->prev());
+	for (int n=N-1; n>=0; n--)
+		mvar += string("[")+"i"+n+"+H"+n+"]";
+
+	add_line( var + " += " + load + " * " + mvar + ";" );
+
+	for (int n=N-1; n>=0; n--) {
+		indent_count--;
+		add_line( "}" );
+	}
+	indent_count--;
+
 	mask.push_back( std::make_pair(node->mask(),node->id) );
 }
 
 void CpuFocalSkeleton::visit(FocalFunc *node) {
-	// Adds focal code
-	{
-		const int N = node->numdim().toInt();
-		string var = var_name(node);
-		string type = node->prev()->datatype().ctypeString();
-		string load = "load_F_" + type + "(VAR_LIST(IN_" + node->prev()->id + "),bc0+i0,bc1+i1,BS0,BS1)";
+	const int N = node->numdim().toInt();
+	string type = node->prev()->datatype().ctypeString();
 
-		add_line( var + " = " + node->type.neutralString(node->datatype()) + ";" );
+	string var = var_name(node);
+	string load = "load_F_" + type + "(VAR_LIST(IN_" + node->prev()->id + "),bc0+i0,bc1+i1,BS0,BS1)";
 
-		for (int n=N-1; n>=0; n--) {
-			int h = 1;
-			string i = string("i") + n;
-			add_line( "for (int "+i+"=-H"+n+"; "+i+"<=+H"+n+"; "+i+"++) {" );
-			indent_count++;
-		}
+	add_line( var + " = " + node->type.neutralString(node->datatype()) + ";" );
 
-		if (node->type.isOperator())
-			add_line( var + " = " + var + " "+node->type.code()+" " + load + ";" );
-		else if (node->type.isFunction())
-			add_line( var + " = " + node->type.code()+"(" + var+"," + load +")" + ";" );
-
-		for (int n=N-1; n>=0; n--) {
-			indent_count--;
-			add_line( "}" );
-		}
+	for (int n=N-1; n>=0; n--) {
+		int h = 1;
+		string i = string("i") + n;
+		add_line( "for (int "+i+"=-H"+n+"; "+i+"<=+H"+n+"; "+i+"++) {" );
+		indent_count++;
 	}
-	
 
-	shared.push_back(node->prev());
-	func.push_back(node);
+	if (node->type.isOperator())
+		add_line( var + " = " + var + " "+node->type.code()+" " + load + ";" );
+	else if (node->type.isFunction())
+		add_line( var + " = " + node->type.code()+"(" + var+"," + load +")" + ";" );
+
+	for (int n=N-1; n>=0; n--) {
+		indent_count--;
+		add_line( "}" );
+	}
 }
 
 void CpuFocalSkeleton::visit(FocalPercent *node) {
-	// Adds FocalPercent code
-	{
-		const int N = node->numdim().toInt();
-		string var = var_name(node);
-		string pvar = var_name(node->prev());
-		string type = node->prev()->datatype().ctypeString();
-		string load = "load_" + type + "(VAR_LIST(IN_" + node->prev()->id + "),bc0+i0,bc1+i1,BS0,BS1)";
+	const int N = node->numdim().toInt();
+	string type = node->prev()->datatype().ctypeString();
 
-		add_line( var + " = 0;" );
+	string var = var_name(node);
+	string pvar = var_name(node->prev());
+	string load = "load_F_" + type + "(VAR_LIST(IN_" + node->prev()->id + "),bc0+i0,bc1+i1,BS0,BS1)";
 
-		for (int n=N-1; n>=0; n--) {
-			int h = 1;
-			string i = string("i") + n;
-			add_line( "for (int "+i+"=-H"+n+"; "+i+"<=+H"+n+"; "+i+"++) {" );
-			indent_count++;
-		}
+	add_line( var + " = 0;" );
 
-		add_line( var + " += (" + pvar + " "+node->type.code()+" " + load + ");" );
-
-		for (int n=N-1; n>=0; n--) {
-			indent_count--;
-			add_line( "}" );
-		}
-
-		add_line( var + " /= " + nbh_size(N) + ";" );
+	for (int n=N-1; n>=0; n--) {
+		int h = 1;
+		string i = string("i") + n;
+		add_line( "for (int "+i+"=-H"+n+"; "+i+"<=+H"+n+"; "+i+"++) {" );
+		indent_count++;
 	}
 
-	shared.push_back(node->prev());
-	percent.push_back(node);
+	add_line( var + " += (" + pvar + " "+node->type.code()+" " + load + ");" );
+
+	for (int n=N-1; n>=0; n--) {
+		indent_count--;
+		add_line( "}" );
+	}
+
+	add_line( var + " /= " + nbh_size(N) + ";" );
 }
 
 } } // namespace map::detail

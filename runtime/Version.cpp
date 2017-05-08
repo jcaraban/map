@@ -49,6 +49,8 @@ Version::Version(Verkey key)
 	// Filling rest...
 	shared_size = -1;
 	num_group = (task->blocksize() - 1) / groupsize() + 1;
+
+	assert(all(task->blocksize() % groupsize() == 0)); // 'groupsize' must divide 'blocksize' exactly!
 }
 
 cle::Device Version::device() const {

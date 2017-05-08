@@ -19,7 +19,7 @@ int Group::id_count;
 Group::Group()
 	: id(-1)
 	, task(nullptr)
-	, gen_pattern(NONE_PAT)
+	, gen_pattern(NONE_PATTERN)
 	, gen_num_dim(NONE_NUMDIM)
 	, gen_data_size()
 	, gen_block_size()
@@ -127,10 +127,10 @@ void Group::removeOutputNode(Node *node) {
 void Group::addAutoNode(Node *node) {
 	if (node->isInput()) {
 		addInputNode(node);
-		gen_pattern += FREE;
+		gen_pattern += INPUT;
 	} else if (node->isOutput()) {
 		addOutputNode(node);
-		gen_pattern += FREE;
+		gen_pattern += OUTPUT;
 	} else {
 		addNode(node);
 	} 

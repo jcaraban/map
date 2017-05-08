@@ -65,9 +65,9 @@ struct Group {
 	void removeNext(Group *group);
 	bool isNext(const Group *group) const;
 
-	void addBack(Group *group, Pattern pattern=NONE_PAT); // @
+	void addBack(Group *group, Pattern pattern=NONE_PATTERN); // @
 	void removeBack(Group *group);
-	void addForw(Group *group, Pattern pattern=NONE_PAT); // @
+	void addForw(Group *group, Pattern pattern=NONE_PATTERN); // @
 	void removeForw(Group *group);
 
 	void updateAttributes() const;

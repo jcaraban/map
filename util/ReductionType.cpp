@@ -9,6 +9,11 @@
 
 namespace map { namespace detail {
 
+ReductionEnum operator++(ReductionEnum& rte) {
+   rte = static_cast<ReductionEnum>( static_cast<int>(rte)+1 );
+   return rte;
+}
+
 ReductionType::ReductionType()
 	: type(NONE_REDUCTION)
 { }

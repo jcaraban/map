@@ -9,6 +9,11 @@
 
 namespace map { namespace detail {
 
+DataTypeEnum operator++(DataTypeEnum& dte) {
+   dte = static_cast<DataTypeEnum>( static_cast<int>(dte)+1 );
+   return dte;
+}
+
 DataType::DataType()
 	: type(NONE_DATATYPE)
 { }

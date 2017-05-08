@@ -13,32 +13,34 @@ namespace map { namespace detail {
 PatternEnum operator + (const PatternEnum& lhs, const PatternEnum& rhs) {
 	return static_cast<PatternEnum>(static_cast<int>(lhs) | static_cast<int>(rhs));
 }
-//PatternEnum& operator += (PatternEnum& lhs, const PatternEnum& rhs) {
-//	return lhs = static_cast<PatternEnum>(static_cast<int>(lhs) | static_cast<int>(rhs));
-//}
-//PatternEnum operator << (const PatternEnum& lhs, int i) {
-//	return static_cast<PatternEnum>(static_cast<int>(lhs) << i);
-//}
-PatternEnum& operator <<= (PatternEnum& lhs, int i) {
-	return lhs = static_cast<PatternEnum>(static_cast<int>(lhs) << i);
+
+PatternEnum operator - (const PatternEnum& lhs, const PatternEnum& rhs) {
+	return static_cast<PatternEnum>(static_cast<int>(lhs) & ~static_cast<int>(rhs));
 }
 
-bool Pattern::operator==(const Pattern& pattern) {
+bool Pattern::operator==(const Pattern& pattern) const {
 	return this->pat == pattern.pat;
 }
 
-bool Pattern::operator!=(const Pattern& pattern) {
+bool Pattern::operator!=(const Pattern& pattern) const {
 	return this->pat != pattern.pat;
 }
 
 Pattern Pattern::operator+(const Pattern& rhs) {
-	Pattern ret;
-	ret.pat = this->pat + rhs.pat;
-	return ret;
+	return Pattern(this->pat + rhs.pat);
 }
 
 Pattern& Pattern::operator+=(const Pattern& rhs) {
 	this->pat = this->pat + rhs.pat;
+	return *this;
+}
+
+Pattern Pattern::operator-(const Pattern& rhs) {
+	return Pattern(this->pat - rhs.pat);
+}
+
+Pattern& Pattern::operator-=(const Pattern& rhs) {
+	this->pat = this->pat - rhs.pat;
 	return *this;
 }
 
@@ -64,7 +66,7 @@ bool canPipeFuse(const Pattern& top, const Pattern& bot) {
 	PIPE(LOCAL,LOCAL,true)
 	PIPE(LOCAL,FOCAL,	false) // could, not ready
 	PIPE(LOCAL,ZONAL,true)
-	PIPE(LOCAL,RADIAL,true)
+	PIPE(LOCAL,RADIAL,	false)
 	PIPE(LOCAL,SPREAD,	false) // could
 	PIPE(LOCAL,STATS,	false) // could
 	PIPE(LOCAL,GLOBAL,true)
@@ -88,7 +90,7 @@ bool canPipeFuse(const Pattern& top, const Pattern& bot) {
 	PIPE(ZONAL,GLOBAL,	false)
 
 	PIPE(RADIAL,FREE,true)
-	PIPE(RADIAL,LOCAL,true)
+	PIPE(RADIAL,LOCAL,	false)
 	PIPE(RADIAL,FOCAL,	false) // Incomplatible data dependencies
 	PIPE(RADIAL,ZONAL,	false) // RAD | ZONAL can be fused, skeleton not ready
 	PIPE(RADIAL,RADIAL,	false) // RAD | RAD can be fused if 'start' is close enough, but scan of scan doesn't make sense
@@ -214,8 +216,12 @@ bool canFlatFuse(const Pattern& left, const Pattern& right) {
 }
 
 std::ostream& operator<< (std::ostream& os, const Pattern& pat) {
-	if (pat.pat == NONE_PAT)
+	if (pat.pat == NONE_PATTERN)
 		os << "None";
+	if (pat.pat == INPUT)
+		os << "Input";
+	if (pat.pat == OUTPUT)
+		os << "Output";
 	if (pat.is(FREE))
 		os << "Free";
 	if (pat.is(LOCAL))
