@@ -89,6 +89,10 @@ BlockSize ma_blocksize(Node *node) {
 	return node->blocksize();
 }
 
+GroupSize ma_groupsize(Node *node) {
+	return node->groupsize();
+}
+
 /**/
 
 Node* ma_read(const char *file_path) {
@@ -105,8 +109,8 @@ int ma_write(Node *prev, const char *file_path) {
 	return 0;
 }
 
-Node* ma_constant(VariantType var, DataSize ds, DataTypeEnum dt, MemOrderEnum mo, BlockSize bs) {
-	Node *node = Constant::Factory(var,ds,dt,mo,bs);
+Node* ma_constant(VariantType var, DataSize ds, DataTypeEnum dt, MemOrderEnum mo, BlockSize bs, GroupSize gs) {
+	Node *node = Constant::Factory(var,ds,dt,mo,bs,gs);
 	return Runtime::getInstance().addNode(node);
 }
 
@@ -120,8 +124,8 @@ Node* ma_cast(Node *prev, DataTypeEnum type) {
 	return Runtime::getInstance().addNode(node);
 }
 
-Node* ma_index(DataSize ds, NumDimEnum dim, MemOrderEnum mo, BlockSize bs) {
-	Node *node = Index::Factory(ds,dim,mo,bs);
+Node* ma_index(DataSize ds, NumDimEnum dim, MemOrderEnum mo, BlockSize bs, GroupSize gs) {
+	Node *node = Index::Factory(ds,dim,mo,bs,gs);
 	return Runtime::getInstance().addNode(node);
 }
 

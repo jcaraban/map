@@ -36,6 +36,8 @@ class FlowType {
 	std::string code() const;
 };
 
+static_assert( std::is_standard_layout< FlowType >::value , "FlowType must be C compatible");
+
 } } // namespace map::detail
 
 #endif

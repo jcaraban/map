@@ -34,6 +34,8 @@ class PercentType {
 	std::string code() const;
 };
 
+static_assert( std::is_standard_layout< PercentType >::value , "PercentType must be C compatible");
+
 } } // namespace map::detail
 
 #endif

@@ -6,6 +6,7 @@
  * TODO: consider spliting the StreamDir IO into InOut and OutIn, to model the case where we want to write
  *       but also to have a temporal file backing the data (to be reused later). OI would cover this case
  * TODO: move c_func into anonymous namespace?
+ * TODO: remove meta.ref() in exchange for meta.set()
  */
 
 #include "binary.hpp"
@@ -125,8 +126,8 @@ Ferr binary::open(std::string file_path, StreamDir stream_dir) {
 
 		// Cached variables
 		initial_offset = PAGE_SIZE;
-		total_data_size = meta.getTotalDataSize();
-		total_block_size = meta.getTotalBlockSize();
+		total_data_size = meta.totalDataSize();
+		total_block_size = meta.totalBlockSize();
 
 		// TODO: maybe check erroneous file by comparing its length (seek_end-seek_beg) with total_data_size
 	}
@@ -140,8 +141,8 @@ Ferr binary::open(std::string file_path, StreamDir stream_dir) {
 
 		// Cached variables
 		initial_offset = PAGE_SIZE;
-		total_data_size = meta.getTotalDataSize();
-		total_block_size = meta.getTotalBlockSize();
+		total_data_size = meta.totalDataSize();
+		total_block_size = meta.totalBlockSize();
 
 		ferr = setMeta();
 		if (ferr != 0) {
@@ -171,8 +172,8 @@ Ferr binary::create_temp_file() {
 
 	// Cached variables
 	initial_offset = PAGE_SIZE;
-	total_data_size = meta.getTotalDataSize();
-	total_block_size = meta.getTotalBlockSize();
+	total_data_size = meta.totalDataSize();
+	total_block_size = meta.totalBlockSize();
 
 	// Truncate file to the desired length
     if (ftruncate(fd, initial_offset+total_data_size) == -1) {
@@ -193,11 +194,11 @@ Ferr binary::create_temp_file() {
 Ferr binary::close() {
 	Ferr ferr;
 
-	if (meta.stream_dir == IN || meta.stream_dir == IO)
+	if (meta.getStreamDir() == IN || meta.getStreamDir() == IO)
 	{
 		// Nothing to do
 	}
-	else if (meta.stream_dir == OUT)
+	else if (meta.getStreamDir() == OUT)
 	{
 		ferr = setStats();
 		if (ferr != 0) {
@@ -223,31 +224,38 @@ Ferr binary::getMeta() {
 	size_t off = 0;
 
 	// data_type
-	c_pread(fd, (char*)&meta.data_type, sizeof(meta.data_type), off);
-	off += sizeof(meta.data_type);
+	DataType data_type;
+	c_pread(fd, (char*)&data_type, sizeof(data_type), off);
+	off += sizeof(data_type);
+	meta.setDataType(data_type);
 
 	// num_dim
-	c_pread(fd, (char*)&meta.num_dim, sizeof(meta.num_dim), off);
-	off += sizeof(meta.num_dim);
-	const int num = meta.num_dim.toInt();
-	meta.data_size = DataSize(num);
-	meta.block_size = BlockSize(num);
+	NumDim num_dim;
+	c_pread(fd, (char*)&num_dim, sizeof(num_dim), off);
+	off += sizeof(num_dim);
+	meta.setNumDim(num_dim);	
 
 	// data_size
-	for (int i=0; i<num; i++) {
-		c_pread(fd, (char*)&meta.data_size[i], sizeof(meta.data_size[i]), off);
-		off += sizeof(meta.data_size[i]);
+	auto data_size = DataSize(num_dim.toInt());
+	for (int i=0; i<num_dim.toInt(); i++) {
+		c_pread(fd, (char*)&data_size[i], sizeof(data_size[i]), off);
+		off += sizeof(data_size[i]);
 	}
+	meta.setDataSize(data_size);
 
 	// mem_order
-	c_pread(fd, (char*)&meta.mem_order, sizeof(meta.mem_order), off);
-	off += sizeof(meta.mem_order);
+	MemOrder mem_order;
+	c_pread(fd, (char*)&mem_order, sizeof(mem_order), off);
+	off += sizeof(mem_order);
+	meta.setMemOrder(mem_order);
 
 	// block_size
-	for (int i=0; i<num; i++) {
-		c_pread(fd, (char*)&meta.block_size[i], sizeof(meta.block_size[i]), off);
-		off += sizeof(meta.block_size[i]);
+	auto block_size = BlockSize(num_dim.toInt());
+	for (int i=0; i<num_dim.toInt(); i++) {
+		c_pread(fd, (char*)&block_size[i], sizeof(block_size[i]), off);
+		off += sizeof(block_size[i]);
 	}
+	meta.setBlockSize(block_size);
 
 	assert(off <= PAGE_SIZE);
 	return ferr;
@@ -258,27 +266,32 @@ Ferr binary::setMeta() {
 	size_t off = 0;
 
 	// data_type
-	c_pwrite(fd, (char*)&meta.data_type, sizeof(meta.data_type), off);
-	off += sizeof(meta.data_type);
+	DataType data_type = meta.getDataType();
+	c_pwrite(fd, (char*)&data_type, sizeof(data_type), off);
+	off += sizeof(data_type);
 
 	// num_dim
-	c_pwrite(fd, (char*)&meta.num_dim, sizeof(meta.num_dim), off);
-	off += sizeof(meta.num_dim);
+	NumDim num_dim = meta.getNumDim();
+	c_pwrite(fd, (char*)&num_dim, sizeof(num_dim), off);
+	off += sizeof(num_dim);
 
 	// data_size
-	for (int i=0; i<meta.num_dim.toInt(); i++) {
-		c_pwrite(fd, (char*)&meta.data_size[i], sizeof(meta.data_size[i]), off);
-		off += sizeof(meta.data_size[i]);
+	DataSize data_size = meta.getDataSize();
+	for (int i=0; i<num_dim.toInt(); i++) {
+		c_pwrite(fd, (char*)&data_size[i], sizeof(data_size[i]), off);
+		off += sizeof(data_size[i]);
 	}
 
 	// mem_order
-	c_pwrite(fd, (char*)&meta.mem_order, sizeof(meta.mem_order), off);
-	off += sizeof(meta.mem_order);
+	MemOrder mem_order = meta.getMemOrder();
+	c_pwrite(fd, (char*)&mem_order, sizeof(mem_order), off);
+	off += sizeof(mem_order);
 
 	// block_size
-	for (int i=0; i<meta.num_dim.toInt(); i++) {
-		c_pwrite(fd, (char*)&meta.block_size[i], sizeof(meta.block_size[i]), off);
-		off += sizeof(meta.block_size[i]);
+	BlockSize block_size = meta.getBlockSize();
+	for (int i=0; i<num_dim.toInt(); i++) {
+		c_pwrite(fd, (char*)&block_size[i], sizeof(block_size[i]), off);
+		off += sizeof(block_size[i]);
 	}
 
 	assert(off <= PAGE_SIZE);
@@ -298,11 +311,11 @@ Ferr binary::setStats() {
 }
 
 Ferr binary::read(void* dst, const Coord& beg_coord, const Coord& end_coord) {
-	if (meta.mem_order != ROW || meta.num_dim != D2) {
+	if (meta.getMemOrder() != ROW || meta.getNumDim() != D2) {
 		assert(0);
 	}
 
-	size_t offset = initial_offset + (beg_coord[1]*meta.data_size[0] + beg_coord[0]) * meta.data_type.sizeOf();
+	size_t offset = initial_offset + (beg_coord[1]*meta.getDataSize()[0] + beg_coord[0]) * meta.getDataType().sizeOf();
 	Coord len = end_coord - beg_coord;
 	Ferr ferr = 0;
 
@@ -312,19 +325,19 @@ Ferr binary::read(void* dst, const Coord& beg_coord, const Coord& end_coord) {
 			std::cout << strerror(errno) << std::endl;
 			assert(0);
 		}
-		offset += meta.data_size[0];
-		dst = static_cast<char*>(dst) + meta.data_size[0];
+		offset += meta.getDataSize()[0];
+		dst = static_cast<char*>(dst) + meta.getDataSize()[0];
 	}
 
 	return ferr;
 }
 
 Ferr binary::write(const void* src, const Coord& beg_coord, const Coord& end_coord) {
-	if (meta.mem_order != ROW || meta.num_dim != D2) {
+	if (meta.getMemOrder() != ROW || meta.getNumDim() != D2) {
 		assert(0);
 	}
 
-	size_t offset = initial_offset + (beg_coord[1]*meta.data_size[0] + beg_coord[0]) * meta.data_type.sizeOf();
+	size_t offset = initial_offset + (beg_coord[1]*meta.getDataSize()[0] + beg_coord[0]) * meta.getDataType().sizeOf();
 	Coord len = end_coord - beg_coord;
 	Ferr ferr = 0;
 
@@ -334,19 +347,19 @@ Ferr binary::write(const void* src, const Coord& beg_coord, const Coord& end_coo
 			std::cout << strerror(errno) << std::endl;
 			assert(0);
 		}
-		offset += meta.data_size[0];
-		src = static_cast<const char*>(src) + meta.data_size[0];
+		offset += meta.getDataSize()[0];
+		src = static_cast<const char*>(src) + meta.getDataSize()[0];
 	}
 
 	return ferr;
 }
 
 Ferr binary::readBlock(Block &block) const {
-	if (meta.mem_order != ROW+BLK) {
+	if (meta.getMemOrder() != ROW+BLK) {
 		assert(0);
 	}
 
-	size_t offset = proj(block.key.coord,meta.num_block) * total_block_size;
+	size_t offset = proj(block.key.coord,meta.getNumBlock()) * total_block_size;
 	Ferr ferr = 0;
 	size_t ret, len = 0;
 	char *mem = (char*)block.host_mem;
@@ -366,11 +379,11 @@ Ferr binary::readBlock(Block &block) const {
 }
 
 Ferr binary::writeBlock(const Block &block) {
-	if (meta.mem_order != ROW+BLK) {
+	if (meta.getMemOrder() != ROW+BLK) {
 		assert(0);
 	}
 
-	size_t offset = proj(block.key.coord,meta.num_block) * total_block_size;
+	size_t offset = proj(block.key.coord,meta.getNumBlock()) * total_block_size;
 	Ferr ferr = 0;
 	size_t ret, len = 0;
 	char *mem = (char*)block.host_mem;
@@ -399,7 +412,7 @@ Ferr binary::writeBlock(const Block &block) {
 
 Ferr binary::discard(const Block &block) {
 	Ferr ferr = 0;
-	size_t offset = proj(block.key.coord,meta.num_block) * total_block_size;
+	size_t offset = proj(block.key.coord,meta.getNumBlock()) * total_block_size;
 
 	//ferr = fallocate(fd, FALLOC_FL_ZERO_RANGE, offset+initial_offset, total_block_size);
 	ferr = fallocate(fd, FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE, offset+initial_offset, total_block_size);

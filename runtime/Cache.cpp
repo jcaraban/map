@@ -2,15 +2,11 @@
  * @file	Cache.cpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * Note: HOLD_0 leads to null-blocks with null-cl_mem. Null-cl_mem tell the kernel when it is in a border case
- * Note: conf.inmem_cache deactivates the in-memory caching (aka always loads and stores)
- * Note: when inmem_cache is deactivated, the cache still allocates memory chunks and behaves like a mem.pool
- *
- * TODO: the reduction functionality within scalar.cpp has to be moved to the cache
  * TODO: pinned_list now has 1 cl_mem per worker, it would need 'max_in_block+max_out_block' if events are activated
  * TODO: try 'events' again, make sure events are not re-allocated in the main worker loop (clCreateUserEvent clReleaseEvent)
  *
  * TODO: create a buffer of Blocks (like 'pinned_list') so that HOLD_0/1 blocks are reaused instead than re-allocated non-stop
+ * TODO: could the reduction functionality within scalar.cpp be moved to the cache ?
  * TODO: could load / store / getFile be moved out of cache ?
  */
 
@@ -65,11 +61,11 @@ void Cache::allocChunks(cle::Context ctx) {
 		cle::clCheckError(err);
 	}
 
-	// Allocates the page for scalar reductions
-	scalar_page = clCreateBuffer(*ctx, CL_MEM_READ_WRITE, conf.cache_scalar_size, nullptr, &err);
+	// Allocates the page for block reductions / statistics
+	scalar_page = clCreateBuffer(*ctx, CL_MEM_READ_WRITE, conf.cache_block_size, nullptr, &err);
 	cle::clCheckError(err);
 
-	// Allocates the page for group statistics
+	// Allocates the page for group reductions / statistics
 	group_page = clCreateBuffer(*ctx, CL_MEM_READ_WRITE, conf.cache_group_size, nullptr, &err);
 	cle::clCheckError(err);
 }
@@ -88,11 +84,11 @@ void Cache::freeChunks() {
 		cle::clCheckError(err);
 	}
 
-	// Releases the page for scalars reductions
+	// Releases the page for block reductions / statistics
 	err = clReleaseMemObject(scalar_page);
 	cle::clCheckError(err);
 
-	// Releases the page for group statistics
+	// Releases the page for group reductions / statistics
 	err = clReleaseMemObject(group_page);
 	cle::clCheckError(err);
 
@@ -119,7 +115,7 @@ void Cache::allocEntries(const Program &prog) {
 	for (auto task : prog.taskList())
 	{
 		for (auto node : full_join(task->inputList(),task->nodeList())) {
-			size_t size = node->metadata().getTotalBlockSize();
+			size_t size = node->metadata().totalBlockSize();
 			if (size > unit_mem_size) {
 				unit_mem_size = size;
 				unit_block_size = node->blocksize();
@@ -191,13 +187,14 @@ void Cache::freeEntries() {
 	}
 
 	// chunk is not cleared!
-	// scalar is not cleared!
+	// block is not cleared!
+	// group is not cleared!
 	entry_list.clear();
 	lru_list.clear();
 	blk_hash.clear();
 	pinned_mem.clear();
 	pinned_ptr.clear();
-	
+
 	for (auto it : file_hash)
 		delete it.second;
 	file_hash.clear();
@@ -214,10 +211,15 @@ void Cache::requestBlocks(const KeyList &key_list, BlockList &blk_list) {
 		{
 			blk_list.push_back( new Block(key) );
 		}
-		else if (hold == HOLD_1) // D0 case, block holds '1' value
+		else if (hold == HOLD_1) // Block holds '1' value
 		{
-			blk_list.push_back( new Block(key,scalar_page,group_page) );
+			blk_list.push_back( new Block(key,scalar_page,nullptr) );
 		}
+		//else if (hold == HOLD_2) // Block holds 'groups per block' values
+		//{
+		//	assert(0);
+		//	blk_list.push_back( new Block(key,nullptr,group_page) );
+		//}
 		else if (hold == HOLD_N) // Normal case, block holds 'N' values
 		{
 			blk_list.push_back( retainBlock(key,dep) );
@@ -235,30 +237,61 @@ void Cache::retainEntries(BlockList &blk_list) {
 }
 
 void Cache::readInputBlocks(BlockList &in_blk_list) {
+	int idx = 0;
 	for (auto &iblk : in_blk_list)
 	{
 		if (iblk->holdtype() == HOLD_1)
 		{
-			loadScalar(iblk);
+			loadScalar(iblk,idx);
 		}
+		//else if (iblk->holdtype() == HOLD_2)
+		//{
+		//	assert(0);
+		//	loadGroups(iblk,idx);
+		//}
 		else if (iblk->holdtype() == HOLD_N)
 		{
 			readInBlk(iblk);
 		}
+		idx++;
 	}
 }
 
-void Cache::writeOutputBlocks(BlockList &out_blk_list) {
+void Cache::initOutputBlocks(BlockList &out_blk_list) {
+	int idx = 0;
 	for (auto &oblk : out_blk_list)
 	{
 		if (oblk->holdtype() == HOLD_1)
 		{
-			storeScalar(oblk);
+			initScalar(oblk,idx);
 		}
+		//else if (oblk->holdtype() == HOLD_2)
+		//{
+		//	assert(0);
+		//	initGroups(oblk,idx);
+		//}
+		idx++;
+	}
+}
+
+void Cache::writeOutputBlocks(BlockList &out_blk_list) {
+	int idx = 0;
+	for (auto &oblk : out_blk_list)
+	{
+		if (oblk->holdtype() == HOLD_1)
+		{
+			storeScalar(oblk,idx);
+		}
+		//else if (oblk->holdtype() == HOLD_2)
+		//{
+		//	assert(0);
+		//	storeGroups(oblk,idx);
+		//}
 		else if (oblk->holdtype() == HOLD_N)
 		{
 			writeOutBlk(oblk);
 		}
+		idx++;
 	}
 }
 
@@ -275,7 +308,7 @@ void Cache::returnBlocks(const KeyList &key_list, BlockList &blk_list) {
 		Key key = std::get<0>(tuple);
 		HoldType hold = std::get<1>(tuple);
 		Block *blk = blk_list[i];
-	
+
 		/**/ if (hold == HOLD_0) // Null block, holds '0' values
 		{
 			delete blk;
@@ -300,7 +333,7 @@ void Cache::returnBlocks(const KeyList &key_list, BlockList &blk_list) {
 Block* Cache::retainBlock(const Key &key, int depend) {
 	if (not conf.inmem_cache) { // no-cache mode
 		return new Block(key,unit_mem_size,DEPEND_UNKNOWN); // always created / deleted
-	}	
+	}
 	////////////////////////////
 	std::unique_lock<std::mutex> lock(mtx_blk); // thread-safe
 	Block *blk = nullptr;
@@ -316,7 +349,7 @@ Block* Cache::retainBlock(const Key &key, int depend) {
 		blk = new Block(key,unit_mem_size,depend);
 		blk_hash[key] = std::unique_ptr<Block>(blk);
 	}
-	
+
 	return blk;
 }
 
@@ -353,7 +386,7 @@ void Cache::readInBlk(Block *blk) {
 void Cache::writeOutBlk(Block *blk) {
 	////////////////////////////
 	std::unique_lock<std::mutex> lock(blk->mtx); // thread-safe
-	
+
 	if (not blk->isReady()) {
 		blk->setReady();
 		blk->setDirty();
@@ -382,7 +415,7 @@ void Cache::releaseEntry(Block *blk) {
 
 	// Discards blocks that will not be used anymore
 	if (give_entry)
-	{	
+	{
 		clock.incr(DISCARDED);
 
 		if (blk->entry != nullptr)
@@ -497,6 +530,8 @@ IFile* Cache::getFile(Node *node) {
 	return it->second;
 }
 
+// Load, Init, Store
+
 void Cache::store(Block *block) {
 	assert(block->holdtype() == HOLD_N);
 	clock.incr(STORED);
@@ -510,15 +545,6 @@ void Cache::store(Block *block) {
 	block->host_mem = nullptr;
 }
 
-void Cache::storeScalar(Block *block) {
-	assert(block->holdtype() == HOLD_1);
-	assert(not block->value.isNone());
-
-	IFile *file = getFile(block->key.node);
-
-	block->store(file);
-}
-
 void Cache::load(Block *block) {
 	assert(block->holdtype() == HOLD_N);
 	clock.incr(LOADED);
@@ -530,13 +556,37 @@ void Cache::load(Block *block) {
 	block->send();
 	block->setReady();
 	//
-	block->host_mem = nullptr;	
+	block->host_mem = nullptr;
 }
 
-void Cache::loadScalar(Block *block) {
+void Cache::storeScalar(Block *block, int blk_idx) {
+	assert(block->holdtype() == HOLD_1);
+	assert(not block->value.isNone());
+
+	if (block->key.node->inputReach().numdim() != D0) // from Dx to D0
+	{
+		cle::Queue que = Runtime::getOclEnv().D(Tid.dev()).Q(Tid.rnk());
+
+		int offset = sizeof(double) * (conf.max_out_block*Tid.rnk() + blk_idx);
+		size_t size = block->datatype().sizeOf();
+
+		cl_int clerr = clEnqueueReadBuffer(*que,scalar_page,CL_TRUE,offset,size,&block->value.ref(),0,nullptr,nullptr);
+		cle::clCheckError(clerr);
+	}
+
+	IFile *file = getFile(block->key.node);
+	block->store(file);
+
+	block->load(file); // @ loading to update the block value
+}
+
+void Cache::loadScalar(Block *block, int blk_idx) {
+	if (block->isReady())
+		return; // @@
+	
 	assert(block->holdtype() == HOLD_1);
 	assert(block->value.isNone());
-	
+
 	auto *cnode = dynamic_cast<Constant*>(block->key.node);
 	if (cnode != nullptr) { // @@
 		block->fixValue( cnode->cnst );
@@ -544,8 +594,53 @@ void Cache::loadScalar(Block *block) {
 	}
 
 	IFile *file = getFile(block->key.node);
-
 	block->load(file);
+}
+
+void Cache::initScalar(Block *block, int blk_idx) {
+	if (block->key.node->inputReach().numdim() == D0) // from Dx to D0
+		return; // no need for initialization
+	//
+	cle::Queue que = Runtime::getOclEnv().D(Tid.dev()).Q(Tid.rnk());
+
+	block->value = block->key.node->initialValue();
+
+	int offset = sizeof(double) * (conf.max_out_block*Tid.rnk() + blk_idx);
+	size_t dtsz = block->datatype().sizeOf();
+	size_t size = dtsz;
+
+	// Fill just 1 value
+	cl_int err = clEnqueueFillBuffer(*que,scalar_page,&block->value.ref(),dtsz,offset,size,0,nullptr,nullptr);
+	cle::clCheckError(err);
+}
+
+void Cache::storeGroups(Block *block, int blk_idx) {
+	cle::Queue que = Runtime::getOclEnv().D(Tid.dev()).Q(Tid.rnk());
+
+	int offset = sizeof(double) * conf.max_group_x_block * (conf.max_out_block*Tid.rnk() + blk_idx);
+	int size = block->size();
+	void *ptr = pinned_ptr[Tid.proj()];
+
+	cl_int clerr = clEnqueueReadBuffer(*que,block->group_page,CL_TRUE,offset,size,ptr,0,nullptr,nullptr);
+	cle::clCheckError(clerr);
+}
+
+void Cache::loadGroups(Block *block, int blk_idx) {
+	;
+}
+
+void Cache::initGroups(Block *block, int blk_idx) {
+	cle::Queue que = Runtime::getOclEnv().D(Tid.dev()).Q(Tid.rnk());
+
+	block->value = block->key.node->initialValue();
+
+	int offset = sizeof(double) * conf.max_group_x_block * (conf.max_out_block*Tid.rnk() + blk_idx);
+	size_t dtsz = block->datatype().sizeOf();
+	size_t size = block->size();
+
+	// Fill 'groups per block' number of values
+	cl_int err = clEnqueueFillBuffer(*que,block->group_page,&block->value.ref(),dtsz,offset,size,0,nullptr,nullptr);
+	cle::clCheckError(err);
 }
 
 } } // namespace map::detail

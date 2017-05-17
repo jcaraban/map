@@ -39,6 +39,8 @@ class MemOrder {
 	std::string toString() const;
 };
 
+static_assert( std::is_standard_layout< MemOrder >::value , "MemOrder must be C compatible");
+
 } } // namespace map::detail
 
 #endif

@@ -5,11 +5,13 @@
  * Visitor of the graph that composes OpenCL kernel codes from skeletons
  *
  * TODO: rename "tag" to "section", like in <Code Section> ?
+ * TODO: clean up of declared variables and data structures ?
  */
 
 #ifndef MAP_RUNTIME_SKELETON_HPP_
 #define MAP_RUNTIME_SKELETON_HPP_
 
+#include "util.hpp"
 #include "../visitor/Visitor.hpp"
 #include <unordered_map>
 #include <vector>
@@ -88,18 +90,21 @@ struct Skeleton : public Visitor
 
   // code
 	void dispatch_section(SkelTag tag);
-	void reach_head_section(SkelTag tag);
-	void reach_tail_section(SkelTag tag);
+	void reach_top_section(SkelTag tag);
+	void reach_bot_section(SkelTag tag);
 	void input_section(SkelTag tag);
 	void output_section(SkelTag tag);
 	void free_section(SkelTag tag);
 	void local_section(SkelTag tag);
 	void focal_section(SkelTag tag);
 	void zonal_section(SkelTag tag);
+	void stats_section(SkelTag tag);
+	void loop_section(SkelTag tag);
+	void reduc_section(SkelTag tag);
 
   // visit
-	void visit_input(Node *node);
-	void visit_output(Node *node);
+	virtual void visit_input(Node *node);
+	virtual void visit_output(Node *node);
 	DECLARE_VISIT(Constant)
 	DECLARE_VISIT(Index)
 	DECLARE_VISIT(Identity)
@@ -132,7 +137,9 @@ struct Skeleton : public Visitor
 	DECLARE_VISIT(Checkpoint)
 	DECLARE_VISIT(Barrier)
 	DECLARE_VISIT(Summary)
+	DECLARE_VISIT(DataSummary)
 	DECLARE_VISIT(BlockSummary)
+	DECLARE_VISIT(GroupSummary)
 
   // vars
 	Version *const ver; //!< Aggregation
@@ -162,7 +169,8 @@ struct Skeleton : public Visitor
 
 	std::vector<Diversity*> diver; //!< Stores diversity nodes
 	std::vector<Rand*> rand; //!< Stores rand nodes
-	std::vector<ZonalReduc*> reduc; //!< Stores ZonalReduc nodes
+	std::vector<Merge*> merge_list;
+	std::vector<SkelReduc> reduc_list; //!< Stores reductions nodes
 };
 
 #undef DECLARE_VISIT

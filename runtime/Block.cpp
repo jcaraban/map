@@ -71,7 +71,7 @@ Block::Block(Key key, cl_mem scalar_page, cl_mem group_page)
 	, entry(nullptr)
 	, host_mem(nullptr)
 	, scalar_page(scalar_page)
-	, group_page(group_page)
+	, group_page(nullptr)
 	, value()
 	, fixed(false)
 	, ready(false)
@@ -82,15 +82,32 @@ Block::Block(Key key, cl_mem scalar_page, cl_mem group_page)
 	, used(0)
 	, dirty(false)
 	, mtx()
-{
-	assert(numdim() == D0);
-}
-
+{ }
+/*
+Block::Block(Key key, cl_mem group_page, int size)
+	: key(key)
+	, entry(nullptr)
+	, host_mem(nullptr)
+	, scalar_page(nullptr)
+	, group_page(group_page)
+	, value()
+	, fixed(false)
+	, ready(false)
+	, stats()
+	, total_size(size)
+	, dependencies(DEPEND_UNKNOWN)
+	, hold_type(HOLD_2)
+	, used(0)
+	, dirty(false)
+	, mtx()
+{ }
+*/
 Block::Block(Key key, int max_size, int depend)
 	: key(key)
 	, entry(nullptr)
 	, host_mem(nullptr)
 	, scalar_page(nullptr)
+	, group_page(nullptr)
 	, value()
 	, fixed(false)
 	, ready(false)
@@ -102,8 +119,6 @@ Block::Block(Key key, int max_size, int depend)
 	, dirty(false)
 	, mtx()
 {
-	assert(numdim() != D0);
-	
 	this->total_size = prod(key.node->blocksize()) * datatype().sizeOf();
 	assert(total_size <= max_size);
 	assert(max_size % total_size == 0);

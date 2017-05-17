@@ -26,35 +26,38 @@ struct Config {
 	// Max
 	const int max_num_machines = 1;
 	const int max_num_devices = 4;
-	const int max_num_ranks = 32;
+	const int max_num_ranks = 16;
 	const int max_num_workers = max_num_machines * max_num_devices * max_num_ranks;
 	const size_t max_cache_total_size = (size_t)1024*1024*1024 * 16; // GB
 	const size_t max_cache_chunk_size = (size_t)1024*1024*1024 * 1; // GB
 	const int max_block_size = 1024*1024*sizeof(double); // 8 MB
 	const int max_group_size = 16*16*sizeof(double); // 2 KB
 	const int max_in_block = 16;
-	const int max_out_block = 16;
+	const int max_out_block = 8;
 
 	// Min
 	const int min_num_machines = 1;
 	const int min_num_devices = 1;
 	const int min_num_ranks = 1;
 	const int min_num_workers = min_num_machines * min_num_devices * min_num_ranks;
-	const size_t min_cache_total_size =  max_block_size * 16; // @ difficult to give a static number
+	const size_t min_cache_total_size = (size_t)1024*1024 * 128; // MB
 	const size_t min_cache_chunk_size = (size_t)1024*1024 * 64; // MB
 	const int min_block_size = 64*64*sizeof(bool); // 4 KB (page size)
 	const int min_group_size = 8*8*sizeof(bool); // 512 B
 	const int min_in_block = 0;
 	const int min_out_block = 0;
 
+	// Inferred
+	const int max_group_x_block = max_block_size / min_group_size;
+
 	// Default
 	const int def_num_machines = 1;
 	const int def_num_devices = 1;
-	const int def_num_ranks = 16;
-	const size_t def_cache_total_size = (size_t)1024*1024 * (512*5); // @ 512*7 MB @@
+	const int def_num_ranks = 1; // @@@ 16;
+	const size_t def_cache_total_size = (size_t)1024*1024 * (512*4); // @ 2 GB
 	const size_t def_cache_chunk_size = (size_t)1024*1024 * 256; // @ 256 MB
-	const size_t def_cache_group_size = max_block_size / min_group_size * max_out_block * max_num_ranks;
-	const size_t def_cache_scalar_size = sizeof(double) * max_out_block * max_num_ranks;
+	const size_t def_cache_block_size = max_out_block * max_num_ranks * sizeof(double);
+	const size_t def_cache_group_size = max_group_x_block * def_cache_block_size; // @ max_in_block?
 	const int def_block_size = 128*128*sizeof(float);
 	const int def_group_size = 16*16*sizeof(float);
 
@@ -69,17 +72,17 @@ struct Config {
 	int num_ranks = def_num_ranks;
 	size_t cache_total_size = def_cache_total_size;
 	size_t cache_chunk_size = def_cache_chunk_size;
+	size_t cache_block_size = def_cache_block_size;
 	size_t cache_group_size = def_cache_group_size;
-	size_t cache_scalar_size = def_cache_scalar_size;
 	int block_size = def_block_size;
 	int group_size = def_group_size;
 	
-	// Inferred
+	// Mutable Inferred
 	int num_workers = num_machines * num_devices * num_ranks;
 	int cache_num_chunk = cache_total_size / cache_chunk_size; // rounds down
 	int cache_num_entry = cache_total_size / block_size;
 	int chunk_num_entry = cache_chunk_size / block_size;
-	int scalar_num_entry = cache_scalar_size / sizeof(double);
+	int block_num_entry = cache_block_size / sizeof(double);
 
   // Methods
 	void setNumMachines(int num_machines);

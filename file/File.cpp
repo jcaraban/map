@@ -97,49 +97,49 @@ StreamDir IFile::getStreamDir() const {
 	/*if (!is_open) {
 		assert(!"Error in get method, no file was open yet!");
 	}*/
-	return meta.stream_dir;
+	return meta.getStreamDir();
 }
 
 DataType IFile::getDataType() const {
 	/*if (!is_open) {
 		assert(!"Error in get method, no file was open yet!");
 	}*/
-	return meta.data_type;
+	return meta.getDataType();
 }
 
 NumDim IFile::getNumDim() const {
 	/*if (!is_open) {
 		assert(!"Error in get method, no file was open yet!");
 	}*/
-	return meta.num_dim;
+	return meta.getNumDim();
 }
 
 MemOrder IFile::getMemOrder() const {
 	/*if (!is_open) {
 		assert(!"Error in get method, no file was open yet!");
 	}*/
-	return meta.mem_order;
+	return meta.getMemOrder();
 }
 
 const DataSize& IFile::getDataSize() const {
 	/*if (!is_open) {
 		assert(!"Error in get method, no file was open yet!");
 	}*/
-	return meta.data_size;
+	return meta.getDataSize();
 }
 
 const BlockSize& IFile::getBlockSize() const {
 	/*if (!is_open) {
 		assert(!"Error in get method, no file was open yet!");
 	}*/
-	return meta.block_size;
+	return meta.getBlockSize();
 }
 
 const NumBlock& IFile::getNumBlock() const {
 	/*if (!is_open) {
 		assert(!"Error in get method, no file was open yet!");
 	}*/
-	return meta.num_block;
+	return meta.getNumBlock();
 }
 
 const std::string& IFile::getFilePath() const {
@@ -164,18 +164,18 @@ Ferr IFile::setMetaData(MetaData meta, StreamDir stream_dir) {
 	//this->meta = meta; // delete
 
 	if (stream_dir == NONE_STREAMDIR)
-		stream_dir = meta.stream_dir;
+		stream_dir = meta.getStreamDir();
 	if ((ferr = setStreamDir(stream_dir)) != 0)
 		assert(0); //return ferr;
-	if ((ferr = setDataType(meta.data_type)) != 0)
+	if ((ferr = setDataType(meta.getDataType())) != 0)
 		assert(0); //return ferr;
-	if ((ferr = setNumDim(meta.num_dim)) != 0)
+	if ((ferr = setNumDim(meta.getNumDim())) != 0)
 		assert(0); //return ferr;
-	if ((ferr = setMemOrder(meta.mem_order)) != 0)
+	if ((ferr = setMemOrder(meta.getMemOrder())) != 0)
 		assert(0); //return ferr;
-	if ((ferr = setDataSize(meta.data_size)) != 0)
+	if ((ferr = setDataSize(meta.getDataSize())) != 0)
 		assert(0); //return ferr;
-	if ((ferr = setBlockSize(meta.block_size)) != 0)
+	if ((ferr = setBlockSize(meta.getBlockSize())) != 0)
 		assert(0); //return ferr;
 
 	return ferr;

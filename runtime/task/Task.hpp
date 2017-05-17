@@ -4,7 +4,6 @@
  *
  * Task base class
  *
- * TODO: TASK UNIFICATION ... doing ...
  * TODO: selfJobs() should take a 'Key done_block', but atm it is only used for Radial and is ok
  */
 
@@ -62,10 +61,12 @@ struct Task
 	const DataSize& datasize() const;
 	const BlockSize& blocksize() const;
 	const NumBlock& numblock() const;
+	const GroupSize& groupsize() const;
+	const NumGroup& numgroup() const;
   // Spatial
 	virtual Pattern pattern() const;
-	virtual const Mask& inputReach(Node *node, Coord coord) const;
-	virtual const Mask& outputReach(Node *node, Coord coord) const;
+	virtual const Mask& accuInputReach(Node *node, Coord coord) const;
+	virtual const Mask& accuOutputReach(Node *node, Coord coord) const;
   // Versions
 	virtual void createVersions();
 	const VersionList& versionList() const;
@@ -81,8 +82,8 @@ struct Task
 	void notify(Coord coord, std::vector<Job> &job_vec);
 	void notifyAll(std::vector<Job> &job_vec);
   // Dependencies
-	int prevDependencies(Coord coord) const;
-	int nextDependencies(Node *node, Coord coood) const;
+	virtual int prevDependencies(Coord coord) const;
+	virtual int nextDependencies(Node *node, Coord coood) const;
 	virtual int prevInterDepends(Node *node, Coord coord) const;
 	virtual int nextInterDepends(Node *node, Coord coord) const;
 	virtual int prevIntraDepends(Node *node, Coord coord) const;
@@ -115,7 +116,8 @@ struct Task
 	int prev_jobs_count, self_jobs_count;//, next_jobs_count;
 	ThreadId last;
 
-	std::unordered_map<Node*,Mask> accu_reach_of; // Accumulated 'spatial reach' of input nodes for a job to execute
+	std::unordered_map<Node*,Mask> accu_in_reach_of; // Accumulated 'spatial reach' of input nodes (e.g. Focal, Radial)
+	std::unordered_map<Node*,Mask> accu_out_reach_of; // Accumulated 'spatial reach' of output nodes (e.g. Spread)
 
 	mutable std::mutex mtx;
 

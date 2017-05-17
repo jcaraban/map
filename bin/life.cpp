@@ -25,6 +25,7 @@ int main(int argc, char **argv) {
 	Raster state, nbh, random, x, y;
 	DataSize data_size;
 	BlockSize block_size = {512,512};
+	GroupSize group_size = {16,16};
 	int r, N = 16;
 
 	//// Arguments
@@ -40,13 +41,13 @@ int main(int argc, char **argv) {
 
 	//// Configuration
 
-	detail::Runtime::getConfig().setNumRanks(1);
+	//detail::Runtime::getConfig().setNumRanks(1);
 	//setupDevices("Intel",DEV_CPU,"");
 	setupDevices("",DEV_GPU,"");
 
 	//// Computation
 	
-	state = rand(N,data_size,U8,ROW+BLK,block_size) > 128;
+	state = rand(N,data_size,U8,ROW+BLK,block_size,group_size) > 128;
 	//state = rand(N,data_size,U8,ROW+BLK,block_size) * 0;
 
 	r = data_size[0] / 2;

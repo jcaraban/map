@@ -30,7 +30,7 @@ struct key_hash {
 	std::size_t operator()(const Key& k) const;
 };
 
-enum HoldType { NONE_HOLD, HOLD_0, HOLD_1, HOLD_N, N_HOLD };
+enum HoldType { NONE_HOLD, HOLD_0=0x1, HOLD_1=0x2, /*HOLD_2=0x4,*/ HOLD_N=0x8, N_HOLD };
 enum DependType { DEPEND_UNKNOWN = -1, DEPEND_ZERO = 0 };
 
 //typedef std::vector<Key> Depend;

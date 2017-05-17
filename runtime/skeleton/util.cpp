@@ -74,8 +74,9 @@ string out_arg(const Node *node) {
 	std::string type = node->datatype().ctypeString();
 
 	string str = "global " + type + " *OUT_" + node->id + ",";
-	if (d0)
-		str += string(" int idx_") + node->id + ",";
+
+	if (prod(node->blocksize())==1)
+		str += string(" int off_") + node->id + ",";
 
 	return str;
 }
@@ -548,7 +549,7 @@ string defines_focal_flow() {
 	return str;
 }
 
-string defines_zonal_reduc(ReductionType rt, DataType dt) {
+string defines_reduc_type(ReductionType rt, DataType dt) {
 	string ftype = dt.ctypeString();
 	string itype =  ( dt.is64() ? DataType(S64) : DataType(S32) ).ctypeString();
 	string atomic = "atomic";

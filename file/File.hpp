@@ -2,7 +2,7 @@
  * @file    File.hpp 
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * TODO: Ferr has to be defined, then asserts() should be changed for cerr + return
+ * TODO: get rid of all this template non-sense !!
  */
 
 #ifndef MAP_FILE_HPP_
@@ -228,7 +228,7 @@ Ferr FILE_DEC::setStreamDir(StreamDir stream_dir) {
 		case IO  : if (Format::Support::StreamDir::IO  == 0) assert(0); break;
 		default  : assert(0);
 	}
-	meta.stream_dir = stream_dir;
+	meta.setStreamDir(stream_dir);
 
 	return ferr;
 }
@@ -254,7 +254,7 @@ Ferr FILE_DEC::setDataType(DataType data_type) {
 		case S64 : if (Format::Support::DataType::S64 == 0) assert(0); break;
 		default  : assert(0);
 	}
-	meta.data_type = data_type;
+	meta.setDataType(data_type);
 
 	return ferr;
 }
@@ -276,7 +276,7 @@ Ferr FILE_DEC::setNumDim(NumDim num_dim) {
 	if (num_dim.is(TIME) && Format::Support::NumDim::TIME == 0) {    
 		assert(0);
 	}
-	meta.num_dim = num_dim;
+	meta.setNumDim(num_dim);
 
 	return ferr;
 }
@@ -297,7 +297,7 @@ Ferr FILE_DEC::setMemOrder(MemOrder mem_order) {
 	if (mem_order.is(BLK) && Format::Support::MemOrder::BLK == 0) {    
 		assert(0);
 	}
-	meta.mem_order = mem_order;
+	meta.setMemOrder(mem_order);
 
 	return ferr;
 }
@@ -309,21 +309,7 @@ Ferr FILE_DEC::setDataSize(DataSize data_size) {
 	if (is_open) {
 		assert(!"Error in set method, file was open already!");
 	}
-	if (data_size.size() != meta.num_dim.toInt()) {
-		assert(0);
-	}
-	if (any(data_size < 1)) {
-		assert(0);
-	}
-	if (!meta.block_size.isNone() && any(data_size < meta.block_size)) {
-		assert(0);
-	}
-
-	meta.data_size = data_size;
-
-	if (!meta.block_size.isNone()) {
-		meta.num_block = (meta.data_size + meta.block_size - 1) / meta.block_size;
-	}
+	meta.setDataSize(data_size);
 
 	return ferr;
 }
@@ -335,21 +321,7 @@ Ferr FILE_DEC::setBlockSize(BlockSize block_size) {
 	if (is_open) {
 		assert(!"Error in set method, file was open already!");
 	}
-	if (block_size.size() != meta.num_dim.toInt()) {
-		assert(0);
-	}
-	if (any(block_size < 1)) {
-		assert(0);
-	}
-	if (!meta.data_size.isNone() && any(meta.data_size < block_size)) {
-		assert(0);
-	}
-
-	meta.block_size = block_size;
-
-	if (!meta.data_size.isNone()) {
-		meta.num_block = (meta.data_size + meta.block_size - 1) / meta.block_size;
-	}
+	meta.setBlockSize(block_size);
 
 	return ferr;
 }
@@ -362,14 +334,14 @@ Ferr FILE_DEC::open(std::string file_path, StreamDir stream_dir) {
 		assert(!"Error opening, file was open already!");
 	}
 	if (stream_dir == NONE_STREAMDIR) { 
-		if (meta.stream_dir == NONE_STREAMDIR) { // Checks that at least one StreamDir was given
+		if (meta.getStreamDir() == NONE_STREAMDIR) { // Checks that at least one StreamDir was given
 			assert(!"One stream_dir must be given, either before or by argument");
 		} else { // Always uses the last given
 			stream_dir = meta.stream_dir;
 		}
 	}
 	if (stream_dir == OUT) {
-		if (meta.data_type == NONE_DATATYPE || meta.num_dim == NONE_NUMDIM || meta.mem_order == NONE_MEMORDER) {
+		if (meta.getDataType() == NONE_DATATYPE || meta.getNumDim() == NONE_NUMDIM || meta.getMemOrder() == NONE_MEMORDER) {
 			assert(!"Format must be configured before opening an OUT file");
 		}
 	}
@@ -388,8 +360,8 @@ Ferr FILE_DEC::open(std::string file_path, StreamDir stream_dir) {
 		// MetaData vars should be assigned here, not in Format::open()::IN
 		// this has to do with the current task division, where Format has more responsabilities than it should
 		// Format defines how the data is stored and encoded, but has nothing to do with e.g. opening closing the file
-		// @ Temporary {data_type,num_dim,mem_order,data_size,block_size} are asigned in Formats
-		meta.num_block = (meta.data_size + meta.block_size - 1) / meta.block_size;
+		// @@ Temporary {data_type,num_dim,mem_order,data_size,block_size} are asigned in Formats
+		meta.setGroupSize({16,16}); // @@
 	}
 
 	return ferr;
@@ -428,7 +400,7 @@ Ferr FILE_DEC::read(void* dst, const Coord& beg_coord, const Coord& end_coord) {
 	if (any(beg_coord >= end_coord)) {
 		assert(0);
 	}
-	if (any(!in_range(beg_coord,meta.data_size))) {
+	if (any(!in_range(beg_coord,meta.getDataSize()))) {
 		assert(0);
 	}
 
@@ -459,7 +431,7 @@ Ferr FILE_DEC::write(const void* src, const Coord& beg_coord, const Coord& end_c
 	if (any(beg_coord >= end_coord)) {
 		assert(0);
 	}
-	if (any(!in_range(beg_coord,meta.data_size))) {
+	if (any(!in_range(beg_coord,meta.getDataSize()))) {
 		assert(0);
 	}
 
@@ -488,7 +460,7 @@ Ferr FILE_DEC::readBlock(Block &block) const {
 		if (block.key.coord.size() != meta.num_dim.toInt()) {
 			assert(0);
 		}
-		if (any(!in_range(block.key.coord,meta.num_block))) { // @
+		if (any(!in_range(block.key.coord,meta.getNumBlock()))) { // @
 			assert(!"Error reading, coord is out of range");
 		}
 	}
@@ -531,7 +503,7 @@ Ferr FILE_DEC::writeBlock(const Block &block) {
 		if (block.key.coord.size() != meta.num_dim.toInt()) {
 			assert(0);
 		}
-		if (any(!in_range(block.key.coord,meta.num_block))) { // @
+		if (any(!in_range(block.key.coord,meta.getNumBlock()))) { // @
 			assert(!"Error writing, coord is out of range");
 		}
 	}

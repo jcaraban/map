@@ -51,6 +51,8 @@ class UnaryType {
 
 template <UnaryEnum U, DataTypeEnum T> struct UnaryOperator;
 
+static_assert( std::is_standard_layout< UnaryType >::value , "UnaryType must be C compatible");
+
 } } // namespace map::detail
 
 #endif

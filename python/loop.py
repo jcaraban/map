@@ -35,7 +35,7 @@ def pitFill(orig, stream):
 	elev = con(acti, orig, +inf)
 	nbh = [[1,1,1],[1,0,1],[1,1,1]]
 
-	while zsum(acti):
+	while zor(acti):
 		newe = max( fmin( elev , nbh ) , orig )
 		acti = elev != newe
 		elev = newe
@@ -93,7 +93,7 @@ def basinBorder(catch):
 ## Computation
 
 dem = read(in_file_path)
-stream = zeros_like(dem,S32)
+stream = dem < 0.05
 pit = pitFill(dem,stream)
 #
 write( pit, out_file_path)

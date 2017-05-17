@@ -467,6 +467,7 @@ Array4<T> cond(const Array4<bool> &cond, const Array4<T> &lhs, const Array4<T> &
 
 template <typename T>
 std::string to_string(const Array4<T> &array) {
+	assert(not array.isNone());
 	std::string str = "{";
 	for (int i=0; i<array.size(); i++) {
 		std::string comma = (i < array.size()-1) ? "," : "";
@@ -478,13 +479,7 @@ std::string to_string(const Array4<T> &array) {
 
 template <typename T>
 std::ostream& operator<<(std::ostream &strm, const Array4<T> &array4) {
-	strm << "{";
-	for (int i=0; i<array4.size()-1; i++)
-		strm << array4[i] << ",";
-	if (array4.size() > 0)
-		strm << array4[ array4.size()-1 ];
-	strm << "}";
-	return strm;
+	return strm << to_string(array4);
 }
 
 
@@ -571,17 +566,16 @@ inline bool neighbors(Coord lhs, Coord rhs, int step=1) {
 
 struct coord_hash {
 	std::size_t operator()(const Coord &c) const {
-		// @ Think how to improve this hash function
 		std::size_t h = 0;
 		for (int i=0; i<c.size(); i++)
-			h = (size_t)c[i] << (i*16);
+			h ^= std::hash<int>()(c[i]);
 		return h;
 	}
 };
 
 struct coord_equal {
 	bool operator()(const Coord &lhs, const Coord &rhs) const {
-		return all(lhs == rhs);
+		return lhs.size() == rhs.size() && all(lhs == rhs);
 	}
 };
 

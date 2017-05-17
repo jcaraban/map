@@ -65,7 +65,9 @@ namespace map {
 	using detail::Array4;
 	using detail::DataSize;
 	using detail::BlockSize;
+	using detail::GroupSize;
 	using detail::NumBlock;
+	using detail::NumGroup;
 	using detail::Coord;
 	using detail::operator+;
 	using detail::operator-;

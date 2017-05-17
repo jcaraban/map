@@ -34,6 +34,8 @@ class StreamDir {
 	std::string toString() const;
 };
 
+static_assert( std::is_standard_layout< StreamDir >::value , "DataType must be C compatible");
+
 } } // namespace map::detail
 
 #endif

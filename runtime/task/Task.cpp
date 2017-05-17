@@ -2,6 +2,8 @@
  * @file    Task.cpp 
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
+ * TODO: SPREAD needs another look in nextJobs(), 'for offset : out_space'
+ * TODO: nextJob() and the 'inversion' would not work for the central Radial Job
  */
 
 #include "Task.hpp"
@@ -11,7 +13,6 @@
 #include "LoopTask.hpp"
 #include "IdentityTask.hpp"
 #include "../dag/Group.hpp"
-#include "../ThreadId.hpp"
 #include "../Runtime.hpp"
 #include <memory>
 #include <cassert>
@@ -58,7 +59,8 @@ Task::Task(Program &prog, Clock &clock, Config &conf, Group *group)
 	, prev_jobs_count(0)
 	, self_jobs_count(0)
 	, last()
-	, accu_reach_of()
+	, accu_in_reach_of()
+	, accu_out_reach_of()
 	, mtx()
 {
 	// Links 'group' <-> 'task'
@@ -102,15 +104,14 @@ Task::Task(Program &prog, Clock &clock, Config &conf, Group *group)
 	// Prepares next_of_out structure for the next tasks
 	next_of_out.resize(outputList().size());
 
-	// Filling is_input_of structure // @@ obsolete
+	// Filling 'is_input_of' structure, e.g. tells the pre-focal, pre-radial
 	is_input_of.resize(inputList().size());
 	for (int i=0; i<inputList().size(); i++)
 		is_input_of[i] = isInputOf(inputList()[i],base_group);
 
 	// Puts in + body + out nodes into 'all_list', in order
-	auto all_list = full_join(inputList(),nodeList());
-	all_list = full_unique_join(all_list,outputList());
-	accu_reach_of = decltype(accu_reach_of)();
+	auto body_out = full_unique_join(nodeList(),outputList());
+	auto all_list = full_join(inputList(),body_out);
 
 	// Walks nodes backward and accumulate their 'input spatial reach'
 	for (auto i=all_list.rbegin(); i!=all_list.rend(); i++) {
@@ -119,12 +120,26 @@ Task::Task(Program &prog, Clock &clock, Config &conf, Group *group)
 
 		auto next_inside = inner_join(node->nextList(),nodeList());
 		for (auto next : next_inside) {
-			auto next_in = next->inputReach(Coord());
-			auto next_accu = accu_reach_of.find(next)->second;
+			auto next_in = next->inputReach();
+			auto next_accu = accu_in_reach_of.find(next)->second;
 			reach = flat(reach,pipe(next_in,next_accu)); // combines the spatial reaches
 		}
 
-		accu_reach_of.insert({node,reach});
+		accu_in_reach_of.insert({node,reach});
+	}
+
+	// Walks nodes forward and accumulates their 'output spatial reach'
+	for (auto node : body_out) { // @ all_list ?
+		auto reach = Mask(numdim().unitVec(),true); // accumulated spatial reach
+
+		auto prev_inside = inner_join(node->prevList(),nodeList());
+		for (auto prev : prev_inside) {
+			auto prev_out = prev->outputReach();
+			auto prev_accu = accu_out_reach_of.find(prev)->second;
+			reach = flat(reach,pipe(prev_out,prev_accu)); // combines the spatial reaches
+		}
+
+		accu_out_reach_of.insert({node,reach});
 	}
 }
 
@@ -188,18 +203,28 @@ const NumBlock& Task::numblock() const {
 	return group()->numblock();
 }
 
+const GroupSize& Task::groupsize() const {
+	return group()->groupsize();
+}
+
+const NumGroup& Task::numgroup() const {
+	return group()->numgroup();
+}
+
 Pattern Task::pattern() const {
 	return group()->pattern();
 }
 
-const Mask& Task::inputReach(Node *node, Coord coord) const {
-	auto it = accu_reach_of.find(node);
-	assert(it != accu_reach_of.end());
+const Mask& Task::accuInputReach(Node *node, Coord coord) const {
+	auto it = accu_in_reach_of.find(node);
+	assert(it != accu_in_reach_of.end());
 	return it->second;
 }
 
-const Mask& Task::outputReach(Node *node, Coord coord) const {
-	return node->outputReach(coord); // 'out_spa_rea' does not accumuate
+const Mask& Task::accuOutputReach(Node *node, Coord coord) const {
+	auto it = accu_out_reach_of.find(node);
+	assert(it != accu_out_reach_of.end());
+	return it->second;
 }
 
 void Task::createVersions() {
@@ -210,7 +235,7 @@ void Task::createVersions() {
 	for (int i=0; i<env.deviceSize(); i++) {
 		Verkey key(this);
 		key.dev = env.D(i);
-		key.group = {16,16};
+		key.group = groupsize();
 		key.detail = "";
 		key_list.push_back(key);
 	}
@@ -245,13 +270,12 @@ void Task::blocksToLoad(Coord coord, KeyList &in_keys) const {
 	in_keys.clear();
 	
 	for (auto node : inputList()) {
-		auto reach = inputReach(node,coord);
+		auto reach = accuInputReach(node,coord);
 		auto space = reach.blockSpace(blocksize());
 
 		for (auto offset : space) {	
 			Coord nbc = coord + offset;
-			HoldType hold = (node->numdim() == D0) ? HOLD_1 : HOLD_N;
-			hold = any(not in_range(nbc,numblock())) ? HOLD_0 : hold;
+			HoldType hold = node->holdtype(nbc);
 			Depend dep = node->isInput() ? nextInputDepends(node,nbc) : -1;
 
 			in_keys.push_back( std::make_tuple(Key(node,nbc),hold,dep) );
@@ -262,12 +286,16 @@ void Task::blocksToLoad(Coord coord, KeyList &in_keys) const {
 void Task::blocksToStore(Coord coord, KeyList &out_keys) const {
 	out_keys.clear();
 
-	// TODO: add 'for offset : out_reach)
-
 	for (auto node : outputList()) {
-		HoldType hold = (node->numdim() == D0) ? HOLD_1 : HOLD_N;
-		int dep = nextDependencies(node,coord) + 1; // @ +1 for notify() in out-blks
-		out_keys.push_back( std::make_tuple(Key(node,coord),hold,dep) );
+		auto reach = accuOutputReach(node,coord);
+		auto space = reach.blockSpace(blocksize());
+
+		for (auto offset : space) {	
+			Coord nbc = coord + offset;
+			HoldType hold = node->holdtype(nbc);
+			int dep = 1 + nextDependencies(node,coord); // +1 cause out blocks get 1 extra notify()
+			out_keys.push_back( std::make_tuple(Key(node,coord),hold,dep) );
+		}
 	}
 }
 
@@ -281,7 +309,7 @@ void Task::initialJobs(std::vector<Job> &job_vec) {
 
 void Task::askJobs(Job done_job, std::vector<Job> &job_vec) {
 	assert(done_job.task == this);
-	bool zero = (Tid == last);
+	bool end = (Tid == last);
 
 	// Asks itself for self-jobs, a.k.a. intra-dependencies (e.g. Radial, Spread)
 	this->selfJobs(done_job,job_vec);
@@ -290,7 +318,7 @@ void Task::askJobs(Job done_job, std::vector<Job> &job_vec) {
 	for (auto next_task : this->nextList()) {
 		auto common_nodes = inner_join(this->outputList(),next_task->inputList());
 		for (auto node : common_nodes) {
-			if (node->numdim() == D0 && !zero)
+			if (node->numdim()==D0 && !end)
 				continue; // D0 jobs only notify at the end
 			Key key = Key(node,done_job.coord);
 			next_task->nextJobs(key,job_vec);
@@ -309,10 +337,11 @@ void Task::nextJobs(Key done_block, std::vector<Job> &job_vec) {
 	}
 	else // Case when prev!=D0, self!=D0
 	{
-		auto reach = inputReach(done_block.node,done_block.coord);
-		auto space = reach.blockSpace(blocksize());
+		auto reach = accuInputReach(done_block.node,done_block.coord);
+		auto inver = reach.invert(); // Notifies the inverted 'input space'
+		auto space = inver.blockSpace(blocksize());
 
-		for (auto offset : space) {	// @@ not really correct
+		for (auto offset : space) {
 			auto nbc = done_block.coord + offset;
 			if (all(in_range(nbc,numblock()))) {
 				notify(nbc,job_vec);
@@ -369,7 +398,7 @@ int Task::nextDependencies(Node *node, Coord coord) const {
 }
 
 int Task::prevInterDepends(Node *node, Coord coord) const {
-	auto reach = inputReach(node,coord);
+	auto reach = accuInputReach(node,coord);
 	auto space = reach.blockSpace(blocksize());
 	int dep = 0;
 
@@ -401,7 +430,7 @@ int Task::nextInputDepends(Node *node, Coord coord) const { // @
 
 	for (auto task : prog.taskList()) {
 		if (is_included(node,task->inputList())) {
-			auto reach = inputReach(node,coord);
+			auto reach = accuInputReach(node,coord);
 			auto space = reach.blockSpace(blocksize());
 			for (auto offset : space)
 				dep += all(in_range(coord+offset,numblock()));
@@ -439,7 +468,7 @@ void Task::preLoad(Coord coord, const BlockList &in_blk, const BlockList &out_bl
 	NodeList nodes_to_fill = full_unique_join(nodeList(),outputList());
 
 	for (auto node : nodes_to_fill) {
-		auto reach = inputReach(node,coord);
+		auto reach = accuInputReach(node,coord);
 		auto space = reach.blockSpace(blocksize());
 		for (auto offset : space) {
 			node->computeFixed(coord+offset,val_hash);
@@ -454,63 +483,32 @@ void Task::preLoad(Coord coord, const BlockList &in_blk, const BlockList &out_bl
 }
 
 void Task::preCompute(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
-	const Version *ver = getVersion(DEV_ALL,{},""); // Any device, No detail
-	cle::Task tsk = ver->tsk;
-	cle::Queue que = tsk.C().D(Tid.dev()).Q(Tid.rnk());
-	cl_int err;
-
-	// Fills output-zonal-scalars with neutral value
-	int sidx = 0;
-	for (auto blk : out_blk) {
-		if (blk->holdtype() == HOLD_1)
-		{
-			ReductionType rtype;
-			auto *zn = dynamic_cast<ZonalReduc*>(blk->key.node);
-			if(zn != nullptr)
-				rtype = zn->type;
-			auto *sn = dynamic_cast<Scalar*>(blk->key.node);
-			if(sn != nullptr) {
-				auto *zn = dynamic_cast<ZonalReduc*>(sn->prev());
-				assert(zn != nullptr);
-				rtype = zn->type;
-			}
-			assert(rtype != NONE_REDUCTION);
-
-			int index = sizeof(double)*(conf.max_out_block*Tid.rnk() + sidx++);
-			blk->value = rtype.neutral(blk->datatype());
-			size_t dtsz = blk->value.datatype().sizeOf();
-
-			err = clEnqueueFillBuffer(*que,blk->scalar_page,&blk->value.ref(),dtsz,index,dtsz,0,nullptr,nullptr);
-			cle::clCheckError(err);
-		}
-	}
+	return; // choose a version among the available, according to statistics, devices ?
 }
 
 void Task::postCompute(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
-	const Version *ver = getVersion(DEV_ALL,{},""); // Any device, No detail
-	cle::Task tsk = ver->tsk;
-	cle::Queue que = tsk.C().D(Tid.dev()).Q(Tid.rnk());
+	return; // summary ?
+}
 
-	// Transfers back the output-zonal-scalars
-	int sidx = 0;
-	for (auto blk : out_blk) {
-		if (blk->holdtype() == HOLD_1)
-		{
-			int index = sizeof(double)*(conf.max_out_block*Tid.rnk() + sidx++);
-			size_t dtsz = blk->value.datatype().sizeOf();
+void Task::postStore(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
+	std::lock_guard<std::mutex> lock(mtx); // thread-safe
+	assert(self_jobs_count > 0);
 
-			cl_int clerr = clEnqueueReadBuffer(*que,blk->scalar_page,CL_TRUE,index,dtsz,&blk->value.ref(),0,nullptr,nullptr);
-			cle::clCheckError(clerr);
+	self_jobs_count--;
+	if (self_jobs_count == 0)
+		last = Tid;
 
-			if (blk->key.node->pattern().is(ZONAL)) { // @
-				auto *node = dynamic_cast<ZonalReduc*>(blk->key.node);
-				std::lock_guard<std::mutex> lock(mtx); // thread-safe
-				node->value = node->type.apply(node->value,blk->value);
-			}
+	// @ Integrates reduced zonal value to the node
+	if (self_jobs_count == 0) {
+		for (auto blk : out_blk) {
+			blk->key.node->value = blk->value;
 		}
+	}
 
-		//... continue ... cl Enqueue Fill/Read Buffer with the 'group_page' too, then upgrade the 'skeletons'
-
+	// @ Integrates 'stats' to the block and node
+	for (auto blk : out_blk) {
+		if (blk->key.node->pattern().isNot(STATS))
+			continue;
 		auto *summary = dynamic_cast<Summary*>(blk->key.node);
 		if (summary != nullptr) {
 			VariantType min, max, mean, std;
@@ -549,22 +547,15 @@ void Task::postCompute(Coord coord, const BlockList &in_blk, const BlockList &ou
 	}
 }
 
-void Task::postStore(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
-	std::lock_guard<std::mutex> lock(mtx); // thread-safe
-
-	self_jobs_count--;
-	assert(self_jobs_count >= 0);
-	
-	if (self_jobs_count == 0)
-		last = Tid;
-}
-
 void Task::compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
 	const Version *ver = getVersion(DEV_ALL,{},""); // Any device, No detail
+	assert(ver != nullptr);
 
 	auto all_fixed = [&](Block *b){ return b->fixed; };
-	if (std::all_of(out_blk.begin(),out_blk.end(),all_fixed))
+	if (std::all_of(out_blk.begin(),out_blk.end(),all_fixed)) {
+		clock.incr(NOT_COMPUTED);
 		return; // All output blocks are fixed, no need to compute
+	}
 
 	computeVersion(coord,in_blk,out_blk,ver);
 }
@@ -591,7 +582,7 @@ void Task::computeVersion(Coord coord, const BlockList &in_blk, const BlockList 
 
 	//// Sets kernel arguments
 
-	int arg = 0, sidx = 0;
+	int arg = 0, bidx = 0;
 
 	for (auto &b : in_blk) {
 		void *dev_mem = (b->entry != nullptr) ? b->entry->dev_mem : nullptr;
@@ -610,10 +601,14 @@ void Task::computeVersion(Coord coord, const BlockList &in_blk, const BlockList 
 		}
 	}
 	for (auto &b : out_blk) {
-		/****/ if (b->holdtype() == HOLD_1) { // If HOLD_1, the scalar_page + index are given
+		/****/ if (b->holdtype() == HOLD_1) { // If HOLD_1, the scalar_page + offset are given
 			clSetKernelArg(*krn, arg++, sizeof(cl_mem), &b->scalar_page);
-			int index = sizeof(double)*(conf.max_out_block*Tid.rnk() + sidx++);
-			clSetKernelArg(*krn, arg++, sizeof(int), &index);
+			int offset = sizeof(double)*(conf.max_out_block*Tid.rnk() + bidx++);
+			clSetKernelArg(*krn, arg++, sizeof(int), &offset);
+		//} else if (b->holdtype() == HOLD_2) {
+		//	clSetKernelArg(*krn, arg++, sizeof(cl_mem), &b->group_page);
+		//	int offset = sizeof(double)*conf.max_group_x_block*(conf.max_out_block*Tid.rnk() + bidx++);
+		//	clSetKernelArg(*krn, arg++, sizeof(int), &offset);
 		} else if (b->holdtype() == HOLD_N) { // In the normal case a valid cl_mem with memory is given
 			clSetKernelArg(*krn, arg++, sizeof(cl_mem), &b->entry->dev_mem);
 		} else {

@@ -5,6 +5,7 @@
  * TODO: the scheduling would be more efficient if the jobs are sorted in the queue near by their dependencies
  *       e.g. for two series of conv in parallel, better compute a whole series first, instead of interleaving
  * TODO: it will be necessary to have individual queues per device to keep locality
+ * TODO: move 'dependency_hash' from the tasks to scheduler ?
  */
 
 #ifndef MAP_RUNTIME_SCHEDULER_HPP_

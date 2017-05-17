@@ -69,6 +69,7 @@ class IFormat
 		/*struct MemAccess {
 			static const bool FULL_RANDOM;
 			static const bool BLK_RANDOM;
+			static const bool SEQUENTIAL;
 		};*/
 		/*struct Compression {
 			static const bool 

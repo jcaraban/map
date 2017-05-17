@@ -49,6 +49,9 @@ struct Pattern {
 	 */
 	bool is(Pattern pat) const;
 	bool isNot(Pattern pat) const;
+
+	//
+	std::string toString() const;
 	
 	//friend bool canPipeFuse(const Pattern& top, const Pattern& bot);
 	//friend bool canFlatFuse(const Pattern& left, const Pattern& right);

@@ -2,7 +2,6 @@
  * @file    Worker.cpp 
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * TODO: the prediction should happens before any 'data block' is read from disk, only with the 'data stats'
  * TODO: for more dynamism, worker should analyse / fuse / compile online ('runtime approach to map algebra')
  */
 
@@ -28,23 +27,23 @@ Worker::Worker(Cache &cache, Scheduler &sche, Clock &clock, Config &conf)
 {
 	in_key.reserve(conf.max_in_block);
 	in_blk.reserve(conf.max_in_block);
-	out_key.reserve(conf.max_in_block);
-	out_blk.reserve(conf.max_in_block);
+	out_key.reserve(conf.max_out_block);
+	out_blk.reserve(conf.max_out_block);
 }
 
 void Worker::work(ThreadId thread_id) {
 	Tid = thread_id; // Local thread id initialization
 	
-	// @@ SymLoop 'condition' + 'unrolling' needs to happen locally
+	// @ SymLoop 'condition' + 'unrolling' needs to happen locally
 
 	while (true) // Worker loop
 	{
 		before_work();
 
 		Job job = sche.requestJob();
-		
-		if (job.isNone()) break; // Exit point
 
+		if (job.isNone()) break; // Exit point
+std::cout << job.task->id() << " " << job.coord << std::endl;
 		request_blocks(job);
 
 		pre_load(job);
@@ -70,8 +69,8 @@ void Worker::work(ThreadId thread_id) {
 }
 
 void Worker::before_work() {
-	// what could be do 'before work' and not related to the job
-	// e.g. machine related stuff, debug checks,  distributed exchange (of version_cache, statistics) ?
+	// what could we do 'before work' and not related to the job ?
+	// e.g. machine related opt, debug checks,  distributed exchange (of version_cache, statistics)
 }
 
 void Worker::request_blocks(Job job) {
@@ -87,6 +86,10 @@ void Worker::request_blocks(Job job) {
 void Worker::pre_load(Job job) {
 	TimedRegion region(clock,PRE_LOAD); // Timed function
 
+	for (auto iblk : in_blk) // @@
+		if (iblk->holdtype() == HOLD_1)
+			cache.loadScalar(iblk,0);
+
 	job.task->preLoad(job.coord,in_blk,out_blk);
 }
 
@@ -97,12 +100,11 @@ void Worker::load(Job job) {
 	cache.retainEntries(out_blk);
 
 	cache.readInputBlocks(in_blk);
+	cache.initOutputBlocks(out_blk);
 }
 
 void Worker::pre_compute(Job job) {
 	TimedRegion region(clock,PRE_COMP); // Timed function
-
-	// choose a version among the available, according to statistics, devices ?
 
 	job.task->preCompute(job.coord,in_blk,out_blk);
 }

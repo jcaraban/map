@@ -21,8 +21,6 @@ struct LoopTask : public Task
 {	
 	LoopTask(Program &prog, Clock &clock, Config &conf, Group *group);	
 
-	void createVersions();
-
 	void blocksToLoad(Coord coord, KeyList &in_keys) const;
 	void blocksToStore(Coord coord, KeyList &out_keys) const;
 
@@ -31,17 +29,12 @@ struct LoopTask : public Task
 	void selfJobs(Job done_job, std::vector<Job> &job_vec);
 	void nextJobs(Key done_block, std::vector<Job> &job_vec);
 
-	int prevInterDepends(Node *node, Coord coord) const;
-	int nextInterDepends(Node *node, Coord coord) const;
-	int prevIntraDepends(Node *node, Coord coord) const;
-	int nextIntraDepends(Node *node, Coord coord) const;
+	int prevDependencies(Coord coord) const;
 
+	void postStore(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
 	void compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
-	
-	Pattern pattern() const;
 
   // vars
-	Pattern pat;
 	LoopCond *cond_node;
 	MergeList merge_list;
 	SwitchList switch_list;

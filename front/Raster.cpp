@@ -112,14 +112,14 @@ Raster Raster::operator=(Raster other) {
  **********************/
 
 Raster::Raster(VariantType val) {
-	node = ma_constant(val,{},val.datatype().get(),ROW,{});
+	node = ma_constant(val,{},val.datatype().get(),ROW,{},{});
 	incr();
 }
 
 
 Raster Raster::operator=(VariantType val) {
 	decr();
-	node = ma_constant(val,{},val.datatype().get(),ROW,{});
+	node = ma_constant(val,{},val.datatype().get(),ROW,{},{});
 	incr();
 	return *this;
 }
@@ -170,6 +170,10 @@ BlockSize Raster::blocksize() const {
 //	return ma_numblock(node);
 //}
 
+GroupSize Raster::groupsize() const {
+	return ma_groupsize(node);
+}
+
 /*********************
    Elemental Methods
  *********************/
@@ -217,9 +221,9 @@ Rerr write(Raster data, const std::string &file_path) {
 	return ma_write(data.node,file_path.data());
 }
 
-Raster zeros(DataSize data_size, DataType data_type, MemOrder mem_order, BlockSize block_size) {
+Raster zeros(DataSize data_size, DataType data_type, MemOrder mem_order, BlockSize block_size, GroupSize group_size) {
 	VariantType var(0,data_type);
-	return Raster( ma_constant(var,data_size,data_type.get(),mem_order.get(),block_size) );
+	return Raster( ma_constant(var,data_size,data_type.get(),mem_order.get(),block_size,group_size) );
 }
 
 Raster zeros_like(Raster data, DataType type, MemOrder order) {
@@ -227,13 +231,14 @@ Raster zeros_like(Raster data, DataType type, MemOrder order) {
 	DataType dt = (type != NONE_DATATYPE) ? type : data.datatype();
 	MemOrder mo = (order != NONE_MEMORDER) ? order : data.memorder();
 	BlockSize bs = data.blocksize();
+	GroupSize gs = data.groupsize();
 	VariantType var(0,dt);
-	return Raster( ma_constant(var,ds,dt.get(),mo.get(),bs) );
+	return Raster( ma_constant(var,ds,dt.get(),mo.get(),bs,gs) );
 }
 
-Raster ones(DataSize data_size, DataType data_type, MemOrder mem_order, BlockSize block_size) {
+Raster ones(DataSize data_size, DataType data_type, MemOrder mem_order, BlockSize block_size, GroupSize group_size) {
 	VariantType var(1,data_type);
-	return Raster( ma_constant(var,data_size,data_type.get(),mem_order.get(),block_size) );
+	return Raster( ma_constant(var,data_size,data_type.get(),mem_order.get(),block_size,group_size) );
 }
 
 Raster ones_like(Raster data, DataType type, MemOrder order) {
@@ -241,12 +246,13 @@ Raster ones_like(Raster data, DataType type, MemOrder order) {
 	DataType dt = (type != NONE_DATATYPE) ? type : data.datatype();
 	MemOrder mo = (order != NONE_MEMORDER) ? order : data.memorder();
 	BlockSize bs = data.blocksize();
+	GroupSize gs = data.groupsize();
 	VariantType var(1,dt);
-	return Raster( ma_constant(var,ds,dt.get(),mo.get(),bs) );
+	return Raster( ma_constant(var,ds,dt.get(),mo.get(),bs,gs) );
 }
 
-Raster full(VariantType var, DataSize data_size, DataType data_type, MemOrder mem_order, BlockSize block_size) {
-	return Raster( ma_constant(var,data_size,data_type.get(),mem_order.get(),block_size) );
+Raster full(VariantType var, DataSize data_size, DataType data_type, MemOrder mem_order, BlockSize block_size, GroupSize group_size) {
+	return Raster( ma_constant(var,data_size,data_type.get(),mem_order.get(),block_size,group_size) );
 }
 
 Raster full_like(VariantType var, Raster data, DataType type, MemOrder order) {
@@ -254,12 +260,13 @@ Raster full_like(VariantType var, Raster data, DataType type, MemOrder order) {
 	DataType dt = (type != NONE_DATATYPE) ? type : var.datatype();
 	MemOrder mo = (order != NONE_MEMORDER) ? order : data.memorder();
 	BlockSize bs = data.blocksize();
-	return Raster( ma_constant(var,ds,dt.get(),mo.get(),bs) );
+	GroupSize gs = data.groupsize();
+	return Raster( ma_constant(var,ds,dt.get(),mo.get(),bs,gs) );
 }
 
-Raster rand(VariantType seed, DataSize data_size, DataType data_type, MemOrder mem_order, BlockSize block_size) {
+Raster rand(VariantType seed, DataSize data_size, DataType data_type, MemOrder mem_order, BlockSize block_size, GroupSize group_size) {
 	seed = seed.convert(data_type);
-	Raster cnst = full(seed,data_size,data_type,mem_order,block_size);
+	Raster cnst = full(seed,data_size,data_type,mem_order,block_size,group_size);
 	return Raster( ma_rand(cnst.node,data_type.get(),mem_order.get()) );
 }
 
@@ -275,7 +282,8 @@ Raster index(Raster data, NumDim dim) {
 	DataSize ds = data.datasize();
 	MemOrder mo = data.memorder();
 	BlockSize bs = data.blocksize();
-	return Raster( ma_index(ds,dim.get(),mo.get(),bs) );
+	GroupSize gs = data.groupsize();
+	return Raster( ma_index(ds,dim.get(),mo.get(),bs,gs) );
 }
 
 Raster con(Raster cond, Raster lhs, Raster rhs) {

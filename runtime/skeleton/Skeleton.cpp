@@ -8,8 +8,7 @@
 #include "Skeleton.hpp"
 //#include "CpuFocalSkeleton.hpp"
 #include "RadialSkeleton.hpp"
-//#include "SpreadSkeleton.hpp"
-#include "util.hpp"
+#include "LoopSkeleton.hpp"
 #include "../Version.hpp"
 #include "../task/Task.hpp"
 #include <iostream>
@@ -87,17 +86,17 @@ std::size_t SkelTag::Hash::operator()(const SkelTag& k) const {
 Skeleton* Skeleton::Factory(Version *ver) {
 	Pattern pat = ver->task->pattern();
 
-	/**/ if ( pat.is(STATS) )
-	{
-		assert(0); //return new StatsSkeleton(ver);
-	}
-	else if ( pat.is(RADIAL) )
+	if ( pat.is(RADIAL) )
 	{
 		return new RadialSkeleton(ver);
 	}
 	else if ( pat.is(FOCAL) && ver->deviceType() == DEV_CPU )
 	{
 		assert(0); //return new CpuFocalSkeleton(ver);
+	}
+	else if ( pat.is(LOOP) )
+	{
+		return new LoopSkeleton(ver);
 	}
 	else {
 		return new Skeleton(ver);
@@ -131,7 +130,7 @@ void Skeleton::tag() {
 		Node *node = *it;
 		SkelTag tag;
 
-		tag.ext = ver->task->numdim().unitVec(); // accumulated extension
+		tag.ext = node->inputReach().datasize(); // accumulated extension
 		tag.pat = NONE_PATTERN; // code section position
 
 		if (is_included(node,ver->task->inputList())) {
@@ -168,7 +167,7 @@ void Skeleton::tag() {
 				for (auto next_tag : tag_hash[next]) {
 					SkelTag partial = tag;
 
-					auto next_ext = next->inputReach(Coord()).datasize();
+					auto next_ext = next->inputReach().datasize();
 					partial.ext = max(next_ext,next_tag.ext);
 
 					if (tag_set.find(partial) == tag_set.end()) {
@@ -294,7 +293,7 @@ void Skeleton::compact() {
 	sort_unique(ext_shared,node_id_less(),node_id_equal());
 	// Transfers nodes to 'shared' structure
 	for (auto node : ext_shared) {
-		auto reach = ver->task->inputReach(node,Coord());
+		auto reach = ver->task->accuInputReach(node,Coord());
 		int shared_size = prod(ver->groupsize() + reach.datasize() / 2 * 2);
 		shared.push_back( std::make_pair(node,shared_size) );
 	}
@@ -312,7 +311,6 @@ std::string Skeleton::versionCode() {
 	//// Variables ////
 	const int N = ver->task->numdim().toInt();
 	Pattern pattern = ver->task->group()->pattern();
-	string _s = "";
 	string cond, comma;
 
 	//// Defines ////
@@ -324,10 +322,8 @@ std::string Skeleton::versionCode() {
 	add_line( "" );
 
 	// Definitions, Utilities
-	if (pattern.is(LOCAL) || pattern.is(ZONAL)) {
-		add_section( defines_local() );
-		add_line( "" );
-	}
+	add_section( defines_local() );
+	add_line( "" );
 	if (pattern.is(FOCAL)) {
 		add_section( defines_focal() );
 		add_line( "" );
@@ -336,7 +332,7 @@ std::string Skeleton::versionCode() {
 	bool local_types[N_DATATYPE] = {};
 	bool focal_types[N_DATATYPE] = {};
 	bool diver_types[N_DATATYPE] = {};
-	bool zonal_reduc[N_DATATYPE][N_REDUCTION] = {};
+	bool reduc_def[N_DATATYPE][N_REDUCTION] = {};
 
 	auto any_true = [](bool array[], int num){
 		return std::any_of(array,array+num,[](bool b) { return b; });
@@ -344,7 +340,7 @@ std::string Skeleton::versionCode() {
 
 	for (auto node : ver->task->inputList()) {
 		DataType dt = node->datatype();
-		auto reach = ver->task->inputReach(node,Coord());
+		auto reach = ver->task->accuInputReach(node,Coord());
 		bool extended = prod(reach.datasize()) > 1;
 
 		local_types[dt.get()] = true;
@@ -355,10 +351,8 @@ std::string Skeleton::versionCode() {
 		DataType dt = node->prev(0)->datatype();
 		diver_types[dt.get()] = true;
 	}
-	for (auto node : reduc) {
-		DataType dt = node->datatype();
-		ReductionType rt = node->type;
-		zonal_reduc[dt.get()][rt.get()] = true;
+	for (auto reduc : reduc_list) {
+		reduc_def[reduc.dt.get()][reduc.rt.get()] = true;
 	}
 
 	for (auto dt=NONE_DATATYPE; dt<N_DATATYPE; ++dt)
@@ -381,9 +375,9 @@ std::string Skeleton::versionCode() {
 
 	for (auto dt=NONE_DATATYPE; dt<N_DATATYPE; ++dt)
 		for (auto rt=NONE_REDUCTION; rt<N_REDUCTION; ++rt)
-			if (zonal_reduc[dt][rt])
-				add_section( defines_zonal_reduc(rt,dt) );
-	if (any_true(&**zonal_reduc,N_DATATYPE*N_REDUCTION))
+			if (reduc_def[dt][rt])
+				add_section( defines_reduc_type(rt,dt) );
+	if (any_true(&**reduc_def,N_DATATYPE*N_REDUCTION))
 		add_line( "" );
 
 	//// Header ////
@@ -396,7 +390,7 @@ std::string Skeleton::versionCode() {
 	indent_count++;
 	for (auto &node : ver->task->inputList()) // keeps the order IN_0, IN_8, ...
 	{
-		auto reach = ver->task->inputReach(node,Coord());
+		auto reach = ver->task->accuInputReach(node,Coord());
 		bool extended = prod(reach.datasize()) > 1;
 		add_line( in_arg(node,extended) );
 	}
@@ -437,10 +431,16 @@ std::string Skeleton::versionCode() {
 	
 	// Declaring indexing variables
 	for (int n=0; n<N; n++) {
-		add_line( _s + "int gc"+n+" = get_local_id("+n+");" );
+		add_line( string("int gc")+n+" = get_local_id("+n+");" );
 	}
 	for (int n=0; n<N; n++) {
-		add_line( _s + "int bc"+n+" = get_global_id("+n+");" );
+		add_line( string("int bc")+n+" = get_global_id("+n+");" );
+	}
+	for (int n=0; n<N; n++) {
+		add_line( string("int GC")+n+" = get_group_id("+n+");" );
+	}
+	for (int n=0; n<N; n++) {
+		add_line( string("int GN")+n+" = get_num_groups("+n+");" );
 	}
 	add_line( "" );
 
@@ -532,7 +532,7 @@ void Skeleton::add_include(string file) {
 void Skeleton::dispatch_section(SkelTag tag) {
 
 	if (tag.extendedReach()) {
-		reach_head_section(tag);
+		reach_top_section(tag);
 	}
 
 	if (tag.is(INPUT)) {
@@ -546,17 +546,21 @@ void Skeleton::dispatch_section(SkelTag tag) {
 			focal_section(tag);
 		if (tag.is(ZONAL))
 			zonal_section(tag);
+		if (tag.is(STATS))
+			stats_section(tag);
+		if (tag.is(LOOP))
+			loop_section(tag);
 	}
 	if (tag.is(OUTPUT)) {
 		output_section(tag);
 	}
 
 	if (tag.extendedReach()) {
-		reach_tail_section(tag);
+		reach_bot_section(tag);
 	}
 }
 
-void Skeleton::reach_head_section(SkelTag tag) {
+void Skeleton::reach_top_section(SkelTag tag) {
 	int N = ver->task->numdim().toInt();
 
 	add_line( "// Extended section" );
@@ -586,7 +590,7 @@ void Skeleton::reach_head_section(SkelTag tag) {
 	add_line( "" );
 }
 
-void Skeleton::reach_tail_section(SkelTag tag) {
+void Skeleton::reach_bot_section(SkelTag tag) {
 	int N = ver->task->numdim().toInt();
 
 	// Filling focal shared memory
@@ -609,6 +613,8 @@ void Skeleton::reach_tail_section(SkelTag tag) {
 
 void Skeleton::input_section(SkelTag tag) {
 	add_line( "// Input section" );
+	if (tag.ext.size() == 0)
+		add_line( "// " + tag.pat.toString() + " " + to_string(tag.ext) );
 	add_line( "{" );
 	indent_count++;
 	full_code += indented(code_hash[tag]);
@@ -658,20 +664,126 @@ void Skeleton::focal_section(SkelTag tag) {
 }
 
 void Skeleton::zonal_section(SkelTag tag) {
-	int N = ver->task->numdim().toInt();
-
 	add_line( "// Zonal section" );
+	add_line( "{" );
+	indent_count++;
+
+	reduc_section(tag);
+
+	// Write-if
+	int N = ver->task->numdim().toInt();
+	add_line( "if ("+local_cond_zonal(N)+")" );
+	add_line( "{" );
+	indent_count++;
+
+	// Zonal output
+	for (auto reduc : reduc_list) {
+		if (not is_included(reduc.node,node_list_of[tag]))
+			continue;
+		string atomic = "atomic" + reduc.rt.toString();
+		string var = var_name(reduc.node);
+		string ovar = string("(global char*)OUT_") + reduc.node->id + "+off_" + reduc.node->id;
+		add_line( atomic + "( " + ovar + " , " + var + ");" );
+	}
+
+	indent_count--;
+	add_line( "}" ); // Closes write-if
+
+	indent_count--;
+	add_line( "}" );
+	add_line( "" );
+}
+
+void Skeleton::stats_section(SkelTag tag) {
+	add_line( "// Stats section" );
+	add_line( "{" );
+	indent_count++;
+	
+	reduc_section(tag);
+
+	// Write-if
+	int N = ver->task->numdim().toInt();
+	add_line( "if ("+local_cond_zonal(N)+")" );
+	add_line( "{" );
+	indent_count++;
+
+	// Stats output
+	for (auto reduc : reduc_list) {
+		if (not is_included(reduc.node,node_list_of[tag]))
+			continue;
+		if (prod(reduc.node->blocksize())==1) // BlockSummary
+		{
+			string atomic = "atomic" + reduc.rt.toString();
+			string var = var_name(reduc.node);
+			string ovar = string("(global char*)OUT_") + reduc.node->id + "+off_" + reduc.node->id;
+			add_line( atomic + "( " + ovar + " , " + var + ");" );
+		}
+		else // GroupSummary
+		{
+			string out_var = string("OUT_") + reduc.node->id + "[" + group_proj(N) + "]";
+			add_line( out_var + " = " + var_name(reduc.node) + ";" );
+		}
+	}
+
+	indent_count--;
+	add_line( "}" ); // Closes write-if
+
+
+	indent_count--;
+	add_line( "}" );
+	add_line( "" );
+}
+
+void Skeleton::loop_section(SkelTag tag) {
+	add_line( "// Loop section" );
+	add_line( "{" );
+	indent_count++;
+	
+	// Merge inputs
+	for (auto merge : merge_list)
+		add_line( var_name(merge) + " = " + in_var(merge) + ";" );
+	add_line( "" );
+
+	reduc_section(tag);
+
+	// Write-if
+	int N = ver->task->numdim().toInt();
+	add_line( "if ("+local_cond_zonal(N)+")" );
+	add_line( "{" );
+	indent_count++;
+
+	// LoopCond output
+	for (auto reduc : reduc_list) {
+		if (not is_included(reduc.node,node_list_of[tag]))
+			continue;
+		string atomic = "atomic" + reduc.rt.toString();
+		string var = var_name(reduc.node);
+		string ovar = string("(global char*)OUT_") + reduc.node->id + "+off_" + reduc.node->id;
+		add_line( atomic + "( " + ovar + " , " + var + ");" );
+	}
+
+	indent_count--;
+	add_line( "}" ); // Closes write-if
+
+
+	indent_count--;
+	add_line( "}" );
+	add_line( "" );
+}
+
+void Skeleton::reduc_section(SkelTag tag) {
+	int N = ver->task->numdim().toInt();
 
 	add_line( "if ("+global_cond(N)+")" );
 	add_line( "{" ); // Global-if
 	indent_count++;
 	
 	// Filling shared memory
-	for (auto &node : reduc) {
-		if (not is_included(node,node_list_of[tag]))
+	for (auto reduc : reduc_list) {
+		if (not is_included(reduc.node,node_list_of[tag]))
 			continue;
-		string svar = var_name(node,SHARED) + "[" + local_proj_zonal(N) + "]";
-		string var = var_name(node->prev());
+		string svar = var_name(reduc.node,SHARED) + "[" + local_proj_zonal(N) + "]";
+		string var = var_name(reduc.prev);
 		add_line( svar + " = " + var + ";" );
 	}
 
@@ -682,11 +794,11 @@ void Skeleton::zonal_section(SkelTag tag) {
 	indent_count++;
 
 	// Filling shared memory, corner cases with neutral element
-	for (auto &node : reduc) {
-		if (not is_included(node,node_list_of[tag]))
+	for (auto reduc : reduc_list) {
+		if (not is_included(reduc.node,node_list_of[tag]))
 			continue;
-		string svar = var_name(node,SHARED) + "[" + local_proj_zonal(N) + "]";
-		string neutral = node->type.neutralString( node->datatype() );
+		string svar = var_name(reduc.node,SHARED) + "[" + local_proj_zonal(N) + "]";
+		string neutral = reduc.rt.neutralString(reduc.dt);
 		add_line( svar + " = " + neutral + ";" );
 	}
 
@@ -695,7 +807,7 @@ void Skeleton::zonal_section(SkelTag tag) {
 	add_line( "}" );
 	add_line( "" );
 
-	// Zonal-loop
+	// Reduction-loop
 	add_line( "for (int i="+group_size_prod(N)+"/2; i>0; i/=2) {" );
 	indent_count++;
 	add_line( "barrier(CLK_LOCAL_MEM_FENCE);" );
@@ -708,27 +820,19 @@ void Skeleton::zonal_section(SkelTag tag) {
 
 	indent_count--;
 	add_line( "}" ); // Closes if
+
 	indent_count--;
 	add_line( "}" ); // Closes for
 	add_line( "" );
+	add_line( "barrier(CLK_LOCAL_MEM_FENCE);" );
 
-	// Write-if
-	add_line( "if ("+local_cond_zonal(N)+")" );
-	add_line( "{" );
-	indent_count++;
-
-	// Zonal output
-	for (auto &node : reduc) {
-		if (not is_included(node,node_list_of[tag]))
+	// Final results to variables
+	for (auto reduc : reduc_list) {
+		if (not is_included(reduc.node,node_list_of[tag]))
 			continue;
-		string atomic = "atomic" + node->type.toString();
-		string var = var_name(node,SHARED) + "["+local_proj_zonal(N)+"]";
-		string ovar = string("(global char*)OUT_") + node->id + "+idx_" + node->id;
-		add_line( atomic + "( " + ovar + " , " + var + ");" );
+		add_line( var_name(reduc.node) + " = " + var_name(reduc.node,SHARED) + "[0];" );
 	}
 
-	indent_count--;
-	add_line( "}" ); // Closes write-if
 	add_line( "" );
 }
 
@@ -745,7 +849,7 @@ void Skeleton::visit_input(Node *node) {
 }
 
 void Skeleton::visit_output(Node *node) {
-	if (node->numdim() == D0)
+	if (prod(node->blocksize()) == 1)
 		return; // nothing to output for D0
 	add_line( out_var(node) + " = " + var_name(node) + ";" );
 }
@@ -767,9 +871,7 @@ void Skeleton::visit(Index *node) {
 }
 
 void Skeleton::visit(Identity *node) {
-	string var = var_name(node);
-	string pvar = var_name(node->prev());
-	add_line( var + " = " + pvar+ + ";" );
+	add_line( var_name(node) + " = " + var_name(node->prev()) + ";" );
 }
 
 void Skeleton::visit(Rand *node) {
@@ -923,7 +1025,45 @@ void Skeleton::visit(Convolution *node) {
 }
 
 void Skeleton::visit(FocalFunc *node) {
-	assert(0);
+	const int N = node->numdim().toInt();
+
+	string var = var_name(node);
+	string svar = var_name(node->prev(),SHARED) + "[" + local_proj_focal_Hi(N,node->id) + "]";
+	string mvar = node->mask().datatype().toString() + "L_" + std::to_string(node->id);
+	string hvar[N];
+	for (int n=0; n<N; n++)
+		hvar[n] = string("H") + n + "_" + node->id;
+
+	for (int n=0; n<N; n++)
+		add_line( string("int ") + hvar[n] + " = " + node->mask().datasize()[n]/2 + ";" );
+	add_line( var + " = " + node->type.neutralString(node->datatype()) + ";" );
+
+	for (int n=N-1; n>=0; n--) {
+		string i = string("i") + n;
+		add_line( "for (int "+i+"=-"+hvar[n]+"; "+i+"<="+hvar[n]+"; "+i+"++) {" );
+		indent_count++;
+	}
+
+	for (int n=N-1; n>=0; n--)
+		mvar += string("[")+"i"+n+"+"+hvar[n]+"]";
+
+	add_line( "if (" + mvar + ") {" );
+	indent_count++;
+
+	if (node->type.isOperator())
+		add_line( var + " = " + var + " "+node->type.code()+" " + svar + ";" );
+	else if (node->type.isFunction())
+		add_line( var + " = " + node->type.code()+"(" + var+"," + svar+")" + ";" );
+	else 
+		assert(0);
+
+	for (int n=N-1+1; n>=0; n--) {
+		indent_count--;
+		add_line( "}" );
+	}
+	
+	mask.push_back( std::make_pair(node->mask(),node->id) );
+	ext_shared.push_back(node->prev());
 }
 
 void Skeleton::visit(FocalPercent *node) {
@@ -942,7 +1082,7 @@ void Skeleton::visit(ZonalReduc *node) {
 	else 
 		assert(0);
 
-	reduc.push_back(node);
+	reduc_list.push_back( SkelReduc(node,node->prev(),node->type,node->datatype()) );
 	shared.push_back( std::make_pair(node,prod(ver->groupsize())) );
 }
 
@@ -959,16 +1099,12 @@ void Skeleton::visit(LoopCond *node) {
 }
 
 void Skeleton::visit(LoopHead *node) {
-	string var = var_name(node);
-	string pvar = var_name(node->prev());
-	add_line( var + " = " + pvar+ + ";" );
+	add_line( var_name(node) + " = " + var_name(node->prev()) + ";" );
 }
 
 
 void Skeleton::visit(LoopTail *node) {
-	string var = var_name(node);
-	string pvar = var_name(node->prev());
-	add_line( var + " = " + pvar+ + ";" );
+	add_line( var_name(node) + " = " + var_name(node->prev()) + ";" );
 }
 
 void Skeleton::visit(Merge *node) {
@@ -1025,8 +1161,52 @@ void Skeleton::visit(Summary *node) {
 	add_line( var_name(node) + " = " + var_name(node->prev())+ + ";" );
 }
 
+void Skeleton::visit(DataSummary *node) {
+	const int N = node->prev()->numdim().toInt();
+	string lvar = var_name(node,SHARED) + "[" + local_proj_zonal(N) + "]";
+	string rvar = var_name(node,SHARED) + "[" + local_proj_zonal(N) + " + i]";
+
+	if (node->type.isOperator())
+		add_line( lvar + " = " + lvar + " " + node->type.code() + " " + rvar + ";" );
+	else if (node->type.isFunction())
+		add_line( lvar + " = " + node->type.code() + "(" + lvar + ", " + rvar + ");" );
+	else 
+		assert(0);
+
+	reduc_list.push_back( SkelReduc(node,node->prev(),node->type,node->datatype()) );
+	shared.push_back( std::make_pair(node,prod(ver->groupsize())) );
+}
+
 void Skeleton::visit(BlockSummary *node) {
-	add_line( var_name(node) + " = " + var_name(node->prev())+ + ";" );
+	const int N = node->prev()->numdim().toInt();
+	string lvar = var_name(node,SHARED) + "[" + local_proj_zonal(N) + "]";
+	string rvar = var_name(node,SHARED) + "[" + local_proj_zonal(N) + " + i]";
+
+	if (node->type.isOperator())
+		add_line( lvar + " = " + lvar + " " + node->type.code() + " " + rvar + ";" );
+	else if (node->type.isFunction())
+		add_line( lvar + " = " + node->type.code() + "(" + lvar + ", " + rvar + ");" );
+	else 
+		assert(0);
+
+	reduc_list.push_back( SkelReduc(node,node->prev(),node->type,node->datatype()) );
+	shared.push_back( std::make_pair(node,prod(ver->groupsize())) );
+}
+
+void Skeleton::visit(GroupSummary *node) {
+	const int N = node->prev()->numdim().toInt();
+	string lvar = var_name(node,SHARED) + "[" + local_proj_zonal(N) + "]";
+	string rvar = var_name(node,SHARED) + "[" + local_proj_zonal(N) + " + i]";
+
+	if (node->type.isOperator())
+		add_line( lvar + " = " + lvar + " " + node->type.code() + " " + rvar + ";" );
+	else if (node->type.isFunction())
+		add_line( lvar + " = " + node->type.code() + "(" + lvar + ", " + rvar + ");" );
+	else 
+		assert(0);
+
+	reduc_list.push_back( SkelReduc(node,node->prev(),node->type,node->datatype()) );
+	shared.push_back( std::make_pair(node,prod(ver->groupsize())) );
 }
 
 } } // namespace map::detail

@@ -73,6 +73,7 @@ class VariantType {
   	bool isNone() const;
   	bool isZero() const;
   	bool isOne() const;
+  	bool isInf() const;
 
   	VariantUnion& ref();
   	VariantUnion get() const;

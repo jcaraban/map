@@ -49,7 +49,9 @@ void Simplifier::clear() {
 	CheckpointMap.clear();
 	BarrierMap.clear();
 	SummaryMap.clear();
+	DataSummaryMap.clear();
 	BlockSummaryMap.clear();
+	GroupSummaryMap.clear();
 }
 
 Node* Simplifier::simplify(Node *node) {
@@ -102,7 +104,9 @@ void Simplifier::drop(Node *node) {
 	DEFINE_VISIT(Checkpoint)
 	DEFINE_VISIT(Barrier)
 	DEFINE_VISIT(Summary)
+	DEFINE_VISIT(DataSummary)
 	DEFINE_VISIT(BlockSummary)
+	DEFINE_VISIT(GroupSummary)
 #undef DEFINE_VISIT
 
 void Simplifier::visit(Temporal *node) { orig = node; }

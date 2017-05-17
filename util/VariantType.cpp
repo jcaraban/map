@@ -146,6 +146,16 @@ bool VariantType::isOne() const {
 	assert(0);
 }
 
+bool VariantType::isInf() const {
+	if (not type.isFloating())
+		return false;
+	switch (type.get()) {
+		case F32 : return std::isinf(get<F32>());
+		case F64 : return std::isinf(get<F64>());
+		default: assert(0);
+	}
+}
+
 VariantUnion& VariantType::ref() {
 	return var;
 }

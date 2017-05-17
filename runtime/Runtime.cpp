@@ -370,6 +370,10 @@ void Runtime::work() {
 	// Workers gathering
 	for (auto &thr : threads)
 		thr->join();
+
+	// Checks all the work was done
+	for (auto task : program.taskList())
+		assert(task->dep_hash.empty());
 }
 
 void Runtime::reportEval() {

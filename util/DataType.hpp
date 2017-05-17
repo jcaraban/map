@@ -59,6 +59,8 @@ class DataType {
 	DataType to64() const;
 };
 
+static_assert( std::is_standard_layout< DataType >::value , "DataType must be C compatible");
+
 } } // namespace map::detail
 
 #endif

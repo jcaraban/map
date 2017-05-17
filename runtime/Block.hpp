@@ -57,6 +57,7 @@ struct Block
 	Block();
 	Block(Key key);
 	Block(Key key, cl_mem scalar_page, cl_mem group_page);
+	Block(Key key, cl_mem group_page, int size);
 	Block(Key key, int total_size, int depend);
 	~Block();
 

@@ -43,7 +43,7 @@ NodeList Sorter::sort(NodeList list) {
 
 		node_list.push_back(node);
 
-		for (auto next : node->nextList()) {
+		for (auto next : inner_join(node->nextList(),list)) {
 			auto it = prev_count.find(next);
 			assert(it != prev_count.end());
 			auto &count = it->second;

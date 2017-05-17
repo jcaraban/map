@@ -209,24 +209,24 @@ Ferr tiff::getMeta() {
 	switch (tag_sampleFormat) {
 		case SAMPLEFORMAT_UINT:
 			switch (tag_bitsPerSample) {
-				case 8 : meta.data_type = U8 ; break;
-				case 16: meta.data_type = U16; break;
-				case 32: meta.data_type = U32; break;
+				case 8 : meta.setDataType( U8  ); break;
+				case 16: meta.setDataType( U16 ); break;
+				case 32: meta.setDataType( U32 ); break;
 				default: assert(0);
 			}
 			break;
 		case SAMPLEFORMAT_INT:
 			switch (tag_bitsPerSample) {
-				case 8 : meta.data_type = S8 ; break;
-				case 16: meta.data_type = S16; break;
-				case 32: meta.data_type = S32; break;
+				case 8 : meta.setDataType( S8  ); break;
+				case 16: meta.setDataType( S16 ); break;
+				case 32: meta.setDataType( S32 ); break;
 				default: assert(0);
 			}
 			break;
 		case SAMPLEFORMAT_IEEEFP:
 			switch (tag_bitsPerSample) {
-				case 32: meta.data_type = F32; break;
-				case 64: meta.data_type = F64; break;
+				case 32: meta.setDataType( F32 ); break;
+				case 64: meta.setDataType( F64 ); break;
 				default: assert(0);
 			}
 			break;
@@ -234,9 +234,11 @@ Ferr tiff::getMeta() {
 	}
 
 	// num_dim
-	meta.num_dim = D2; // Although D3 is possible, currently other layers than the first are ignored
-	meta.data_size = DataSize(2);
-	meta.block_size = BlockSize(2);
+	meta.setNumDim( D2 ); // Although D3 is possible, currently other layers than the first are ignored
+
+	const int num = meta.getNumDim().toInt();
+	auto data_size = DataSize(num);
+	auto block_size = BlockSize(num);
 
 	// data_size
 	ret = TIFFGetField(handler, TIFFTAG_IMAGEWIDTH, &imageWidth);
@@ -250,8 +252,9 @@ Ferr tiff::getMeta() {
 	if (imageWidth <= 0 || imageLength <= 0) {
 		assert(0);
 	}
-	meta.data_size[0] = static_cast<int>(imageWidth);
-	meta.data_size[1] = static_cast<int>(imageLength);
+	data_size[0] = static_cast<int>(imageWidth);
+	data_size[1] = static_cast<int>(imageLength);
+	meta.setDataSize(data_size);
 
 	// mem_order
 	// @ how to avoid strip?
@@ -262,7 +265,7 @@ Ferr tiff::getMeta() {
 	//if (ret > 0) {
 	//	assert(!"Strip mode not supported");
 	//}
-	meta.mem_order = ROW+BLK; // only TILE mode supported
+	meta.setMemOrder( ROW+BLK ); // only TILE mode supported
 
 	// block_size
 	ret = TIFFGetField(handler, TIFFTAG_TILEWIDTH, &tileWidth);
@@ -276,8 +279,9 @@ Ferr tiff::getMeta() {
 	if (tileWidth <= 0 || tileLength <= 0) {
 		assert(0);
 	}
-	meta.block_size[0] = static_cast<int>(tileWidth);
-	meta.block_size[1] = static_cast<int>(tileLength);
+	block_size[0] = static_cast<int>(tileWidth);
+	block_size[1] = static_cast<int>(tileLength);
+	meta.setBlockSize(block_size);
 
 	return ferr;
 }
@@ -293,7 +297,7 @@ Ferr tiff::setMeta() {
 	meta.stream_dir = OUT;
 	
 	// data_type
-	switch (meta.data_type.get()) {
+	switch (meta.getDataType().get()) {
 		case U8 : tag_sampleFormat = SAMPLEFORMAT_UINT; tag_bitsPerSample = 8; break;
 		case U16: tag_sampleFormat = SAMPLEFORMAT_UINT; tag_bitsPerSample = 16; break;
 		case U32: tag_sampleFormat = SAMPLEFORMAT_UINT; tag_bitsPerSample = 32; break;
@@ -323,8 +327,8 @@ Ferr tiff::setMeta() {
 	// --> it's configured by setting the data_size
 
 	// data_size
-	imageWidth = static_cast<uint32>(meta.data_size[0]);
-	imageLength = static_cast<uint32>(meta.data_size[1]);
+	imageWidth = static_cast<uint32>(meta.getDataSize()[0]);
+	imageLength = static_cast<uint32>(meta.getDataSize()[1]);
 	if (imageWidth <= 0 || imageLength <= 0) {
 		assert(0);
 	}
@@ -341,8 +345,8 @@ Ferr tiff::setMeta() {
 	// it's configured by setting the block_size (only TILE mode supported)
 
 	// block_size
-	tileWidth = static_cast<uint32>(meta.block_size[0]);
-	tileLength = static_cast<uint32>(meta.block_size[1]);
+	tileWidth = static_cast<uint32>(meta.getBlockSize()[0]);
+	tileLength = static_cast<uint32>(meta.getBlockSize()[1]);
 	if (tileWidth <= 0 || tileLength <= 0) {
 		assert(0);
 	}
@@ -509,8 +513,8 @@ Ferr tiff::write(const void* src, const Coord& beg_coord, const Coord& end_coord
 }
 
 Ferr tiff::readBlock(Block &block) const {
-	uint32 x_pos_abs = block.key.coord[0] * meta.block_size[0]; // libTIFF takes an absolute index
-	uint32 y_pos_abs = block.key.coord[1] * meta.block_size[1]; // see TIFF reference page for more info
+	uint32 x_pos_abs = block.key.coord[0] * meta.getBlockSize()[0]; // libTIFF takes an absolute index
+	uint32 y_pos_abs = block.key.coord[1] * meta.getBlockSize()[1]; // see TIFF reference page for more info
 
 	tsize_t ret = TIFFReadTile(handler, block.host_mem, x_pos_abs, y_pos_abs, 0, 0);
 
@@ -518,8 +522,8 @@ Ferr tiff::readBlock(Block &block) const {
 }
 
 Ferr tiff::writeBlock(const Block &block) {
-	uint32 x_pos_abs = block.key.coord[0] * meta.block_size[0]; // libTIFF takes an absolute index
-	uint32 y_pos_abs = block.key.coord[1] * meta.block_size[1]; // see TIFF reference page for more info
+	uint32 x_pos_abs = block.key.coord[0] * meta.getBlockSize()[0]; // libTIFF takes an absolute index
+	uint32 y_pos_abs = block.key.coord[1] * meta.getBlockSize()[1]; // see TIFF reference page for more info
 
 	tsize_t ret = TIFFWriteTile(handler, const_cast<void*>(block.host_mem), x_pos_abs, y_pos_abs, 0, 0);
 

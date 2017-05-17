@@ -12,6 +12,7 @@ assert argc > 3
 out_file_path = argv[1]
 ds = [int(argv[2]),int(argv[3])]
 bs = [512,512]
+gs = [16,16]
 N = 16
 
 if (argc > 4):
@@ -27,7 +28,7 @@ def life(dem):
 		 [1,1,1]]
 	return convolve(dem,S)
 
-state = rand(N,ds,U8,ROW+BLK,bs) > 128
+state = rand(N,ds,U8,ROW+BLK,bs,gs) > 128
 
 for i in range(N):
 	nbh = life(state)

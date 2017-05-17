@@ -107,4 +107,17 @@ VariantType ReductionType::apply(VariantType lhs, VariantType rhs) const {
 	}
 }
 
+void ReductionType::atomic(VariantType &lhs, VariantType rhs) const {
+	assert(lhs.datatype() == rhs.datatype());
+	switch (type) {
+		case SUM : atomic1<SUM >(lhs,rhs); break;
+		case PROD: atomic1<PROD>(lhs,rhs); break;
+		case rAND: atomic1<rAND>(lhs,rhs); break;
+		case rOR : atomic1<rOR >(lhs,rhs); break;
+		case MAX : atomic1<MAX >(lhs,rhs); break;
+		case MIN : atomic1<MIN >(lhs,rhs); break;
+		default: assert(0);
+	}
+}
+
 } } // namespace map::detail

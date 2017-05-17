@@ -38,6 +38,8 @@ class NumDim {
 	Coord unitVec() const;
 };
 
+static_assert( std::is_standard_layout< NumDim >::value , "NumDim must be C compatible");
+
 // Util
 
 constexpr NumDimEnum operator+(const NumDimEnum& lhs, const NumDimEnum& rhs) {

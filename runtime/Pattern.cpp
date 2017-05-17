@@ -52,6 +52,43 @@ bool Pattern::isNot(Pattern pat) const {
 	return !is(pat);
 }
 
+std::string Pattern::toString() const {
+	std::string str;
+	if (pat == NONE_PATTERN)
+		str += "None";
+	if (pat == INPUT)
+		str += "Input";
+	if (pat == OUTPUT)
+		str += "Output";
+	if (is(FREE))
+		str += "Free";
+	if (is(LOCAL))
+		str += "Local";
+	if (is(FOCAL))
+		str += "Focal";
+	if (is(ZONAL))
+		str += "Zonal";
+	if (is(RADIAL))
+		str += "Radial";
+	if (is(SPREAD))
+		str += "Spread";
+	if (is(STATS))
+		str += "Stats";
+	if (is(GLOBAL))
+		str += "Barrier";
+	if (is(HEAD))
+		str += "Head";
+	if (is(MERGE))
+		str += "Merge";
+	if (is(SWITCH))
+		str += "Switch";
+	if (is(TAIL))
+		str += "Tail";
+	if (is(LOOP))
+		str += "Loop";
+	return str;
+}
+
 bool canPipeFuse(const Pattern& top, const Pattern& bot) {
 	#define PIPE(t,b,val) if ((top.pat & t) == t && (bot.pat & b) == b) fuses &= val;
 	#define PIPE_T(t,val) if ((top.pat & t) == t) fuses &= val;
@@ -216,39 +253,7 @@ bool canFlatFuse(const Pattern& left, const Pattern& right) {
 }
 
 std::ostream& operator<< (std::ostream& os, const Pattern& pat) {
-	if (pat.pat == NONE_PATTERN)
-		os << "None";
-	if (pat.pat == INPUT)
-		os << "Input";
-	if (pat.pat == OUTPUT)
-		os << "Output";
-	if (pat.is(FREE))
-		os << "Free";
-	if (pat.is(LOCAL))
-		os << "Local";
-	if (pat.is(FOCAL))
-		os << "Focal";
-	if (pat.is(ZONAL))
-		os << "Zonal";
-	if (pat.is(RADIAL))
-		os << "Radial";
-	if (pat.is(SPREAD))
-		os << "Spread";
-	if (pat.is(STATS))
-		os << "Stats";
-	if (pat.is(GLOBAL))
-		os << "Barrier";
-	if (pat.is(HEAD))
-		os << "Head";
-	if (pat.is(MERGE))
-		os << "Merge";
-	if (pat.is(SWITCH))
-		os << "Switch";
-	if (pat.is(TAIL))
-		os << "Tail";
-	if (pat.is(LOOP))
-		os << "Loop";
-	return os;
+	return os << pat.toString();
 }
 
 } } // namespace map::detail

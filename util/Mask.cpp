@@ -1,6 +1,8 @@
 /**
  * @file	Mask.cpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
+ *
+ * TODO: remove the exception code added to ARRA4 BINARY OP and handle the exceptions here
  */
 
 #include "Mask.hpp"
@@ -94,6 +96,17 @@ std::string Mask::signature() const {
 	for (int i=0; i<array.size(); i++)
 		sign += array[i].toString();
 	return sign;
+}
+
+Mask Mask::invert() const {
+	const Mask &mask = *this; 
+	Mask inver = *this;
+	for (auto coord : mask.cellSpace()) {
+		if (all(coord == 0))
+			break; // stops in the middle
+		inver[0-coord] = mask[coord];
+	}
+	return inver;
 }
 
 std::vector<Coord> Mask::cellSpace() const {

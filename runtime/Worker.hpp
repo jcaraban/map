@@ -11,7 +11,6 @@
 #define MAP_RUNTIME_WORKER_HPP_
 
 #include "Job.hpp"
-#include "Entry.hpp"
 #include "Block.hpp"
 #include "ThreadId.hpp"
 #include "Config.hpp"

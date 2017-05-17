@@ -77,7 +77,9 @@ struct Simplifier : public Visitor
 	DECLARE_MAP(Checkpoint)
 	DECLARE_MAP(Barrier)
 	DECLARE_MAP(Summary)
+	DECLARE_MAP(DataSummary)
 	DECLARE_MAP(BlockSummary)
+	DECLARE_MAP(GroupSummary)
 
   // visit
 	//void static_visit(Node *node);
@@ -112,7 +114,9 @@ struct Simplifier : public Visitor
 	DECLARE_VISIT(Checkpoint)
 	DECLARE_VISIT(Barrier)
 	DECLARE_VISIT(Summary)
+	DECLARE_VISIT(DataSummary)
 	DECLARE_VISIT(BlockSummary)
+	DECLARE_VISIT(GroupSummary)
 	
 	DECLARE_VISIT(Temporal)
 

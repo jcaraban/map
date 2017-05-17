@@ -129,6 +129,65 @@ VariantType ReductionType::apply2(VariantType lhs, VariantType rhs) const {
 	return VariantType( ReductionOperator<R,T>()(lhs.get<T>(),rhs.get<T>()) );
 }
 
+/********************************************************************************/
+
+template <ReductionEnum R>
+void ReductionType::atomic1(VariantType &lhs, VariantType rhs) const {
+	switch (lhs.datatype().get()) {
+		case F32: atomic2<R,F32>(lhs,rhs); break;
+		case F64: atomic2<R,F64>(lhs,rhs); break;
+		case B8 : atomic2<R,B8 >(lhs,rhs); break;
+		case U8 : atomic2<R,U8 >(lhs,rhs); break;
+		case U16: atomic2<R,U16>(lhs,rhs); break;
+		case U32: atomic2<R,U32>(lhs,rhs); break;
+		case U64: atomic2<R,U64>(lhs,rhs); break;
+		case S8 : atomic2<R,S8 >(lhs,rhs); break;
+		case S16: atomic2<R,S16>(lhs,rhs); break;
+		case S32: atomic2<R,S32>(lhs,rhs); break;
+		case S64: atomic2<R,S64>(lhs,rhs); break;
+		default: assert(0);
+	}
+}
+
+/*
+ * AtomicOperator class, required for template-partial-specialization
+ */
+template <ReductionEnum R, DataTypeEnum T>
+struct AtomicOperator {
+	static_assert(true,"Not valid template parameter");
+};
+
+#define DEFINE_ATOMIC_OPERATOR(R,expr) \
+	template <DataTypeEnum T> \
+	struct AtomicOperator<R,T> { \
+		void operator()(Ctype<T> &lhs, Ctype<T> rhs) { expr; } \
+	};
+
+DEFINE_ATOMIC_OPERATOR( SUM  , assert(!"atomic not yet implemented") )
+DEFINE_ATOMIC_OPERATOR( PROD , assert(!"atomic not yet implemented") )
+DEFINE_ATOMIC_OPERATOR( rAND , assert(!"atomic not yet implemented") )
+DEFINE_ATOMIC_OPERATOR( rOR  , assert(!"atomic not yet implemented") )
+DEFINE_ATOMIC_OPERATOR( MAX  , assert(!"atomic not yet implemented") )
+DEFINE_ATOMIC_OPERATOR( MIN  , assert(!"atomic not yet implemented") )
+#undef DEFINE_ATOMIC_OPERATOR
+
+#define DEFINE_ATOMIC_EXCEPTION(R,T,expr) \
+	template <> \
+	struct AtomicOperator<R,T> { \
+		void operator()(Ctype<T> &lhs, Ctype<T> rhs) { expr; } \
+	};
+
+DEFINE_ATOMIC_EXCEPTION( rAND , F32 , assert(!"atomic not yet implemented") )
+DEFINE_ATOMIC_EXCEPTION( rOR  , F32 , assert(!"atomic not yet implemented") )
+DEFINE_ATOMIC_EXCEPTION( rAND , F64 , assert(!"atomic not yet implemented") )
+DEFINE_ATOMIC_EXCEPTION( rOR  , F64 , assert(!"atomic not yet implemented") )
+#undef DEFINE_ATOMIC_EXCEPTION
+
+template <ReductionEnum R, DataTypeEnum T>
+void ReductionType::atomic2(VariantType &lhs, VariantType rhs) const {
+	ReductionOperator<R,T>()(lhs.ref<T>(),rhs.get<T>());
+}
+
 } } // namespace detail, map
 
 #endif

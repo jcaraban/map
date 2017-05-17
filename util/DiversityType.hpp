@@ -40,6 +40,8 @@ class DiversityType {
 	template <DiversityEnum D, DataTypeEnum T> static VariantType apply2(std::vector<VariantType> list);
 };
 
+static_assert( std::is_standard_layout< DiversityType >::value , "DiversityType must be C compatible");
+
 } } // namespace map::detail
 
 #endif

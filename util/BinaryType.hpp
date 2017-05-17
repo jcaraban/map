@@ -49,6 +49,8 @@ class BinaryType {
 
 template <BinaryEnum U, DataTypeEnum T> struct BinaryOperator;
 
+static_assert( std::is_standard_layout< BinaryType >::value , "BinaryType must be C compatible");
+
 } } // namespace map::detail
 
 #endif

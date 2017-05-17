@@ -2,8 +2,9 @@
  * @file	ReductionType.hpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * TODO: study including "AND" and "OR" but with different names (these ones are in BinartType.hpp)
- *       AND is also known as logical CONjunction while OR is known as logical DISjunction
+ * TODO: find better names for rAND / rOR? also called logical CONjunction / logical DISjunction
+ * TODO: add MEAN enum, which would behave like an online variance calculation
+ * TODO: finish the implementation of 'atomic' or remove it all together
  */
 
 #ifndef MAP_UTIL_REDUCTIONTYPE_HPP_
@@ -47,6 +48,7 @@ class ReductionType {
 	std::string neutralString(DataType dt) const;
 	VariantType neutral(DataType dt) const;
 	VariantType apply(VariantType lhs, VariantType rhs) const;
+	void atomic(VariantType &lhs, VariantType rhs) const;
 
   private:
 	template <ReductionEnum R> VariantType neutral1(DataType dt) const ;
@@ -54,7 +56,12 @@ class ReductionType {
 	
 	template <ReductionEnum R> VariantType apply1(VariantType lhs, VariantType rhs) const ;
 	template <ReductionEnum R, DataTypeEnum T> VariantType apply2(VariantType lhs, VariantType rhs) const ;
+
+	template <ReductionEnum R> void atomic1(VariantType &lhs, VariantType rhs) const ;
+	template <ReductionEnum R, DataTypeEnum T> void atomic2(VariantType &lhs, VariantType rhs) const ;
 };
+
+static_assert( std::is_standard_layout< ReductionType >::value , "ReductionType must be C compatible");
 
 } } // namespace map::detail
 

@@ -22,6 +22,17 @@ enum TypeMem {PRIVATE, SHARED, LITERAL};
 // Kernel type of variable
 enum TypeVar {SCALAR, ARRAY, POINTER};
 
+/*
+ *
+ */
+struct SkelReduc {
+   Node *node, *prev;
+   ReductionType rt;
+   DataType dt;
+   SkelReduc(Node *node, Node *prev, ReductionType rt, DataType dt)
+      : node(node), prev(prev), rt(rt), dt(dt) { }
+};
+
 /*********
    Utils
  *********/
@@ -123,7 +134,7 @@ std::string defines_diver_type(DataType dt);
 std::string defines_focal();
 std::string defines_focal_type(DataType dt);
 std::string defines_focal_flow();
-std::string defines_zonal_reduc(ReductionType rt, DataType dt);
+std::string defines_reduc_type(ReductionType rt, DataType dt);
 std::string defines_radial();
 std::string defines_radial_type(DataType dt);
 std::string defines_radial_const(Direction fst, Direction snd);

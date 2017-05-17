@@ -38,6 +38,7 @@ NumDimEnum ma_numdim(Node *node);
 MemOrderEnum ma_memorder(Node *node);
 DataSize ma_datasize(Node *node);
 BlockSize ma_blocksize(Node *node);
+GroupSize ma_groupsize(Node *node);
 
 /*********
    I / O
@@ -50,10 +51,10 @@ int ma_write(Node *node, const char *file_path);
    Operations
  **************/
 
-Node* ma_constant(VariantType var, DataSize ds, DataTypeEnum dt, MemOrderEnum mo, BlockSize bs);
+Node* ma_constant(VariantType var, DataSize ds, DataTypeEnum dt, MemOrderEnum mo, BlockSize bs, GroupSize gs);
 Node* ma_rand(Node *seed, DataTypeEnum dt, MemOrderEnum mo);
 Node* ma_cast(Node *node, DataTypeEnum type);
-Node* ma_index(DataSize ds, NumDimEnum dim, MemOrderEnum mo, BlockSize bs);
+Node* ma_index(DataSize ds, NumDimEnum dim, MemOrderEnum mo, BlockSize bs, GroupSize gs);
 Node* ma_conditional(Node *cond, Node *lhs, Node *rhs);
 
 Node* ma_unary(Node *node, UnaryEnum type);

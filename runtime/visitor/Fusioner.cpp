@@ -171,13 +171,13 @@ Group* Fusioner::pipeFuseGroup(Group *&top, Group *&bot) {
 		next->removePrev(bot);
 	}
 
-	for (auto back : bot->backList()) { // @@
+	for (auto back : bot->backList()) { // @
 		back->addForw(top);
 		top->addBack(back);
 		back->removeForw(bot);
 	}
 
-	for (auto forw : bot->forwList()) { // @@
+	for (auto forw : bot->forwList()) { // @
 		forw->addBack(top);
 		top->addForw(forw);
 		forw->removeBack(bot);
@@ -256,13 +256,13 @@ Group* Fusioner::flatFuseGroup(Group *&left, Group *&right) {
 		next->removePrev(right);
 	}
 
-	for (auto back : right->backList()) { // @@
+	for (auto back : right->backList()) { // @
 		back->addForw(left);
 		left->addBack(back);
 		back->removeForw(right);
 	}
 
-	for (auto forw : right->forwList()) { // @@
+	for (auto forw : right->forwList()) { // @
 		forw->addBack(left);
 		left->addForw(forw);
 		forw->removeBack(right);
@@ -336,13 +336,13 @@ Group* Fusioner::freeFuseGroup(Group *&one, Group *&other) {
 		next->removePrev(other);
 	}
 
-	for (auto back : other->backList()) { // @@
+	for (auto back : other->backList()) { // @
 		back->addForw(one);
 		one->addBack(back);
 		back->removeForw(other);
 	}
 
-	for (auto forw : other->forwList()) { // @@
+	for (auto forw : other->forwList()) { // @
 		forw->addBack(one);
 		one->addForw(forw);
 		forw->removeBack(other);
@@ -389,7 +389,7 @@ void Fusioner::process(Node *node) {
 		new_group->addPrev(prev_group,prev_group->pattern()); // only LOCAL / FREE patters are fused now
 	}
 
-	for (auto back : node->backList()) { // @@
+	for (auto back : node->backList()) { // @
 		Group *back_group = group_list_of[back].front();
 		back_group->addForw(new_group);
 		new_group->addBack(back_group);
@@ -628,13 +628,13 @@ void Fusioner::linking() {
 		}
 	}
 
-	// Some patterns (e.g. Radial, Spread, Stats) require their nodes to become output of their group
+	// Radial, Spread, Stats, Loop require their nodes to become output of their group
 
 	for (auto &i : group_list) {  // For every 'group' in group_list...
 		Group *group = i.get();
 		for (auto &node : group->nodeList()) { // For every 'node' in 'group'
 			Pattern pat = node->pattern();
-			if (pat.is(RADIAL) || pat.is(SPREAD) || pat.is(STATS)) {
+			if (pat.is(RADIAL) || pat.is(SPREAD) || pat.is(STATS) || pat.is(LOOP)) {
 				group->addOutputNode(node); // 'node' becomes an output of its 'group'
 			}
 		}

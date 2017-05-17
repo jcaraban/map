@@ -24,14 +24,11 @@ Key::Key(Node *node, Coord coord)
 { }
 
 bool Key::operator==(const Key& k) const {
-	return (node==k.node && all(coord==k.coord));
+	return (node==k.node && coord_equal()(coord,k.coord));
 }
 
 std::size_t key_hash::operator()(const Key &k) const {
-	std::size_t h = std::hash<Node*>()(k.node);
-	for (int i=0; i<k.coord.size(); i++)
-		h ^= std::hash<int>()(k.coord[i]);
-	return h;
+	return std::hash<Node*>()(k.node) ^ coord_hash()(k.coord);
 }
 
 } } // namespace map::detail

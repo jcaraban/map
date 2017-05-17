@@ -60,7 +60,10 @@ struct Visitor
 	DECLARE_VISIT(Checkpoint)
 	DECLARE_VISIT(Barrier)
 	DECLARE_VISIT(Summary)
+	DECLARE_VISIT(DataSummary)
 	DECLARE_VISIT(BlockSummary)
+	DECLARE_VISIT(GroupSummary)
+
 };
 
 #undef DECLARE_VISIT

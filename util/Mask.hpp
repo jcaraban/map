@@ -45,10 +45,12 @@ struct Mask
 	size_t hash() const;
 	std::string signature() const;
 
+	Mask invert() const;
+
 	std::vector<Coord> cellSpace() const;
 	std::vector<Coord> blockSpace(BlockSize bs) const;
 };
-	
+
 Mask pipe(const Mask& lhs, const Mask& rhs);
 Mask flat(const Mask& lhs, const Mask& rhs);
 

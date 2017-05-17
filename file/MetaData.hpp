@@ -13,27 +13,46 @@
 namespace map { namespace detail {
 
 /*
+ * @class Shape
+ */
+struct DataShape {
+	NumDim num_dim; //!< dimension number
+	DataSize data_size; //!< Full size or resolution of the raster data
+	BlockSize block_size; //!< Size of the blocks partitioning the data
+	GroupSize group_size; //!< Size of the groups partitioning the block
+	NumBlock num_block; //!< Number of blocks = 'data_size' / 'block_size'
+	NumGroup num_group; //!< Number of groups = 'block_size' / 'group_size'
+
+	DataShape();
+	DataShape(DataSize ds, BlockSize bs, GroupSize gs);
+	bool operator==(const DataShape &other);
+	bool encompass(const DataShape &other);
+};
+
+
+/*
  * @class MetaData
- * Structure containing all metadata related to a File / Node
- * Owned by the File / Node, accessed by many others
- *
- * Note: can be extended with geographical data in a future
  */
 struct MetaData {
-	StreamDir stream_dir; //!< stream direction 
+	StreamDir stream_dir; //!< stream direction
 	DataType data_type; //!< data type
 	NumDim num_dim; //!< dimension number
 	MemOrder mem_order; //!< memory order
 	//!< codification ? (e.g. compression like bitpack for bool)
-
-	DataSize data_size;
-	BlockSize block_size;
-	NumBlock num_block;
-	//size_t total_data_size;
-	//size_t total_block_size;
+	/*
+	DataSize data_size; //!< Full size or resolution of the raster data
+	BlockSize block_size; //!< Size of the blocks partitioning the data
+	NumBlock num_block; //!< Number of blocks = 'data_size' / 'block_size'
+	GroupSize group_size; //!< Size of the groups partitioning the block
+	NumGroup num_group; //!< Number of groups = 'block_size' / 'group_size'
+	*/
+	DataShape data_shape; // @
+	// what about cached variables like 'size_t total_data_size' ?
 
 	MetaData();
-	MetaData(DataSize data_size, DataType data_type, MemOrder mem_order, BlockSize block_size);
+	MetaData(DataSize ds, DataType dt, MemOrder mo, BlockSize bs, GroupSize gs);
+
+	bool operator==(const MetaData &other);
 
 	StreamDir getStreamDir() const;
 	DataType getDataType() const;
@@ -42,36 +61,32 @@ struct MetaData {
 	const DataSize& getDataSize() const;
 	const BlockSize& getBlockSize() const;
 	const NumBlock& getNumBlock() const;
+	const GroupSize& getGroupSize() const;
+	const NumGroup& getNumGroup() const;
+	const DataShape& getDataShape() const;
+	/*
+	StreamDir& refStreamDir();
+	DataType& refDataType();
+	NumDim& refNumDim();
+	MemOrder& refMemOrder();
+	DataSize& refDataSize();
+	BlockSize& refBlockSize();
+	NumBlock& refNumBlock();
+	GroupSize& refGroupSize();
+	NumGroup& refNumGroup();
+	*/
+	void setStreamDir(StreamDir stream_dir);
+	void setDataType(DataType data_type);
+	void setNumDim(NumDim num_dim);
+	void setMemOrder(MemOrder mem_order);
+	void setDataSize(DataSize data_size);
+	void setBlockSize(BlockSize block_size);
+	void setGroupSize(GroupSize group_size);
 
-	size_t getTotalDataSize() const;
-	size_t getTotalBlockSize() const;
+	size_t totalDataSize() const;
+	size_t totalBlockSize() const;
+	size_t totalGroupSize() const;
 };
-
-inline MetaData::MetaData() { }
-
-inline MetaData::MetaData(DataSize data_size, DataType data_type, MemOrder mem_order, BlockSize block_size)
-	: stream_dir( IO ) // @ IO by default
-	, data_type( data_type )
-	, num_dim( DataSize2NumDim(data_size) ) // @
-	, mem_order( mem_order )
-	, data_size( data_size )
-	, block_size( block_size )
-	, num_block( (data_size + block_size - 1) / block_size )
-{
-	//total_data_size = prod(static_cast<Array<size_t>>(data_size)) * sizeofDataType(data_type);
-	//total_block_size = prod(static_cast<Array<size_t>>(block_size)) * sizeofDataType(data_type);
-}
-
-inline StreamDir MetaData::getStreamDir() const { return stream_dir; }
-inline DataType MetaData::getDataType() const { return data_type; }
-inline NumDim MetaData::getNumDim() const { return num_dim; }
-inline MemOrder MetaData::getMemOrder() const { return mem_order; }
-inline const DataSize& MetaData::getDataSize() const { return data_size; }
-inline const BlockSize& MetaData::getBlockSize() const { return block_size; }
-inline const NumBlock& MetaData::getNumBlock() const { return num_block; }
-
-inline size_t MetaData::getTotalDataSize() const { return prod(static_cast<Array4<size_t>>(data_size)) * data_type.sizeOf(); }
-inline size_t MetaData::getTotalBlockSize() const { return prod(static_cast<Array4<size_t>>(block_size)) * data_type.sizeOf(); }
 
 } } // namespace map::detail
 

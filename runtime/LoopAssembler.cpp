@@ -374,17 +374,18 @@ void LoopAssembler::compose() {
 		Node *node = back_list[i];
 		Switch *swit = stru.switc[i];
 
-		if (not is_included(node,iden_list)) {
-			auto tail = dynamic_cast<LoopTail*>( LoopTail::Factory(swit) );
-			stru.tail.push_back(tail);
-			swap_next_nodes(node,tail,true);
-			// Links the twin 'head' and 'tail' nodes
-			LoopHead *head = stru.head[i];
-			head->twin_tail = tail;
-			tail->twin_head = head;
-			// Adds the 'tail' node to the 'false_side' of 'switch'
-			swit->addFalse(tail);
-		}
+		if (is_included(node,iden_list))
+			continue; // Identities don't need Tail
+
+		auto tail = dynamic_cast<LoopTail*>( LoopTail::Factory(swit) );
+		stru.tail.push_back(tail);
+		swap_next_nodes(node,tail,true);
+		// Links the twin 'head' and 'tail' nodes
+		LoopHead *head = stru.head[i];
+		head->twin_tail = tail;
+		tail->twin_head = head;
+		// Adds the 'tail' node to the 'false_side' of 'switch'
+		swit->addFalse(tail);
 	}
 	
 	// Link 'head' and 'tail' nodes with their owner 'loop'

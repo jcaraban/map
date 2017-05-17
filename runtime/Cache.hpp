@@ -4,6 +4,7 @@
  *
  * TODO: There should be 1 cache per physical memory (Dev mem, Host mem, SSD mem, HDD mem)
  * TODO: consider refactorizing the 'block management' functionality out of Cache
+ * TODO: move unique_ptr<Block> to a 'vector memory allocator' like 'entry_list'
  */
 
 #ifndef MAP_RUNTIME_CACHE_HPP_
@@ -32,8 +33,8 @@ class Cache
 	Clock &clock; // Aggregate
 	Config &conf; // Aggregate
 
-	cl_mem scalar_page; //!< Page of device memory for reduced scalars variables
-	cl_mem group_page; //!< Page of device memory for work-group statistics
+	cl_mem scalar_page; //!< Page of device memory for block-level reductions / statistics
+	cl_mem group_page; //!< Page of device memory for work-group reductions / statistics
 	std::vector<cl_mem> chunk_list; //!< Chunks of device memory
 	std::vector<Entry> entry_list; //!< Entry memory allocator
 	std::list<Entry*> lru_list; //!< Least Recently Used LRU linked list
@@ -42,7 +43,7 @@ class Cache
 	std::vector<cl_mem> pinned_mem;
 	std::vector<void*> pinned_ptr;
 
-	std::mutex mtx_blk, mtx_lru, mtx_file; //, mtx_load, mtx_write;
+	std::mutex mtx_blk, mtx_lru, mtx_file;
 
 	size_t unit_mem_size;
 	BlockSize unit_block_size;
@@ -67,12 +68,13 @@ class Cache
 	void retainEntries(BlockList &blk_list);
 
 	void readInputBlocks(BlockList &in_blk_list);
+	void initOutputBlocks(BlockList &out_blk_list);
 	void writeOutputBlocks(BlockList &out_blk_list);
 
 	void releaseEntries(BlockList &blk_list);
 	void returnBlocks(const KeyList &key_list, BlockList &blk_list);
 
-  private:
+  public: // @
   	Block* retainBlock(const Key &k, int depend);
 	void retainEntry(Block *blk);
 
@@ -89,10 +91,15 @@ class Cache
 	IFile* getFile(Node *node);
 
 	void load(Block *block);
-	void loadScalar(Block *block);
-
 	void store(Block *block);
-	void storeScalar(Block *block);
+
+	void loadScalar(Block *block, int blk_idx);
+	void initScalar(Block *block, int blk_idx);
+	void storeScalar(Block *block, int blk_idx);
+
+	void loadGroups(Block *block, int blk_idx);
+	void initGroups(Block *blocks, int blk_idx);
+	void storeGroups(Block *block, int blk_idx);
 };
 
 } } // namespace map::detail

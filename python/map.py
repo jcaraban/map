@@ -266,8 +266,7 @@ class Raster:
 		return tree
 
 	def _symloop_execution(self,tree):
-		# Note: the Python AST nodes are different from our IR Nodes
-		# jesus: calling eval() twice is not re-entrant, recursion not possible!
+		# Note: calling eval() twice is not re-entrant, recursion not possible!
 		(frame, filename, lineno, _, _, _) = inspect.stack()[2]
 		wile = ast.walk(tree).next().body[0] # while node
 		test = wile.test # while's condition node
@@ -350,8 +349,11 @@ class Raster:
 	def blocksize(self):
 		return _lib.ma_blocksize(self).toList()
 
-	def numblock(self):
-		return _lib.ma_numblock(self).toList()
+	def groupsize(self):
+		return _lib.ma_groupsize(self).toList()
+
+	#def numblock(self):
+	#	return _lib.ma_numblock(self).toList()
 
 	def __pow__(self,other): # exceptional operator in python
 		rhs = _const_to_raster(other) + 0.0
@@ -388,7 +390,8 @@ def _const_to_raster(arg):
 		dt  = Variant(arg).datatype()
 		mo  = ROW+BLK
 		bs  = Array()
-		return Raster( _lib.ma_constant(var,ds,dt,mo,bs) )
+		gs  = Array()
+		return Raster( _lib.ma_constant(var,ds,dt,mo,bs,gs) )
 	else:
 		assert(0)
 
@@ -476,26 +479,26 @@ def read(file):
 def write(raster,file):
 	return _lib.ma_write(raster,file)
 
-def _cnst(cnst,ds,dt,mo,bs):
+def _cnst(cnst,ds,dt,mo,bs,gs):
 	var = Variant(cnst).convert(dt)
-	return Raster( _lib.ma_constant(var,Array(ds),dt,mo,Array(bs)) )
+	return Raster( _lib.ma_constant(var,Array(ds),dt,mo,Array(bs),Array(gs)) )
 
-def zeros(ds=[],dt=F32,mo=ROW+BLK,bs=[]):
-	return _cnst(0,ds,dt,mo,bs)
+def zeros(ds=[],dt=F32,mo=ROW+BLK,bs=[],gs=[]):
+	return _cnst(0,ds,dt,mo,bs,gs)
 
-def ones(ds=[],dt=F32,mo=ROW+BLK,bs=[]):
-	return _cnst(1,ds,dt,mo,bs)
+def ones(ds=[],dt=F32,mo=ROW+BLK,bs=[],gs=[]):
+	return _cnst(1,ds,dt,mo,bs,gs)
 
-def trues(ds=[],dt=B8,mo=ROW+BLK,bs=[]):
-	return _cnst(True,ds,dt,mo,bs)
+def trues(ds=[],dt=B8,mo=ROW+BLK,bs=[],gs=[]):
+	return _cnst(True,ds,dt,mo,bs,gs)
 
-def falses(ds=[],dt=B8,mo=ROW+BLK,bs=[]):
-	return _cnst(False,ds,dt,mo,bs)
+def falses(ds=[],dt=B8,mo=ROW+BLK,bs=[],gs=[]):
+	return _cnst(False,ds,dt,mo,bs,gs)
 
-def full(cnst,ds=[],dt=F32,mo=ROW+BLK,bs=[]):
-	return _cnst(cnst,ds,dt,mo,bs)
+def full(cnst,ds=[],dt=F32,mo=ROW+BLK,bs=[],gs=[]):
+	return _cnst(cnst,ds,dt,mo,bs,gs)
 
-def empty(ds=[],dt=F32,mo=ROW+BLK,bs=[]):
+def empty(ds=[],dt=F32,mo=ROW+BLK,bs=[],gs=[]):
 	return True # return a Raster of no_value ?
 
 def _like(cnst,raster,dt,mo):
@@ -504,7 +507,8 @@ def _like(cnst,raster,dt,mo):
 	var = Variant(cnst).convert(dt)
 	ds  = Array( raster.datasize() )
 	bs  = Array( raster.blocksize() )
-	return Raster( _lib.ma_constant(var,ds,dt,mo,bs) )
+	gs  = Array( raster.groupsize() )
+	return Raster( _lib.ma_constant(var,ds,dt,mo,bs,gs) )
 
 def zeros_like(raster,dt=NONE_DATATYPE,mo=NONE_MEMORDER):
 	return _like(0,raster,dt,mo)
@@ -521,18 +525,20 @@ def empty_like(raster,dt=NONE_DATATYPE,mo=NONE_MEMORDER):
 def index(raster,dim):
 	assert(raster.numdim() > D0)
 	ds = Array( raster.datasize() )
-	bs = Array( raster.blocksize() )
 	mo = raster.memorder()
-	return Raster( _lib.ma_index(ds,dim,mo,bs) )
+	bs = Array( raster.blocksize() )
+	gs = Array( raster.groupsize() )
+	return Raster( _lib.ma_index(ds,dim,mo,bs,gs) )
 
-def rand(seed,ds=[],dt=NONE_DATATYPE ,mo=NONE_MEMORDER,bs=[]):
+def rand(seed,ds=[],dt=NONE_DATATYPE ,mo=NONE_MEMORDER,bs=[],gs=[]):
 	ds = seed.datasize() if isinstance(seed,Raster) else ds
 	dt = seed.datatype() if dt==NONE_DATATYPE else dt
 	mo = BLK+ROW if mo==NONE_DATATYPE else mo
 	bs = seed.blocksize() if isinstance(seed,Raster) else bs
+	gs = seed.groupsize() if isinstance(seed,Raster) else gs
 	if not isinstance(seed,Raster):
 		var = Variant(seed).convert(dt)
-		seed = Raster( _lib.ma_constant(var,Array(ds),dt,mo,Array(bs)) )
+		seed = Raster( _lib.ma_constant(var,Array(ds),dt,mo,Array(bs),Array(gs)) )
 	return Raster( _lib.ma_rand(seed,dt,mo) )
 
 def astype(raster,dt):
@@ -573,6 +579,12 @@ def zsum(raster):
 
 def zprod(raster):
 	return Raster( _lib.ma_zonalReduc(raster,PROD) )
+
+def zor(raster):
+	return Raster( _lib.ma_zonalReduc(raster,rOR) )
+
+def zand(raster):
+	return Raster( _lib.ma_zonalReduc(raster,rAND) )
 
 def zmax(raster):
 	return Raster( _lib.ma_zonalReduc(raster,MAX) )
@@ -761,6 +773,9 @@ _lib.ma_datasize.restype = Array
 _lib.ma_blocksize.argtypes = [Raster]
 _lib.ma_blocksize.restype = Array
 
+_lib.ma_groupsize.argtypes = [Raster]
+_lib.ma_groupsize.restype = Array
+
 _lib.ma_read.argtypes = [ct.c_char_p]
 _lib.ma_read.restype = Node
 
@@ -768,7 +783,7 @@ _lib.ma_write.argtypes = [Raster, ct.c_char_p]
 _lib.ma_write.restype = ct.c_int
 _lib.ma_write.errcheck = err_write
 
-_lib.ma_index.argtypes = [Array, ct.c_int, ct.c_int, Array]
+_lib.ma_index.argtypes = [Array, ct.c_int, ct.c_int, Array, Array]
 _lib.ma_index.restype = Node
 
 _lib.ma_rand.argtypes = [Raster, ct.c_int, ct.c_int]
@@ -786,7 +801,7 @@ _lib.ma_unary.restype = Node
 _lib.ma_binary.argtypes = [Raster, Raster, ct.c_int]
 _lib.ma_binary.restype = Node
 
-_lib.ma_constant.argtypes = [Variant, Array, ct.c_int, ct.c_int, Array]
+_lib.ma_constant.argtypes = [Variant, Array, ct.c_int, ct.c_int, Array, Array]
 _lib.ma_constant.restype = Node
 
 _lib.ma_access.argtypes = [Raster, Array]
