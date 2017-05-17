@@ -49,19 +49,16 @@ Node* Diversity::Factory(NodeList prev_list, DiversityType type) {
 	DataType dt = prev_list[i]->datatype();
 	MemOrder mo = prev_list[i]->memorder();
 	BlockSize bs = prev_list[i]->blocksize();
+	GroupSize gs = prev_list[i]->groupsize();
+	MetaData meta(ds,dt,mo,bs,gs);
 
 	for (auto prev : prev_list) {
-		assert( all(ds == prev->datasize()) );
-		assert( dt == prev->datatype() );
-		assert( mo == prev->memorder() );
-		assert( all(bs == prev->blocksize()) );
+		assert(meta == prev->metadata());
 	}
 
 	if (type == VARI) { // Variety always output an integer
-		dt = S8;
+		meta.data_type = S8;
 	}
-
-	MetaData meta(ds,dt,mo,bs);
 	
 	return new Diversity(meta,prev_list,type);
 }
@@ -116,13 +113,12 @@ const Node* Diversity::prev(int i) const {
 	return prev_list[i];
 }
 
-void Diversity::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
+void Diversity::computeScalar(std::unordered_map<Node*,VariantType> &hash) {
 	assert(numdim() == D0);
-	Coord coord = {0,0};
 	std::vector<VariantType> varvec;
 	for (auto prev : prevList())
-		varvec.push_back( hash.find({prev,coord})->second );
-	hash[{this,coord}] = type.apply(varvec);
+		varvec.push_back( hash.find(prev)->second );
+	hash[this] = type.apply(varvec);
 }
 
 void Diversity::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {

@@ -41,7 +41,8 @@ Node* BoundedNeighbor::Factory(Node *prev, Node *cx, Node* cy) {
 	DataType dt = prev->datatype();
 	MemOrder mo = prev->memorder();
 	BlockSize bs = prev->blocksize();
-	MetaData meta(ds,dt,mo,bs);
+	GroupSize gs = prev->groupsize();
+	MetaData meta(ds,dt,mo,bs,gs);
 
 	return new BoundedNeighbor(meta,prev,cx,cy);
 }

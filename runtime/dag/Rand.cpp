@@ -66,7 +66,8 @@ Node* Rand::Factory(Node *seed, DataType type, MemOrder order) {
 	DataType dt = (type != NONE_DATATYPE) ? type : seed->datatype();
 	MemOrder mo = (order != NONE_MEMORDER) ? order : seed->memorder();
 	BlockSize bs = seed->blocksize();
-	MetaData meta(ds,dt,mo,bs);
+	GroupSize gs = seed->groupsize();
+	MetaData meta(ds,dt,mo,bs,gs);
 
 	return new Rand(meta,seed);
 }
@@ -116,14 +117,13 @@ Node* Rand::seed() const {
 
 // Compute
 
-void Rand::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
-	Coord coord = {0,0};
+void Rand::computeScalar(std::unordered_map<Node*,VariantType> &hash) {
 	typedef r123::Philox2x32 rng32;
 	typedef r123::Philox2x64 rng64;
 	typedef unsigned char uchar;
 	assert(numdim() == D0);
 
-	auto seed_value = hash.find({seed(),coord})->second;
+	auto seed_value = hash.find(seed())->second;
 
 	if (datatype().is64()) // 64-bits
 	{

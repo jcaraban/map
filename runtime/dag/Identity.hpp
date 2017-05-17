@@ -40,13 +40,16 @@ struct Identity : public Node
 	char classSignature() const;
 	Node* prev() const;
 	
+	// Features
+	bool canForward() const { return true; };
+	
 	// Spatial
 	Pattern pattern() const { return LOCAL; }
 	// const Mask& inputReach(Coord coord) const;
 	// const Mask& outputReach(Coord coord) const;
 	
 	// Compute
-	void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
+	void computeScalar(std::unordered_map<Node*,VariantType> &hash);
 	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
 
 	// Variables

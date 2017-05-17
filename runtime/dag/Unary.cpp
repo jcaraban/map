@@ -27,24 +27,25 @@ std::size_t Unary::Hash::operator()(const Content& k) const {
 
 // Factory
 
-Node* Unary::Factory(Node *arg, UnaryType type) {
-	assert(arg != nullptr);
+Node* Unary::Factory(Node *prev, UnaryType type) {
+	assert(prev != nullptr);
 
-	DataSize ds = arg->datasize();
-	DataType dt = arg->datatype();
-	MemOrder mo = arg->memorder();
-	BlockSize bs = arg->blocksize();
-
+	DataSize ds = prev->datasize();
+	DataType dt = prev->datatype();
+	MemOrder mo = prev->memorder();
+	BlockSize bs = prev->blocksize();
+	GroupSize gs = prev->groupsize();
+	
 	if (type.isBitwise())
 		assert(dt.isUnsigned());
 	if (type.isRelational())
 		dt = U8; // @ because B8 is an INT in OpenCL
 
-	MetaData meta(ds,dt,mo,bs);
+	MetaData meta(ds,dt,mo,bs,gs);
 
-	// simplification here? e.g. if arg is a constant, return a Constant Node
+	// simplification here? e.g. if prev is a constant, return a Constant Node
 
-	return new Unary(meta,arg,type);
+	return new Unary(meta,prev,type);
 }
 
 Node* Unary::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
@@ -95,13 +96,12 @@ Node* Unary::prev() const {
 
 // Compute
 
-void Unary::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
+void Unary::computeScalar(std::unordered_map<Node*,VariantType> &hash) {
 	assert(numdim() == D0);
-	Coord coord = {0,0};
 	auto *node = this;
 
-	auto pval = hash.find({node->prev(),coord})->second;
-	hash[{node,coord}] = type.apply(pval);
+	auto pval = hash.find(node->prev())->second;
+	hash[node] = type.apply(pval);
 }
 
 void Unary::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {

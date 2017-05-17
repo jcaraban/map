@@ -30,19 +30,20 @@ std::size_t FocalFunc::Hash::operator()(const Content& k) const {
 
 // Factory
 
-Node* FocalFunc::Factory(Node *arg, const Mask &mask, ReductionType type) {
-	assert(arg != nullptr);
-	assert(arg->numdim() != D0);
+Node* FocalFunc::Factory(Node *prev, const Mask &mask, ReductionType type) {
+	assert(prev != nullptr);
+	assert(prev->numdim() != D0);
 	assert(type != NONE_REDUCTION);
-	assert(arg->numdim() == mask.numdim());
+	assert(prev->numdim() == mask.numdim());
 
-	DataSize ds = arg->datasize();
-	DataType dt = arg->datatype();
-	MemOrder mo = arg->memorder();
-	BlockSize bs = arg->blocksize();
-	MetaData meta(ds,dt,mo,bs);
+	DataSize ds = prev->datasize();
+	DataType dt = prev->datatype();
+	MemOrder mo = prev->memorder();
+	BlockSize bs = prev->blocksize();
+	GroupSize gs = prev->groupsize();
+	MetaData meta(ds,dt,mo,bs,gs);
 
-	return new FocalFunc(meta,arg,mask,type);
+	return new FocalFunc(meta,prev,mask,type);
 }
 
 Node* FocalFunc::clone(const std::unordered_map<Node*,Node*> &other_to_this) {

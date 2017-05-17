@@ -46,6 +46,7 @@ InputNode::InputNode() { }
 InputNode::InputNode(SharedFile file)
 	: IONode(file,InputNodeFlag())
 {
+	meta.stream_dir = IN;
 	this->in_spatial_reach = Mask(); // Free
 	this->out_spatial_reach = Mask(numdim().unitVec(),true);
 }
@@ -66,6 +67,7 @@ OutputNode::OutputNode(Node *prev, SharedFile file)
 	id = prev->id; // shares id with the node being output
 	ref = 0;
 	meta = prev->metadata();
+	meta.stream_dir = OUT;
 	stats = prev->datastats();
 
 	prev_list.reserve(1);

@@ -45,10 +45,16 @@ struct LoopHead : public Node
 	LoopCond* loop() const;
 	Node* prev() const;
 
+	// Features
+	bool canForward() const { return true; };
+
 	// Spatial
 	Pattern pattern() const { return HEAD; }
 	// const Mask& inputReach(Coord coord) const;
 	// const Mask& outputReach(Coord coord) const;
+
+	// Compute
+	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
 
 	// Variables
 	LoopCond *owner_loop;

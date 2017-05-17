@@ -35,7 +35,8 @@ Node* Cast::Factory(Node *prev, DataType new_type) {
 	DataType dt = new_type;
 	MemOrder mo = prev->memorder();
 	BlockSize bs = prev->blocksize();
-	MetaData meta(ds,dt,mo,bs);
+	GroupSize gs = prev->groupsize();
+	MetaData meta(ds,dt,mo,bs,gs);
 
 	return new Cast(meta,prev);
 }
@@ -90,11 +91,10 @@ Node* Cast::prev() const {
 
 // Compute
 
-void Cast::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
+void Cast::computeScalar(std::unordered_map<Node*,VariantType> &hash) {
 	assert(numdim() == D0);
-	Coord coord = {0,0};
-	auto pval = hash.find({prev(),coord})->second;
-	hash[{this,coord}] = pval.convert(type);
+	auto pval = hash.find(prev())->second;
+	hash[this] = pval.convert(type);
 }
 
 void Cast::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {

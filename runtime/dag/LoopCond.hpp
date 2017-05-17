@@ -62,6 +62,10 @@ struct LoopCond : public Node
 	// const Mask& inputReach(Coord coord) const;
 	// const Mask& outputReach(Coord coord) const;
 
+	// Compute
+	//void computeScalar(std::unordered_map<Node*,VariantType> &hash);
+	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
+
 	// Variables
 	HeadList head_list; //!< Head nodes acting as inputs for the body
 	TailList tail_list; //!< Tail nodes acting as outputs of the loop

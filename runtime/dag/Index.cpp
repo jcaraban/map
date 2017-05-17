@@ -26,12 +26,12 @@ std::size_t Index::Hash::operator()(const Content& k) const {
 
 // Factory
 
-Node* Index::Factory(DataSize ds, NumDim dim, MemOrder mo, BlockSize bs) {
+Node* Index::Factory(DataSize ds, NumDim dim, MemOrder mo, BlockSize bs, GroupSize gs) {
 	assert(dim != D0 && dim != NONE_NUMDIM);
 
 	DataType dt = S64;
-	MetaData meta(ds,dt,mo,bs);
-	return new Index(meta,dim);	
+	MetaData meta(ds,dt,mo,bs,gs);
+	return new Index(meta,dim);
 }
 
 Node* Index::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
@@ -74,12 +74,13 @@ std::string Index::signature() const {
 
 // Compute
 
-void Index::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
+void Index::computeScalar(std::unordered_map<Node*,VariantType> &hash) {
 	assert(numdim() == D0);
+	hash[this] = VariantType(0,datatype());
 }
 
 void Index::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
-	hash[{this,coord}] = ValFix(); // @ not fixed, but we can now some statistics
+	hash[{this,coord}] = ValFix(); // @ not fixed, but we can now set some statistics (e.g. max, min)
 }
 
 } } // namespace map::detail

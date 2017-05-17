@@ -29,19 +29,20 @@ std::size_t Convolution::Hash::operator()(const Content& k) const {
 
 // Factory
 
-Node* Convolution::Factory(Node *arg, const Mask &mask) {
-	assert(arg != nullptr);
+Node* Convolution::Factory(Node *prev, const Mask &mask) {
+	assert(prev != nullptr);
 	//assert(mask != nullptr); // some other checking for mask?
-	assert(arg->numdim() != D0);
-	assert(arg->numdim() == mask.numdim());
+	assert(prev->numdim() != D0);
+	assert(prev->numdim() == mask.numdim());
 
-	DataSize ds = arg->datasize();
-	DataType dt = promote(arg->datatype(),mask.datatype());
-	MemOrder mo = arg->memorder();
-	BlockSize bs = arg->blocksize();
-	MetaData meta(ds,dt,mo,bs);
+	DataSize ds = prev->datasize();
+	DataType dt = promote(prev->datatype(),mask.datatype());
+	MemOrder mo = prev->memorder();
+	BlockSize bs = prev->blocksize();
+	GroupSize gs = prev->groupsize();
+	MetaData meta(ds,dt,mo,bs,gs);
 
-	return new Convolution(meta,arg,mask);
+	return new Convolution(meta,prev,mask);
 }
 
 Node* Convolution::clone(const std::unordered_map<Node*,Node*> &other_to_this) {

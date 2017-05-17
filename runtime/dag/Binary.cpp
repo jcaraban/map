@@ -33,29 +33,35 @@ Node* Binary::Factory(Node *lhs, Node *rhs, BinaryType type) {
 	assert(lhs != nullptr);
 	assert(rhs != nullptr);
 
-	NumDim dim, ldim = lhs->numdim(), rdim = rhs->numdim();
-	DataSize ds, lds = lhs->datasize(), rds = rhs->datasize();
-	DataType dt, ldt = lhs->datatype(), rdt = rhs->datatype();
-	MemOrder mo, lmo = lhs->memorder(), rmo = rhs->memorder();
-	BlockSize bs, lbs = lhs->blocksize(), rbs = rhs->blocksize();
+	DataType data_type;
+	MemOrder mem_order;
+	DataShape shape;
+	DataShape lshp = lhs->metadata().getDataShape();
+	DataShape rshp = rhs->metadata().getDataShape();
+	
+	if (type.isBitwise()) {
+		assert(lhs->datatype().isUnsigned());
+		assert(rhs->datatype().isUnsigned());
+	}
 
-	if (type.isBitwise())
-		assert(ldt.isUnsigned() && rdt.isUnsigned());
-
-	if (ldim == D0) {
-		dim=rdim, ds=rds, mo=rmo, bs=rbs;
-	} else if (rdim == D0) {
-		dim=ldim, ds=lds, mo=lmo, bs=lbs;
+	if (lhs->numdim() == D0) {
+		shape = rshp;
+		mem_order = rhs->memorder();
+	} else if (rhs->numdim() == D0) {
+		shape = lshp;
+		mem_order = lhs->memorder();
 	} else {
-		assert( ldim==rdim && all(lds==rds) && lmo==rmo && all(lbs==rbs) );
-		dim=ldim, ds=lds, mo=lmo, bs=lbs;
+		assert(lshp == rshp);
+		assert(lhs->memorder() == rhs->memorder());
+		shape = lshp;
+		mem_order = lhs->memorder();
 	}
 	if (type.isRelational()) {
-		dt = U8; // @ because B8 is an INT in OpenCL
+		data_type = U8; // @ because B8 is an INT in OpenCL
 	} else {
-		dt = DataType( promote(ldt,rdt) );
+		data_type = promote(lhs->datatype(),rhs->datatype());
 	}
-	MetaData meta(ds,dt,mo,bs);
+	MetaData meta(shape.data_size,data_type,mem_order,shape.block_size,shape.group_size);
 
 	// @ identity functionality goes here ?
 
@@ -120,14 +126,13 @@ Node* Binary::right() const {
 
 // Compute
 
-void Binary::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
+void Binary::computeScalar(std::unordered_map<Node*,VariantType> &hash) {
 	assert(numdim() == D0);
-	Coord coord = {0,0};
 	auto *node = this;
 
-	auto lval = hash.find({left(),coord})->second;
-	auto rval = hash.find({right(),coord})->second;
-	hash[{node,coord}] = type.apply(lval,rval);
+	auto lval = hash.find(left())->second;
+	auto rval = hash.find(right())->second;
+	hash[node] = type.apply(lval,rval);
 }
 
 void Binary::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {

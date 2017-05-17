@@ -26,16 +26,17 @@ std::size_t Barrier::Hash::operator()(const Content& k) const {
 
 // Factory
 
-Node* Barrier::Factory(Node *arg) {
-	assert(arg != nullptr);
+Node* Barrier::Factory(Node *prev) {
+	assert(prev != nullptr);
 
-	DataSize ds = arg->datasize();
-	DataType dt = arg->datatype();
-	MemOrder mo = arg->memorder();
-	BlockSize bs = arg->blocksize();
-	MetaData meta(ds,dt,mo,bs);
+	DataSize ds = prev->datasize();
+	DataType dt = prev->datatype();
+	MemOrder mo = prev->memorder();
+	BlockSize bs = prev->blocksize();
+	GroupSize gs = prev->groupsize();
+	MetaData meta(ds,dt,mo,bs,gs);
 
-	return new Barrier(meta,arg);
+	return new Barrier(meta,prev);
 }
 
 Node* Barrier::clone(const std::unordered_map<Node*,Node*> &other_to_this) {

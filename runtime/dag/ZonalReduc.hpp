@@ -29,7 +29,7 @@ struct ZonalReduc : public Node
 	};
 
 	// Factory
-	static Node* Factory(Node *arg, ReductionType type);
+	static Node* Factory(Node *prev, ReductionType type);
 	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
@@ -49,7 +49,9 @@ struct ZonalReduc : public Node
 	// const Mask& outputReach(Coord coord) const;
 
 	// Compute
-	//void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
+	VariantType initialValue() const;
+	void updateValue(VariantType value);
+	//void computeScalar(std::unordered_map<Node*,VariantType> &hash);
 	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
 
 	// Variables

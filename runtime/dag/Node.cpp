@@ -164,6 +164,43 @@ bool Node::isOutput() const {
 	return false;
 }
 
+bool Node::isReduction() const {
+	return inputReach().numdim().toInt() > outputReach().numdim().toInt();
+}
+
+bool Node::canForward() const {
+	return false;
+}
+
+Pattern Node::pattern() const {
+	return spatial_pattern;
+}
+
+const Mask& Node::inputReach(Coord coord) const {
+	return in_spatial_reach;
+}
+
+//const Mask& Node::intraReach(Coord coord) const {
+//	return intra_spatial_reach;
+//}
+
+const Mask& Node::outputReach(Coord coord) const {
+	return out_spatial_reach;
+}
+
+HoldType Node::holdtype(Coord coord) {
+	if (prod(blocksize()) == 1)
+		return HOLD_1;
+	//else if (prod(groupsize()) == 1)
+	//	return HOLD_2;
+	else if (numdim() == D2 && all(in_range(coord,numblock())))
+		return HOLD_N;
+	else if (any(not in_range(coord,numblock())))
+		return HOLD_0;
+	else
+		assert(0);
+}
+
 StreamDir Node::streamdir() const {
 	return metadata().getStreamDir();
 }
@@ -192,16 +229,32 @@ const NumBlock& Node::numblock() const {
 	return metadata().getNumBlock();
 }
 
+const GroupSize& Node::groupsize() const {
+	return metadata().getGroupSize();
+}
+
+const NumGroup& Node::numgroup() const {
+	return metadata().getNumGroup();
+}
+
 const DataStats& Node::datastats() const {
 	return stats;
 }
 
-void Node::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
-	assert(!"computeScalar() not implemented in derived class");
+VariantType Node::initialValue() const {
+	assert(!"initialValue() was not implemented in derived class");
+}
+
+void Node::updateValue(VariantType value) {
+	assert(!"updateValue() was not implemented in derived class");
+}
+
+void Node::computeScalar(std::unordered_map<Node*,VariantType> &hash) {
+	assert(!"computeScalar() was not implemented in derived class");
 }
 
 void Node::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
-	assert(!"computeFixed() not implemented in derived class");
+	assert(!"computeFixed() was not implemented in derived class");
 }
 
 } } // namespace map::detail

@@ -2,12 +2,14 @@
  * @file	Group.hpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
+ * TODO: put the 'gen_xxx_xxx' attributes inside a MetaData var?
  */
 
 #ifndef MAP_RUNTIME_DAG_GROUP_HPP_
 #define MAP_RUNTIME_DAG_GROUP_HPP_
 
 #include "../Pattern.hpp"
+#include "../../file/MetaData.hpp"
 #include <unordered_set>
 #include <memory>
 
@@ -44,6 +46,8 @@ struct Group {
 	const DataSize& datasize() const;
 	const BlockSize& blocksize() const;
 	const NumBlock& numblock() const;
+	const GroupSize& groupsize() const;
+	const NumGroup& numgroup() const;
 
 	void addNode(Node *node);
 	void removeNode(Node *node);
@@ -102,10 +106,7 @@ struct Group {
 	PatternList next_pat; //!< 	"		"		"		" next groups 	"		"		"		"		"		"	
 	
 	Pattern gen_pattern; //!< General pattern, composed by the addition of the patterns of all the nodes
-	mutable NumDim gen_num_dim; //!< Least 'number of dimensions' covering all nodes
-	mutable DataSize gen_data_size; //!< Least 'data size' covering all nodes
-	mutable BlockSize gen_block_size; //!< Least 'block size' covering all nodes
-	mutable NumBlock gen_num_block; //!< Least 'number of blocks' covering all nodes
+	mutable DataShape gen_shape; //! Least 'shape' encompassing all nodes
 	mutable bool gen_outdated; //!< Stores if the general attributes are outdated
 
 	mutable std::unordered_set<const Group*> prev_hash; //!< LookUp container for prev of prev groups

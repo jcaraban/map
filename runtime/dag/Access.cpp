@@ -30,17 +30,18 @@ std::size_t Access::Hash::operator()(const Content& k) const {
 
 // Factory
 
-Node* Access::Factory(Node *arg, const Coord &coord) {
-	assert(arg != nullptr);
-	assert(arg->numdim().toInt() == coord.size());
+Node* Access::Factory(Node *prev, const Coord &coord) {
+	assert(prev != nullptr);
+	assert(prev->numdim().toInt() == coord.size());
 
-	DataSize ds = {}; // D0
-	DataType dt = arg->datatype();
-	MemOrder mo = arg->memorder();
-	BlockSize bs = {};
-	MetaData meta(ds,dt,mo,bs);
+	DataSize ds = DataSize(0); // D0
+	DataType dt = prev->datatype();
+	MemOrder mo = prev->memorder();
+	BlockSize bs = BlockSize(0);
+	GroupSize gs = GroupSize(0);
+	MetaData meta(ds,dt,mo,bs,gs);
 
-	return new Access(meta,arg,coord);
+	return new Access(meta,prev,coord);
 }
 
 Node* Access::clone(const std::unordered_map<Node*,Node*> &other_to_this) {

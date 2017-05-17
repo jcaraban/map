@@ -42,7 +42,8 @@ Node* LhsAccess::Factory(Node *lhs, Node *rhs, const Coord &coord) {
 	DataType dt = lhs->datatype();
 	MemOrder mo = lhs->memorder();
 	BlockSize bs = lhs->blocksize();
-	MetaData meta(ds,dt,mo,bs);
+	GroupSize gs = lhs->groupsize();
+	MetaData meta(ds,dt,mo,bs,gs);
 
 	return new LhsAccess(meta,lhs,rhs,coord);
 }

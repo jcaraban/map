@@ -27,10 +27,10 @@ std::size_t Constant::Hash::operator()(const Content& k) const {
 
 // Factory
 
-Node* Constant::Factory(VariantType var, DataSize ds, DataType dt, MemOrder mo, BlockSize bs) {
-	assert(var.datatype() == dt);
-	MetaData meta(ds,dt,mo,bs);
-	return new Constant(meta,var);
+Node* Constant::Factory(VariantType val, DataSize ds, DataType dt, MemOrder mo, BlockSize bs, GroupSize gs) {
+	assert(val.datatype() == dt);
+	MetaData meta(ds,dt,mo,bs,gs);
+	return new Constant(meta,val);
 }
 
 Node* Constant::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
@@ -76,10 +76,9 @@ std::string Constant::signature() const {
 
 // Compute
 
-void Constant::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
+void Constant::computeScalar(std::unordered_map<Node*,VariantType> &hash) {
 	assert(numdim() == D0);
-	Coord coord = {0,0};
-	hash[{this,coord}] = cnst;
+	hash[this] = cnst;
 }
 
 void Constant::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {

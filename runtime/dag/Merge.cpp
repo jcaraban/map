@@ -35,23 +35,19 @@ Node* Merge::Factory(Node *lhs, Node *rhs) {
 	assert(lhs != nullptr);
 	assert(rhs != nullptr);
 
-	NumDim dim, ldim = lhs->numdim(), rdim = rhs->numdim();
-	DataSize ds, lds = lhs->datasize(), rds = rhs->datasize();
-	DataType dt, ldt = lhs->datatype(), rdt = rhs->datatype();
-	MemOrder mo, lmo = lhs->memorder(), rmo = rhs->memorder();
-	BlockSize bs, lbs = lhs->blocksize(), rbs = rhs->blocksize();
+	MetaData meta;
+	MetaData lmt = lhs->metadata();
+	MetaData rmt = lhs->metadata();
 
-	if (ldim == D0) {
-		dim=rdim, ds=rds, mo=rmo, bs=rbs;
-	} else if (rdim == D0) {
-		dim=ldim, ds=lds, mo=lmo, bs=lbs;
+	if (lmt.getNumDim() == D0) {
+		meta = rmt;
+	} else if (rmt.getNumDim() == D0) {
+		meta = lmt;
 	} else {
-		assert( ldim==rdim && all(lds==rds) && lmo==rmo && all(lbs==rbs) );
-		dim=ldim, ds=lds, mo=lmo, bs=lbs;
+		assert(lmt == rmt);
+		meta = lmt;
 	}
-	dt = DataType( promote(ldt,rdt) );	
-
-	MetaData meta(ds,dt,mo,bs);
+	meta.data_type = promote(lmt.getDataType(),rmt.getDataType());
 
 	return new Merge(meta,lhs,rhs);
 }
@@ -131,22 +127,21 @@ Node* Merge::right() const {
 
 // Compute
 
-void Merge::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
+void Merge::computeScalar(std::unordered_map<Node*,VariantType> &hash) {
 	assert(numdim() == D0);
-	Coord coord = {0,0};
 	auto *node = this;
 
-	bool left_found = hash.find({left(),coord}) != hash.end();
-	bool right_found = hash.find({right(),coord}) != hash.end();
+	bool left_found = hash.find(left()) != hash.end();
+	bool right_found = hash.find(right()) != hash.end();
 	assert(left_found xor right_found);
 
 	VariantType value;
 	if (left_found)
-		value = hash.find({left(),coord})->second;
+		value = hash.find(left())->second;
 	else // right_found
-		value = hash.find({right(),coord})->second;
+		value = hash.find(right())->second;
 
-	hash[{node,coord}] = value;
+	hash[node] = value;
 }
 
 void Merge::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {

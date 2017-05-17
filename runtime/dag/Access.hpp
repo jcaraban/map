@@ -29,7 +29,7 @@ struct Access : public Node
 	};
 
 	// Factory
-	static Node* Factory(Node *arg, const Coord &coord);
+	static Node* Factory(Node *prev, const Coord &coord);
 	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors

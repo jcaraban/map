@@ -68,14 +68,17 @@ struct Node {
 	void addBack(Node *node);
 	void addForw(Node *node);
 	void removeBack(Node *node);
-  // I/O
+  // Features
 	virtual bool isInput() const; // False by default
 	virtual bool isOutput() const; // False by default
+	virtual bool canForward() const; // False by default
+	bool isReduction() const; // @
   // Spatial
-	virtual Pattern pattern() const { return spatial_pattern; }
-	virtual const Mask& inputReach(Coord coord) const { return in_spatial_reach; }
-	//virtual const Mask& intraReach(Coord coord) const { return in_spatial_reach; }
-	virtual const Mask& outputReach(Coord coord) const { return out_spatial_reach; }
+	virtual Pattern pattern() const;
+	virtual const Mask& inputReach(Coord coord=Coord()) const;
+	//virtual const Mask& intraReach(Coord coord=Coord()) const;
+	virtual const Mask& outputReach(Coord coord=Coord()) const;
+	virtual HoldType holdtype(Coord coord);
   // Getters
 	const MetaData& metadata() const;
 	StreamDir streamdir() const;
@@ -85,9 +88,14 @@ struct Node {
 	const DataSize& datasize() const;
 	const BlockSize& blocksize() const;
 	const NumBlock& numblock() const;
+	const GroupSize& groupsize() const;
+	const NumGroup& numgroup() const;
 	const DataStats& datastats() const;
+  // Value
+	virtual VariantType initialValue() const;
+	virtual void updateValue(VariantType value);
   // Compute
-	virtual void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
+	virtual void computeScalar(std::unordered_map<Node*,VariantType> &hash);
 	virtual void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
 
   // Variables

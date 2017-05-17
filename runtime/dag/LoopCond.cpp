@@ -47,11 +47,11 @@ Node* LoopCond::Factory(Node *prev) {
 	assert(prev != nullptr);
 
 	DataSize ds = prev->datasize();
-	DataType dt = prev->datatype();
+	DataType dt = U8; // @
 	MemOrder mo = prev->memorder();
 	BlockSize bs = prev->blocksize();
-
-	MetaData meta(ds,dt,mo,bs);
+	GroupSize gs = prev->groupsize();
+	MetaData meta(ds,dt,mo,bs,gs);
 	
 	return new LoopCond(meta,prev);
 }
@@ -118,6 +118,12 @@ const TailList& LoopCond::tailList() const {
 
 Node* LoopCond::prev() const {
 	return prev_list[0];
+}
+
+// Compute
+
+void LoopCond::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
+	hash[{this,coord}] = hash.find({prev(),coord})->second;
 }
 
 } } // namespace map::detail

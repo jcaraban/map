@@ -99,7 +99,13 @@ LoopCond* LoopTail::loop() const {
 }
 
 Node* LoopTail::prev() const {
-	return prev_list[1];
+	return prev_list[0];
+}
+
+// Compute 
+
+void LoopTail::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
+	hash[{this,coord}] = hash.find({prev(),coord})->second;
 }
 
 } } // namespace map::detail

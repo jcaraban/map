@@ -47,8 +47,9 @@ DEFINE_NODESIGN( Temporal, 68 )
 DEFINE_NODESIGN( Checkpoint, 69 )
 DEFINE_NODESIGN( Barrier, 80 )
 DEFINE_NODESIGN( Summary, 81 )
-DEFINE_NODESIGN( BlockSummary, 82 )
-//DEFINE_NODESIGN( GroupSummary, 83 )
+DEFINE_NODESIGN( DataSummary, 82 )
+DEFINE_NODESIGN( BlockSummary, 83 )
+DEFINE_NODESIGN( GroupSummary, 84 )
 
 #undef DEFINE_NODESIGN
 

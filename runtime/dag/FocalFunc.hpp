@@ -32,7 +32,7 @@ struct FocalFunc : public Node
 	};
 
 	// Factory
-	static Node* Factory(Node *arg, const Mask &mask, ReductionType type);
+	static Node* Factory(Node *prev, const Mask &mask, ReductionType type);
 	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
@@ -53,7 +53,7 @@ struct FocalFunc : public Node
 	// const Mask& outputReach(Coord coord) const;
 
 	// Compute
-	//void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
+	//void computeScalar(std::unordered_map<Node*,VariantType> &hash);
 	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
 
 	// Variables

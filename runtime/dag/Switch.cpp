@@ -36,8 +36,9 @@ Node* Switch::Factory(Node *cond, Node *prev) {
 	DataType dt = prev->datatype();
 	MemOrder mo = prev->memorder();
 	BlockSize bs = prev->blocksize();
-
-	MetaData meta(ds,dt,mo,bs);
+	GroupSize gs = prev->groupsize();
+	
+	MetaData meta(ds,dt,mo,bs,gs);
 
 	return new Switch(meta,cond,prev);
 }
@@ -57,8 +58,8 @@ Switch::Switch(const MetaData &meta, Node *cond, Node *prev)
 	cond->addNext(this);
 	prev->addNext(this);
 
-	//this->next_true = push_back ...
-	//this->next_false = push_back ...
+	this->next_true = NodeList(); // Added during loop/if-assembly
+	this->next_false = NodeList(); // Added during loop/if-assembly
 
 	this->in_spatial_reach = Mask(numdim().unitVec(),true);
 	this->out_spatial_reach = Mask(numdim().unitVec(),true);
@@ -127,13 +128,12 @@ void Switch::addFalse(Node *node) {
 
 // Compute 
 
-void Switch::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
+void Switch::computeScalar(std::unordered_map<Node*,VariantType> &hash) {
 	assert(numdim() == D0);
-	Coord coord = {0,0};
 	auto *node = this;
 
-	auto pval = hash.find({node->prev(),coord})->second;
-	hash[{node,coord}] = pval;
+	auto pval = hash.find(node->prev())->second;
+	hash[node] = pval;
 }
 
 void Switch::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {

@@ -27,17 +27,18 @@ std::size_t ZonalReduc::Hash::operator()(const Content& k) const {
 
 // Factory
 
-Node* ZonalReduc::Factory(Node *arg, ReductionType type) {
-	assert(arg != nullptr);
-	assert(arg->numdim() != D0);
+Node* ZonalReduc::Factory(Node *prev, ReductionType type) {
+	assert(prev != nullptr);
+	assert(prev->numdim() != D0);
 
 	DataSize ds = DataSize(0); // == D0
-	DataType dt = arg->datatype();
-	MemOrder mo = arg->memorder();
+	DataType dt = prev->datatype();
+	MemOrder mo = prev->memorder();
 	BlockSize bs = BlockSize(0);
-	MetaData meta(ds,dt,mo,bs);
+	GroupSize gs = GroupSize(0);
+	MetaData meta(ds,dt,mo,bs,gs);
 
-	return new ZonalReduc(meta,arg,type);
+	return new ZonalReduc(meta,prev,type);
 }
 
 Node* ZonalReduc::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
@@ -52,8 +53,8 @@ ZonalReduc::ZonalReduc(const MetaData &meta, Node *prev, ReductionType type) : N
 	prev->addNext(this);
 
 	this->type = type;
+	//this->value = type.neutral(datatype());
 	
-	this->value = type.neutral(datatype()); // @
 	this->in_spatial_reach = Mask(prev->numdim().unitVec(),true);
 	this->out_spatial_reach = Mask(numdim().unitVec(),true); // @ shall be empty ?
 }
@@ -89,17 +90,30 @@ Node* ZonalReduc::prev() const {
 
 // Compute
 
+VariantType ZonalReduc::initialValue() const {
+	return type.neutral(datatype());
+}
+
+void ZonalReduc::updateValue(VariantType value) {
+	//node->type.atomic(node->value,blk->value); // @
+	this->value = type.apply(this->value,value);
+}
+
 void ZonalReduc::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
 	auto *node = this;
 	ValFix vf = ValFix();
 
 	auto prev = hash.find({node->prev(),coord})->second;
 	if (prev.fixed) {
-		if (node->type == MAX || node->type == MIN) {
-			vf = ValFix(prev.value);
+		switch (node->type.get()) {
+			case SUM:  vf = ValFix( prev.value * prod(blocksize()) ); break;
+			case PROD: vf = ValFix( pow(prev.value,prod(blocksize())) ); break;
+			case rAND: vf = ValFix(prev.value); break;
+			case rOR:  vf = ValFix(prev.value); break;
+			case MAX:  vf = ValFix(prev.value); break;
+			case MIN:  vf = ValFix(prev.value); break;
+			default: assert(0);
 		}
-		// @ SUM could be implemented as a multiplication by the block_size
-		// @ PROD could be implemented as a exponentiation by the block_size
 	}
 	hash[{node,coord}] = vf;
 }

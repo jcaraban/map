@@ -66,7 +66,6 @@ LoopHead::~LoopHead() {
 	remove_value(this,owner_loop->head_list);
 }
 
-
 // Methods
 
 void LoopHead::accept(Visitor *visitor) {
@@ -91,6 +90,12 @@ LoopCond* LoopHead::loop() const {
 
 Node* LoopHead::prev() const {
 	return prev_list[0];
+}
+
+// Compute
+
+void LoopHead::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
+	hash[{this,coord}] = hash.find({prev(),coord})->second;
 }
 
 } } // namespace map::detail

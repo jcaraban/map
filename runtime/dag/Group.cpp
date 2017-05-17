@@ -20,10 +20,13 @@ Group::Group()
 	: id(-1)
 	, task(nullptr)
 	, gen_pattern(NONE_PATTERN)
-	, gen_num_dim(NONE_NUMDIM)
-	, gen_data_size()
-	, gen_block_size()
-	, gen_num_block()
+	, gen_shape()
+	//, gen_num_dim(NONE_NUMDIM)
+	//, gen_data_size()
+	//, gen_block_size()
+	//, gen_num_block()
+	//, gen_group_size()
+	//, gen_num_group()
 	, gen_outdated(false)
 { }
 
@@ -31,10 +34,13 @@ Group::Group(Pattern pattern)
 	: id(-1)
 	, task(nullptr)
 	, gen_pattern(pattern)
-	, gen_num_dim(D0)
-	, gen_data_size()
-	, gen_block_size()
-	, gen_num_block()
+	, gen_shape()
+	//, gen_num_dim(D0)
+	//, gen_data_size()
+	//, gen_block_size()
+	//, gen_num_block()
+	//, gen_group_size()
+	//, gen_num_group()
 	, gen_outdated(false)
 { }
 
@@ -68,22 +74,32 @@ const GroupList& Group::forwList() const {
 
 NumDim Group::numdim() const {
 	updateAttributes();
-	return gen_num_dim;
+	return gen_shape.num_dim;
 }
 
 const DataSize& Group::datasize() const {
 	updateAttributes();
-	return gen_data_size;
+	return gen_shape.data_size;
 }
 
 const BlockSize& Group::blocksize() const {
 	updateAttributes();
-	return gen_block_size;
+	return gen_shape.block_size;
 }
 
 const NumBlock& Group::numblock() const {
 	updateAttributes();
-	return gen_num_block;
+	return gen_shape.num_block;
+}
+
+const GroupSize& Group::groupsize() const {
+	updateAttributes();
+	return gen_shape.group_size;
+}
+
+const NumGroup& Group::numgroup() const {
+	updateAttributes();
+	return gen_shape.num_group;
 }
 
 void Group::addNode(Node *node) {
@@ -237,15 +253,17 @@ void Group::removeForw(Group *group) {
 void Group::updateAttributes() const {
 	if (!gen_outdated)
 		return;
-	gen_num_dim == NONE_NUMDIM;
+
+	gen_shape = DataShape();
+
 	for (auto node : full_join(in_list,node_list)) {
-		if (gen_num_dim == NONE_NUMDIM || gen_num_dim.toInt() < node->numdim().toInt()) {
-			gen_num_dim = node->numdim();
-			gen_data_size = node->datasize();
-			gen_block_size = node->blocksize();
-			gen_num_block = node->numblock();
-		}
+		auto node_shape = node->metadata().getDataShape();
+		if (node_shape.encompass(gen_shape))
+			gen_shape = node_shape;
+		else
+			assert(gen_shape.encompass(node_shape));
 	}
+
 	gen_outdated = false;
 }
 

@@ -42,8 +42,10 @@ Identity::Identity(const MetaData &meta, Node *prev)
 {
 	prev_list.reserve(1);
 	this->addPrev(prev);
-	
 	prev->addNext(this);
+
+	this->in_spatial_reach = Mask(numdim().unitVec(),true);
+	this->out_spatial_reach = Mask(numdim().unitVec(),true);
 }
 
 Identity::Identity(const Identity *other, const std::unordered_map<Node*,Node*> &other_to_this)
@@ -74,13 +76,12 @@ Node* Identity::prev() const {
 
 // Compute
 
-void Identity::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
+void Identity::computeScalar(std::unordered_map<Node*,VariantType> &hash) {
 	assert(numdim() == D0);
-	Coord coord = {0,0};
 	auto *node = this;
 
-	auto pval = hash.find({node->prev(),coord})->second;
-	hash[{node,coord}] = pval;
+	auto pval = hash.find(node->prev())->second;
+	hash[node] = pval;
 }
 
 void Identity::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {

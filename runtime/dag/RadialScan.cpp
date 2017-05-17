@@ -32,17 +32,18 @@ std::size_t RadialScan::Hash::operator()(const Content& k) const {
 
 // Factory
 
-Node* RadialScan::Factory(Node *arg, ReductionType type, Coord start) {
-	assert(arg != nullptr);
-	assert(arg->numdim() != D0);
+Node* RadialScan::Factory(Node *prev, ReductionType type, Coord start) {
+	assert(prev != nullptr);
+	assert(prev->numdim() != D0);
 
-	DataSize ds = arg->datasize();
-	DataType dt = arg->datatype();
-	MemOrder mo = arg->memorder();
-	BlockSize bs = arg->blocksize();
-	MetaData meta(ds,dt,mo,bs);
+	DataSize ds = prev->datasize();
+	DataType dt = prev->datatype();
+	MemOrder mo = prev->memorder();
+	BlockSize bs = prev->blocksize();
+	GroupSize gs = prev->groupsize();
+	MetaData meta(ds,dt,mo,bs,gs);
 
-	return new RadialScan(meta,arg,type,start);
+	return new RadialScan(meta,prev,type,start);
 }
 
 Node* RadialScan::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
@@ -159,6 +160,10 @@ const Mask& RadialScan::inputReach(Coord coord) const {
 		;
 	}
 }
+
+//HoldType RadialScan::holdtype(Coord coord) {
+//	assert(0);
+//}
 
 // Compute
 

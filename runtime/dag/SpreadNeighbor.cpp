@@ -27,21 +27,22 @@ std::size_t SpreadNeighbor::Hash::operator()(const Content& k) const {
 
 // Factory
 
-Node* SpreadNeighbor::Factory(Node *arg, Node *dir, ReductionType type) {
-	assert(arg != nullptr);
-	assert(arg->numdim() != D0);
-	assert(arg->numdim() == dir->numdim());
+Node* SpreadNeighbor::Factory(Node *prev, Node *dir, ReductionType type) {
+	assert(prev != nullptr);
+	assert(prev->numdim() != D0);
+	assert(prev->numdim() == dir->numdim());
 	assert(dir != nullptr);
 	assert(dir->numdim() != D0);
 	assert(type != NONE_REDUCTION);
 
-	DataSize ds = arg->datasize();
-	DataType dt = arg->datatype();
-	MemOrder mo = arg->memorder();
-	BlockSize bs = arg->blocksize();
-	MetaData meta(ds,dt,mo,bs);
+	DataSize ds = prev->datasize();
+	DataType dt = prev->datatype();
+	MemOrder mo = prev->memorder();
+	BlockSize bs = prev->blocksize();
+	GroupSize gs = prev->groupsize();
+	MetaData meta(ds,dt,mo,bs,gs);
 
-	return new SpreadNeighbor(meta,arg,dir,type);
+	return new SpreadNeighbor(meta,prev,dir,type);
 }
 
 Node* SpreadNeighbor::clone(const std::unordered_map<Node*,Node*> &other_to_this) {

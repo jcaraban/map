@@ -35,51 +35,63 @@ std::size_t Conditional::Hash::operator()(const Content& k) const {
 Node* Conditional::Factory(Node *cond, Node *lhs, Node *rhs) {
 	assert(cond != nullptr && lhs != nullptr && rhs != nullptr);
 
-	NumDim dim, cdim = cond->numdim(), ldim = lhs->numdim(), rdim = rhs->numdim();
-	DataSize ds, cds = cond->datasize(), lds = lhs->datasize(), rds = rhs->datasize();
-	DataType dt, cdt = cond->datatype(), ldt = lhs->datatype(), rdt = rhs->datatype();
-	MemOrder mo, cmo = cond->memorder(), lmo = lhs->memorder(), rmo = rhs->memorder();
-	BlockSize bs, cbs = cond->blocksize(), lbs = lhs->blocksize(), rbs = rhs->blocksize();
+	DataType data_type;
+	MemOrder mem_order;
+	DataShape shape;
+	DataShape cshp = cond->metadata().getDataShape();
+	DataShape lshp = lhs->metadata().getDataShape();
+	DataShape rshp = rhs->metadata().getDataShape();
 
-	/****/ if (cdim == D0) {
-		if (ldim == D0) {
-			dim=rdim, ds=rds, mo=rmo, bs=rbs;
-		} else if (rdim == D0) {
-			dim=ldim, ds=lds, mo=lmo, bs=lbs;	
+	if (cond->numdim() == D0) {
+		if (lhs->numdim() == D0) {
+			shape = rshp;
+			mem_order = rhs->memorder();
+		} else if (rhs->numdim() == D0) {
+			shape = lshp;
+			mem_order = lhs->memorder();
 		} else {
-			assert( ldim==rdim && all(lds==rds) && lmo==rmo && all(lbs==rbs) );
-			dim=ldim, ds=lds, mo=lmo, bs=lbs;
+			assert(lshp == rshp);
+			assert(lhs->memorder() == rhs->memorder());
+			shape = lshp;
+			mem_order = lhs->memorder();
 		}
-	} else if (ldim == D0) {
-		if (cdim == D0) {
-			dim=rdim, ds=rds, mo=rmo, bs=rbs;
-		} else if (rdim == D0) {
-			dim=cdim, ds=cds, mo=cmo, bs=cbs;
+	} else if (lhs->numdim() == D0) {
+		if (cond->numdim() == D0) {
+			shape = rshp;
+			mem_order = rhs->memorder();
+		} else if (rhs->numdim() == D0) {
+			shape = cshp;
+			mem_order = cond->memorder();
 		} else {
-			assert( cdim==rdim && all(cds==rds) && cmo==rmo && all(cbs==rbs) );
-			dim=cdim, ds=cds, mo=cmo, bs=cbs;
+			assert(cshp == rshp);
+			assert(cond->memorder() == rhs->memorder());
+			shape = cshp;
+			mem_order = rhs->memorder();
 		}
-	} else if (rdim == D0) {
-		if (cdim == D0) {
-			dim=ldim, ds=lds, mo=lmo, bs=lbs;
-		} else if (ldim == D0) {
-			dim=cdim, ds=cds, mo=cmo, bs=cbs;
+	} else if (rhs->numdim() == D0) {
+		if (cond->numdim() == D0) {
+			shape = lshp;
+			mem_order = lhs->memorder();
+		} else if (lhs->numdim() == D0) {
+			shape = cshp;
+			mem_order = cond->memorder();
 		} else {
-			assert( cdim==ldim && all(cds==lds) && cmo==lmo && all(cbs==lbs) );
-			dim=cdim, ds=cds, mo=cmo, bs=cbs;
+			assert(cshp == lshp);
+			shape = cshp;
+			mem_order = cond->memorder();
 		}
 	} else {
-		assert(cdim==ldim && ldim==rdim);
-		assert(all(cds==rds) && all(lds==rds));
-		assert(cmo==lmo && lmo==rmo);
-		assert(all(cbs==lbs) && all(lbs==rbs));
-		dim=cdim, ds=cds, mo=cmo, bs=cbs;
+		assert(cshp == lshp && lshp == rshp);
+		assert(cond->memorder() == lhs->memorder());
+		assert(lhs->memorder() == rhs->memorder());
+		shape = cshp;
+		mem_order = cond->memorder();
 	}
 
-	assert(ldt == rdt); 
-	dt = ldt; // @ if cdim == D0, evaluate 'cond' and assign the type of 'lhs' or 'rhs'
+	assert(lhs->datatype() == rhs->datatype()); 
+	data_type = lhs->datatype(); // @ if cdim == D0, evaluate 'cond' and assign the type of 'lhs' or 'rhs'
 
-	MetaData meta(ds,dt,mo,bs);
+	MetaData meta(shape.data_size,data_type,mem_order,shape.block_size,shape.group_size);
 
 	// @ identity functionality would go here ?
 
@@ -146,13 +158,12 @@ Node* Conditional::right() const {
 	return prev_list[2]; // third element
 }
 
-void Conditional::computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash) {
+void Conditional::computeScalar(std::unordered_map<Node*,VariantType> &hash) {
 	assert(numdim() == D0);
-	Coord coord = {0,0};
-	auto cval = hash.find({cond(),coord})->second;
-	auto lval = hash.find({left(),coord})->second;
-	auto rval = hash.find({right(),coord})->second;
-	hash[{this,coord}] = cval ? lval : rval;
+	auto cval = hash.find(cond())->second;
+	auto lval = hash.find(left())->second;
+	auto rval = hash.find(right())->second;
+	hash[this] = cval ? lval : rval;
 }
 
 void Conditional::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {

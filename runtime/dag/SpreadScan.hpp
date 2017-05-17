@@ -48,7 +48,7 @@ struct SpreadScan : public Node
 	Pattern pattern() const { return SPREAD; }
 
 	// Compute
-	//void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
+	//void computeScalar(std::unordered_map<Node*,VariantType> &hash);
 	//void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
 	
 	// Variables

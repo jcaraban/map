@@ -29,18 +29,18 @@ std::size_t Read::Hash::operator()(const Content& k) const {
 Node* Read::Factory(std::string file_path) {
 	assert(!file_path.empty());
 
-	// Creates an instance of File<Format>
+	// Creates an instance of File<Format> according to the file extension
 	SharedFile in_file = SharedFile( IFile::Factory(file_path) );
 	if (in_file == nullptr) {
 		assert(!"File format coudln't be infered\n");
 	}
-	// Attempts to open the file for reading
+	// Attempts to open the file for reading with the retrieved File<Format>
 	Ferr ferr = in_file->open(file_path, IN);
 	if (ferr) {
 		assert(!"File couldn't be opened\n");
 	}
 
-	// Reading the file is lazy
+	// Only the metadata was read, the actual data is loaded while computing
 	return new Read(in_file);
 }
 

@@ -43,6 +43,8 @@
 #include "Checkpoint.hpp"
 #include "Barrier.hpp"
 #include "Summary.hpp"
+#include "DataSummary.hpp"
 #include "BlockSummary.hpp"
+#include "GroupSummary.hpp"
 
 #endif

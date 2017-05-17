@@ -26,7 +26,7 @@ struct Index : public Node
 	};
 
 	// Factory
-	static Node* Factory(DataSize ds, NumDim dim, MemOrder mo, BlockSize bs);
+	static Node* Factory(DataSize ds, NumDim dim, MemOrder mo, BlockSize bs, GroupSize gs);
 	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
@@ -45,7 +45,7 @@ struct Index : public Node
 	// const Mask& outputReach(Coord coord) const;
 	
 	// Compute
-	void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
+	void computeScalar(std::unordered_map<Node*,VariantType> &hash);
 	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
 
 	// Variables
