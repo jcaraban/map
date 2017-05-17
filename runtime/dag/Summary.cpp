@@ -32,8 +32,8 @@ Node* Summary::Factory(Node *prev, Node *min, Node *max, Node *mean, Node *std) 
 		auto node = dynamic_cast<BlockSummary*>(min);
 		assert(node != nullptr);
 		assert(node->type == MIN);
-		assert(all(min->datasize() == prev->datasize()));
-		assert(all(min->blocksize() == prev->blocksize()));
+		assert(all(min->datasize() == prev->datasize()/prev->blocksize()));
+		assert(all(min->blocksize() == prev->blocksize()/prev->blocksize()));
 		assert(min->datatype() == prev->datatype());
 		assert(min->numdim() == prev->numdim());
 	}
@@ -41,8 +41,8 @@ Node* Summary::Factory(Node *prev, Node *min, Node *max, Node *mean, Node *std) 
 		auto node = dynamic_cast<BlockSummary*>(max);
 		assert(node != nullptr);
 		assert(node->type == MAX);
-		assert(all(max->datasize() == prev->datasize()));
-		assert(all(max->blocksize() == prev->blocksize()));
+		assert(all(max->datasize() == prev->datasize()/prev->blocksize()));
+		assert(all(max->blocksize() == prev->blocksize()/prev->blocksize()));
 		assert(max->datatype() == prev->datatype());
 		assert(max->numdim() == prev->numdim());
 	}
@@ -65,7 +65,8 @@ Node* Summary::Factory(Node *prev, Node *min, Node *max, Node *mean, Node *std) 
 	DataType dt = prev->datatype();
 	MemOrder mo = prev->memorder();
 	BlockSize bs = prev->blocksize();
-	MetaData meta(ds,dt,mo,bs);
+	GroupSize gs = prev->groupsize();
+	MetaData meta(ds,dt,mo,bs,gs);
 
 	return new Summary(meta,prev,min,max,mean,std);
 }

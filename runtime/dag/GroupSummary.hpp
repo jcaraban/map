@@ -1,23 +1,23 @@
 /**
- * @file	BlockSummary.hpp 
+ * @file	GroupSummary.hpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * Node representing a BlockSummary operation, i.e. computes per-block summaries of the data
+ * Node representing a Summary operation, i.e. compute and collect per-block statistics of the data
  */
 
-#ifndef MAP_RUNTIME_DAG_BLOCKSUMMARY_HPP_
-#define MAP_RUNTIME_DAG_BLOCKSUMMARY_HPP_
+#ifndef MAP_RUNTIME_DAG_GROUPSUMMARY_HPP_
+#define MAP_RUNTIME_DAG_GROUPSUMMARY_HPP_
 
 #include "Node.hpp"
 
 
 namespace map { namespace detail {
 
-struct BlockSummary : public Node
+struct GroupSummary : public Node
 {
 	// Internal declarations
 	struct Content {
-		Content(BlockSummary *node);
+		Content(GroupSummary *node);
 		bool operator==(const Content& k) const;
 		Node *prev;
 		ReductionType type;
@@ -31,8 +31,8 @@ struct BlockSummary : public Node
 	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
-	BlockSummary(const MetaData &meta, Node *prev, ReductionType type);
-	BlockSummary(const BlockSummary *other, const std::unordered_map<Node*,Node*> &other_to_this);
+	GroupSummary(const MetaData &meta, Node *prev, ReductionType type);
+	GroupSummary(const GroupSummary *other, const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Methods
 	void accept(Visitor *visitor);
@@ -47,8 +47,6 @@ struct BlockSummary : public Node
 	// const Mask& outputReach(Coord coord) const;
 
 	// Compute
-	VariantType initialValue() const;
-	void updateValue(VariantType value);
 	//void computeScalar(std::unordered_map<Node*,VariantType> &hash);
 	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
 

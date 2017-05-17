@@ -1,9 +1,9 @@
 /**
- * @file	BlockSummary.cpp 
+ * @file	DataSummary.cpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  */
 
-#include "BlockSummary.hpp"
+#include "DataSummary.hpp"
 #include "../visitor/Visitor.hpp"
 #include <functional>
 
@@ -12,42 +12,42 @@ namespace map { namespace detail {
 
 // Internal declarations
 
-BlockSummary::Content::Content(BlockSummary *node) {
+DataSummary::Content::Content(DataSummary *node) {
 	prev = node->prev();
 	type = node->type;
 }
 
-bool BlockSummary::Content::operator==(const Content& k) const {
+bool DataSummary::Content::operator==(const Content& k) const {
 	return (prev==k.prev && type==k.type);
 }
 
-std::size_t BlockSummary::Hash::operator()(const Content& k) const {
+std::size_t DataSummary::Hash::operator()(const Content& k) const {
 	return std::hash<Node*>()(k.prev) ^ std::hash<int>()(k.type.get());
 }
 
 // Factory
 
-Node* BlockSummary::Factory(Node *prev, ReductionType type) {
+Node* DataSummary::Factory(Node *prev, ReductionType type) {
 	assert(prev != nullptr);
 	assert(prev->numdim() != D0);
 
-	DataSize ds = prev->datasize() / prev->blocksize();
+	DataSize ds = prev->numdim().unitVec();
 	DataType dt = prev->datatype();
 	MemOrder mo = prev->memorder();
-	BlockSize bs = prev->numdim().unitVec();;
+	BlockSize bs = prev->numdim().unitVec();
 	GroupSize gs = prev->numdim().unitVec();
 	MetaData meta(ds,dt,mo,bs,gs);
 
-	return new BlockSummary(meta,prev,type);
+	return new DataSummary(meta,prev,type);
 }
 
-Node* BlockSummary::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
-	return new BlockSummary(this,other_to_this);
+Node* DataSummary::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
+	return new DataSummary(this,other_to_this);
 }
 
 // Constructors
 
-BlockSummary::BlockSummary(const MetaData &meta, Node *prev, ReductionType type) : Node(meta) {
+DataSummary::DataSummary(const MetaData &meta, Node *prev, ReductionType type) : Node(meta) {
 	prev_list.reserve(1);
 	this->addPrev(prev);
 	prev->addNext(this);
@@ -59,7 +59,7 @@ BlockSummary::BlockSummary(const MetaData &meta, Node *prev, ReductionType type)
 	this->out_spatial_reach = Mask(numdim().unitVec(),true); // @ shall be something else ?
 }
 
-BlockSummary::BlockSummary(const BlockSummary *other, const std::unordered_map<Node*,Node*> &other_to_this)
+DataSummary::DataSummary(const DataSummary *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 {
 	this->type = other->type;
@@ -67,41 +67,30 @@ BlockSummary::BlockSummary(const BlockSummary *other, const std::unordered_map<N
 
 // Methods
 
-void BlockSummary::accept(Visitor *visitor) {
+void DataSummary::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string BlockSummary::getName() const {
-	return "BlockSummary";
+std::string DataSummary::getName() const {
+	return "DataSummary";
 }
 
-std::string BlockSummary::signature() const {
+std::string DataSummary::signature() const {
 	std::string sign = "";
 	sign += classSignature();
-	sign += to_string(prev()->datasize()); // @
-	sign += to_string(prev()->blocksize()); // @
 	sign += prev()->numdim().toString();
 	sign += prev()->datatype().toString();
 	sign += type.toString();
 	return sign;
 }
 
-Node* BlockSummary::prev() const {
+Node* DataSummary::prev() const {
 	return prev_list[0];
 }
 
 // Compute
 
-VariantType BlockSummary::initialValue() const {
-	return type.neutral(datatype());
-}
-
-void BlockSummary::updateValue(VariantType value) {
-	//node->type.atomic(node->value,blk->value); // @
-	this->value = type.apply(this->value,value);
-}
-
-void BlockSummary::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
+void DataSummary::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
 	auto *node = this;
 	ValFix vf = ValFix();
 

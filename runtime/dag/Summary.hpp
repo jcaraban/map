@@ -7,8 +7,8 @@
  * TODO: remove STATS from the patterns
  */
 
-#ifndef MAP_RUNTIME_DAG_STATS_HPP_
-#define MAP_RUNTIME_DAG_STATS_HPP_
+#ifndef MAP_RUNTIME_DAG_SUMMARY_HPP_
+#define MAP_RUNTIME_DAG_SUMMARY_HPP_
 
 #include "Node.hpp"
 
@@ -46,13 +46,16 @@ struct Summary : public Node
 	Node* mean() const;
 	Node* std() const;
 
+	// Features
+	bool canForward() const { return true; };
+
 	// Spatial
 	Pattern pattern() const { return STATS; }
 	// const Mask& inputReach(Coord coord) const;
 	// const Mask& outputReach(Coord coord) const;
 
 	// Compute
-	//void computeScalar(std::unordered_map<Key,VariantType,key_hash> &hash);
+	//void computeScalar(std::unordered_map<Node*,VariantType> &hash);
 	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
 	
 	// Variables
