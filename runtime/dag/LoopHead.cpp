@@ -63,7 +63,8 @@ LoopHead::LoopHead(const LoopHead *other, const std::unordered_map<Node*,Node*> 
 
 LoopHead::~LoopHead() {
 	// Notifies its 'loop' about the deletion
-	remove_value(this,owner_loop->head_list);
+	if (owner_loop != nullptr)
+		remove_value(this,owner_loop->head_list);
 }
 
 // Methods

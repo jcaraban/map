@@ -25,18 +25,18 @@ void ScalarTask::createVersions() {
 	return; // No versions needed for ScalarTask
 }
 
-void ScalarTask::preCompute(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
-	return; // nothing to do
-}
+//void ScalarTask::preCompute(Job job, const BlockList &in_blk, const BlockList &out_blk) {
+//	return; // nothing to do
+//}
 
-void ScalarTask::postCompute(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
-	return; // nothing to do
-}
+//void ScalarTask::postCompute(Job job, const BlockList &in_blk, const BlockList &out_blk) {
+//	return; // nothing to do
+//}
 
-void ScalarTask::compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
+void ScalarTask::compute(Job job, const BlockList &in_blk, const BlockList &out_blk) {
 	assert(in_blk.size() == inputList().size());
 	assert(out_blk.size() == outputList().size());
-	assert(coord.size() == 0);
+	assert(job.coord.size() == 0);
 
 	// Checking inputs, @ not necesary ?
 	for (int i=0; i<in_blk.size(); i++) {
@@ -65,7 +65,7 @@ void ScalarTask::compute(Coord coord, const BlockList &in_blk, const BlockList &
 		assert(node->value.datatype() != NONE_DATATYPE);
 		assert(blk->value.datatype() == NONE_DATATYPE);
 
-		blk->value = hash.find(node)->second;
+		blk->fixValue( hash.find(node)->second );
 	}
 }
 

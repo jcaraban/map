@@ -53,10 +53,10 @@ Switch::Switch(const MetaData &meta, Node *cond, Node *prev)
 	: Node(meta)
 {
 	prev_list.reserve(2);
-	this->addPrev(cond); // condition first, closes the loop before moving up
 	this->addPrev(prev);
-	cond->addNext(this);
 	prev->addNext(this);
+	this->addPrev(cond); // condition second
+	cond->addNext(this);
 
 	this->next_true = NodeList(); // Added during loop/if-assembly
 	this->next_false = NodeList(); // Added during loop/if-assembly
@@ -68,8 +68,8 @@ Switch::Switch(const MetaData &meta, Node *cond, Node *prev)
 Switch::Switch(const Switch *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
 {
-	this->next_true = other->next_true;
-	this->next_false = other->next_false;
+	this->next_true = other->next_true; // Updated later in Cloner.cpp
+	this->next_false = other->next_false; // Updated later in Cloner.cpp
 }
 
 // Methods
@@ -90,11 +90,11 @@ std::string Switch::signature() const {
 	return sign;
 }
 
-Node* Switch::cond() const {
+Node* Switch::prev() const {
 	return prev_list[0];
 }
 
-Node* Switch::prev() const {
+Node* Switch::cond() const {
 	return prev_list[1];
 }
 

@@ -38,10 +38,11 @@ struct Order {
 struct Job {
 	Task *task;
 	Coord coord;
+	size_t iter;
 	Order order;
 
 	Job();
-	Job(Task *task, Coord coord);
+	Job(Task *task, Coord coord, size_t iter=0);
 	bool isNone();
 };
 

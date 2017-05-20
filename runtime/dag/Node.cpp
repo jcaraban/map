@@ -164,12 +164,20 @@ bool Node::isOutput() const {
 	return false;
 }
 
+bool Node::canForward() const {
+	return false;
+}
+
+bool Node::isConstant() const {
+	return false;
+}
+
 bool Node::isReduction() const {
 	return inputReach().numdim().toInt() > outputReach().numdim().toInt();
 }
 
-bool Node::canForward() const {
-	return false;
+ReductionType Node::reductype() const {
+	return NONE_REDUCTION;
 }
 
 Pattern Node::pattern() const {

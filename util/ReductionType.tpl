@@ -106,8 +106,8 @@ struct ReductionOperator {
 
 DEFINE_REDUCTION_OPERATOR( SUM  , lhs + rhs )
 DEFINE_REDUCTION_OPERATOR( PROD , lhs * rhs )
-DEFINE_REDUCTION_OPERATOR( rAND , lhs & rhs )
-DEFINE_REDUCTION_OPERATOR( rOR  , lhs | rhs )
+DEFINE_REDUCTION_OPERATOR( rAND , lhs && rhs )
+DEFINE_REDUCTION_OPERATOR( rOR  , lhs || rhs )
 DEFINE_REDUCTION_OPERATOR( MAX  , std::max(lhs,rhs) )
 DEFINE_REDUCTION_OPERATOR( MIN  , std::min(lhs,rhs) )
 #undef DEFINE_REDUCTION_OPERATOR
@@ -118,10 +118,10 @@ DEFINE_REDUCTION_OPERATOR( MIN  , std::min(lhs,rhs) )
 		Ctype<T> operator()(Ctype<T> lhs, Ctype<T> rhs) { expr; } \
 	};
 
-DEFINE_REDUCTION_EXCEPTION( rAND , F32 , assert(0) )
-DEFINE_REDUCTION_EXCEPTION( rOR  , F32 , assert(0) )
-DEFINE_REDUCTION_EXCEPTION( rAND , F64 , assert(0) )
-DEFINE_REDUCTION_EXCEPTION( rOR  , F64 , assert(0) )
+//DEFINE_REDUCTION_EXCEPTION( rAND , F32 , assert(0) )
+//DEFINE_REDUCTION_EXCEPTION( rOR  , F32 , assert(0) )
+//DEFINE_REDUCTION_EXCEPTION( rAND , F64 , assert(0) )
+//DEFINE_REDUCTION_EXCEPTION( rOR  , F64 , assert(0) )
 #undef DEFINE_REDUCTION_EXCEPTION
 
 template <ReductionEnum R, DataTypeEnum T>

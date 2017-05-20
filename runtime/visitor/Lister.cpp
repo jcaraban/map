@@ -37,7 +37,7 @@ NodeList Lister::list(NodeList few_nodes) {
 			continue;
 		setVisited(node);
 
-		node_list.push_back(node);
+		node_list.push_back(node); // Push into output
 
 		for (auto forw : node->forwList())
 			queue.push(forw);

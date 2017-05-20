@@ -416,6 +416,7 @@ Ferr binary::discard(const Block &block) {
 
 	//ferr = fallocate(fd, FALLOC_FL_ZERO_RANGE, offset+initial_offset, total_block_size);
 	ferr = fallocate(fd, FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE, offset+initial_offset, total_block_size);
+
 	if (ferr) {
 		std::cout << strerror(errno) << std::endl;
 		assert(0);

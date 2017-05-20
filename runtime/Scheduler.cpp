@@ -109,7 +109,10 @@ void Scheduler::addJobs(const std::vector<Job> &job_vec) {
 }
 
 void Scheduler::print() {
-	// print queues here?
+	std::cout << "--------------------" << std::endl;
+	for (auto job : job_set)
+		std::cout << job.task->id() << " " << job.coord << " " << job.iter << std::endl;
+	std::cout << "--------------------" << std::endl;
 }
 
 } } // namespace map::detail

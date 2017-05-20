@@ -4,7 +4,7 @@
  *
  * Task base class
  *
- * TODO: selfJobs() should take a 'Key done_block', but atm it is only used for Radial and is ok
+ * TODO: shall selfJobs() take a 'Key done_block', or better nextJobs() takes a 'Job done_job' ?
  */
 
 #ifndef MAP_RUNTIME_TASK_HPP_
@@ -72,15 +72,15 @@ struct Task
 	const VersionList& versionList() const;
 	const Version* getVersion(DeviceType dev_type, GroupSize group, std::string detail) const;
   // Blocks
-	virtual void blocksToLoad(Coord coord, KeyList &in_keys) const;
-	virtual void blocksToStore(Coord coord, KeyList &out_keys) const;
+	virtual void blocksToLoad(Job job, KeyList &in_key) const;
+	virtual void blocksToStore(Job job, KeyList &out_key) const;
   // Jobs
 	virtual void initialJobs(std::vector<Job> &job_vec);
 	virtual void askJobs(Job done_job, std::vector<Job> &job_vec);
 	virtual void selfJobs(Job done_job, std::vector<Job> &job_vec);
 	virtual void nextJobs(Key done_block, std::vector<Job> &job_vec);
-	void notify(Coord coord, std::vector<Job> &job_vec);
-	void notifyAll(std::vector<Job> &job_vec);
+	void notify(Job new_job, std::vector<Job> &job_vec);
+	void notifyAll(Job new_job, std::vector<Job> &job_vec);
   // Dependencies
 	virtual int prevDependencies(Coord coord) const;
 	virtual int nextDependencies(Node *node, Coord coood) const;
@@ -90,13 +90,14 @@ struct Task
 	virtual int nextIntraDepends(Node *node, Coord coord) const;
 	int nextInputDepends(Node *node, Coord coord) const; // @
   // Compute
-	virtual void preLoad(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
-	virtual void preCompute(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
-	virtual void postCompute(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
-	virtual void postStore(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
+	virtual void preLoad(Job job, const BlockList &in_blk, const BlockList &out_blk);
+	virtual void preCompute(Job job, const BlockList &in_blk, const BlockList &out_blk);
+	virtual void postCompute(Job job, const BlockList &in_blk, const BlockList &out_blk);
+	virtual void postStore(Job job, const BlockList &in_blk, const BlockList &out_blk);
+	virtual void postWork(Job job, const BlockList &in_blk, const BlockList &out_blk); // @
 
-	virtual void compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
-	virtual void computeVersion(Coord coord, const BlockList &in_blk, const BlockList &out_blk, const Version *ver);
+	virtual void compute(Job job, const BlockList &in_blk, const BlockList &out_blk);
+	virtual void computeVersion(Job job, const BlockList &in_blk, const BlockList &out_blk, const Version *ver);
 
   // vars
 	Program &prog; // Aggregate
@@ -113,7 +114,7 @@ struct Task
 	VersionList ver_list; //!< List of versions required by the task
 	
 	std::unordered_map<Coord,int,coord_hash,coord_equal> dep_hash; // Structure holding the job dependencies met so far
-	int prev_jobs_count, self_jobs_count;//, next_jobs_count;
+	std::unordered_map<int,int> prev_jobs_count, self_jobs_count;//, next_jobs_count;
 	ThreadId last;
 
 	std::unordered_map<Node*,Mask> accu_in_reach_of; // Accumulated 'spatial reach' of input nodes (e.g. Focal, Radial)

@@ -46,6 +46,7 @@ Block::Block()
 	, hold_type()
 	, used(0)
 	, dirty(false)
+	, order(-1)
 	, mtx()
 { }
 
@@ -63,6 +64,7 @@ Block::Block(Key key)
 	, hold_type(HOLD_0)
 	, used(0)
 	, dirty(false)
+	, order(-1)
 	, mtx()
 { }
 
@@ -81,6 +83,7 @@ Block::Block(Key key, cl_mem scalar_page, cl_mem group_page)
 	, hold_type(HOLD_1)
 	, used(0)
 	, dirty(false)
+	, order(-1)
 	, mtx()
 { }
 /*
@@ -99,6 +102,7 @@ Block::Block(Key key, cl_mem group_page, int size)
 	, hold_type(HOLD_2)
 	, used(0)
 	, dirty(false)
+	, order(-1)
 	, mtx()
 { }
 */
@@ -117,6 +121,7 @@ Block::Block(Key key, int max_size, int depend)
 	, hold_type(HOLD_N)
 	, used(0)
 	, dirty(false)
+	, order(-1)
 	, mtx()
 {
 	this->total_size = prod(key.node->blocksize()) * datatype().sizeOf();

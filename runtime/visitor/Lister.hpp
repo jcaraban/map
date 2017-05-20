@@ -33,7 +33,6 @@ struct Lister : public Visitor
   // vars
 	NodeList node_list;
 	std::queue<Node*> queue; //!< Queue of 'prev' / ' forw' nodes still to be visited
-	std::unordered_set<Node*> marked; //!< Mark nodes in the middle of a visit, for loop detection
 };
 
 #undef DECLARE_VISIT

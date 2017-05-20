@@ -9,7 +9,7 @@
 #include "dag/LoopCond.hpp"
 #include "visitor/Lister.hpp"
 #include "visitor/Sorter.hpp"
-#include "visitor/Partitioner.hpp"
+#include "visitor/Unlinker.hpp"
 #include "visitor/Fusioner.hpp"
 #include "visitor/Exporter.hpp"
 #include "visitor/Cloner.hpp"
@@ -78,8 +78,7 @@ Runtime::Runtime()
 Runtime::~Runtime() {
 	// something could be deleted here
 
-	// Nodes cannot be deleted until unlinked
-	unlinkIsolated(node_list);
+	Unlinker().unlink(node_list); // Nodes cannot be deleted until unlinked
 
 	cache.freeChunks();
 	clock.stop(OVERALL);
@@ -210,27 +209,6 @@ Version* Runtime::addVersion(Version *ver) {
 	return ver;
 }
 
-void Runtime::unlinkIsolated(const OwnerNodeList &node_list, bool drop) {
-	// In reverse order, new isolated appear as we unlink nodes
-	for (auto it=node_list.rbegin(); it!=node_list.rend(); it++) {
-		Node *node = it->get();
-		// Skip referred nodes
-		if (node->ref > 0)
-			continue;
-		// Drop from Simplifier
-		if (drop)
-			simplifier.drop(node);
-		// Inform 'prev' nodes
-		for (auto &prev : node->prevList())
-			prev->removeNext(node);
-		node->prev_list.clear();
-		// Inform 'forw' nodes
-		for (auto &forw : node->forwList())
-			forw->removeBack(node);
-		node->forw_list.clear();
-	}
-}
-
 void print_nodes(const OwnerNodeList &list) {
 	std::cout << "----" << std::endl;
 	for (auto &node : list)
@@ -257,12 +235,21 @@ void Runtime::evaluate(NodeList list_to_eval) {
 
 //print_nodes(node_list); // @ Prints nodes
 
-	// Unlinks all unaccessible (i.e. isolated) nodes & removes them from simplifier 
-	unlinkIsolated(node_list,true);
+	// Unlinks all unaccessible nodes (i.e. no var or node links to them)
+	auto un_list = Unlinker().unlink(node_list);
+
+	// Drop the unlinked nodes from simplifier
+	for (auto node : un_list)
+		simplifier.drop(node);
 
 	// Cleaning of old unaccessible nodes
-	auto pred = [](std::unique_ptr<Node> &node){ return node->ref==0; };
-	node_list.erase(std::remove_if(node_list.begin(),node_list.end(),pred),node_list.end());
+	auto pred_ref = [](std::unique_ptr<Node> &node){ return node->ref==0; };
+	node_list.erase(std::remove_if(node_list.begin(),node_list.end(),pred_ref),node_list.end());
+
+	// @ Sorting by 'id' to fix the mess created by the loop assembler
+	typedef std::unique_ptr<Node> NodePtr;
+	auto pred_less = [](const NodePtr &lhs, const NodePtr &rhs){ return lhs->id < rhs->id; };
+	std::sort(node_list.begin(),node_list.end(),pred_less);
 
 //print_nodes(node_list); // @ Prints nodes
 
@@ -307,10 +294,11 @@ void Runtime::evaluate(NodeList list_to_eval) {
 			map_new_old.find(node)->second->value = node->value;
 
 	// Unlinks the private nodes before they are deleted
-	unlinkIsolated(priv_list);
+	auto un_priv_link = Unlinker().unlink(priv_list);
+	assert(un_priv_link.size() == priv_list.size());
 
 	clock.stop(EVAL);
-	reportEval();
+	//reportEval(); // @@
 }
 
 void Runtime::workflow(NodeList list) {

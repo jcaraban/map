@@ -10,6 +10,7 @@
 
 #include "Visitor.hpp"
 #include <unordered_map>
+#include <unordered_set>
 #include <queue>
 
 
@@ -33,6 +34,7 @@ struct Sorter : public Visitor
 	NodeList node_list;
 	std::priority_queue<Node*,std::vector<Node*>,node_id_greater> prique;
 	std::unordered_map<Node*,int> prev_count; //!< Keeps the count of remaining prevs
+	std::unordered_set<Node*> included;
 };
 
 #undef DECLARE_VISIT

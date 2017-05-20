@@ -34,6 +34,7 @@ struct Unlinker : public Visitor
 
   // visit
 	DECLARE_VISIT(Merge)
+	DECLARE_VISIT(Switch)
 
   // vars
 	std::unordered_set<Node*> isolated;

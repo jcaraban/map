@@ -23,8 +23,8 @@ struct SpreadTask : public Task
 
 	void createVersions();
 
-	void blocksToLoad(Coord coord, KeyList &in_keys) const;
-	void blocksToStore(Coord coord, KeyList &out_keys) const;
+	void blocksToLoad(Job job, KeyList &in_key) const;
+	void blocksToStore(Job job, KeyList &out_key) const;
 
 	void initialJobs(std::vector<Job> &job_vec);
 	void askJobs(Job done_job, std::vector<Job> &job_vec);
@@ -36,7 +36,7 @@ struct SpreadTask : public Task
 	int prevIntraDepends(Node *node, Coord coord) const;
 	int nextIntraDepends(Node *node, Coord coord) const;
 
-	void compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
+	void compute(Job job, const BlockList &in_blk, const BlockList &out_blk);
 	
 	Pattern pattern() const { return SPREAD; }
 

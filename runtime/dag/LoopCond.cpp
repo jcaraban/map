@@ -88,6 +88,13 @@ LoopCond::LoopCond(const LoopCond *other, const std::unordered_map<Node*,Node*> 
 	// The 'tail' nodes will link back later and complete the network
 }
 
+LoopCond::~LoopCond() {
+	for (auto head : head_list)
+		head->owner_loop = nullptr;
+	for (auto tail : tail_list)
+		tail->owner_loop = nullptr;
+}
+
 // Methods
 
 void LoopCond::accept(Visitor *visitor) {
@@ -123,7 +130,8 @@ Node* LoopCond::prev() const {
 // Compute
 
 void LoopCond::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
-	hash[{this,coord}] = hash.find({prev(),coord})->second;
+	auto val = hash.find({prev(),coord})->second.value;
+	hash[{this,coord}] = ValFix(val.convert(datatype()));
 }
 
 } } // namespace map::detail

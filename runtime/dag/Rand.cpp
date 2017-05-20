@@ -121,6 +121,9 @@ void Rand::computeScalar(std::unordered_map<Node*,VariantType> &hash) {
 	typedef r123::Philox2x32 rng32;
 	typedef r123::Philox2x64 rng64;
 	typedef unsigned char uchar;
+	typedef unsigned short ushort;
+	typedef unsigned int uint;
+	typedef unsigned long ulong;
 	assert(numdim() == D0);
 
 	auto seed_value = hash.find(seed())->second;

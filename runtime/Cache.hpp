@@ -49,7 +49,7 @@ class Cache
 	BlockSize unit_block_size;
 	int unit_dimension;
 
-	std::unordered_map<Node*,IFile*> file_hash;
+	std::unordered_map<Key,IFile*,key_hash> file_hash;
 
   public:
 	Cache(Clock &clock, Config &conf);
@@ -67,14 +67,16 @@ class Cache
 	void requestBlocks(const KeyList &key_list, BlockList &blk_list);
 	void retainEntries(BlockList &blk_list);
 
+	void preLoadInputBlocks(BlockList &in_blk_list);
 	void readInputBlocks(BlockList &in_blk_list);
 	void initOutputBlocks(BlockList &out_blk_list);
 	void writeOutputBlocks(BlockList &out_blk_list);
+	void reduceOutputBlocks(BlockList &out_blk_list);
 
 	void releaseEntries(BlockList &blk_list);
 	void returnBlocks(const KeyList &key_list, BlockList &blk_list);
 
-  public: // @
+  private:
   	Block* retainBlock(const Key &k, int depend);
 	void retainEntry(Block *blk);
 
@@ -88,18 +90,19 @@ class Cache
 	void touchEntry(Entry *entry);
 	void dropEntry(Entry *entry);
 	void evict(Block *block);
-	IFile* getFile(Node *node);
+	IFile* getFile(Key key);
 
 	void load(Block *block);
 	void store(Block *block);
 
-	void loadScalar(Block *block, int blk_idx);
-	void initScalar(Block *block, int blk_idx);
-	void storeScalar(Block *block, int blk_idx);
+	void loadScalar(Block *block);
+	void initScalar(Block *block);
+	void storeScalar(Block *block);
+	void reduceScalar(Block *block);
 
-	void loadGroups(Block *block, int blk_idx);
-	void initGroups(Block *blocks, int blk_idx);
-	void storeGroups(Block *block, int blk_idx);
+	void loadGroups(Block *block);
+	void initGroups(Block *blocks);
+	void storeGroups(Block *block);
 };
 
 } } // namespace map::detail

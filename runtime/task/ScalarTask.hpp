@@ -21,9 +21,9 @@ struct ScalarTask : public Task
 
 	void createVersions();
 
-	void preCompute(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
-	void postCompute(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
-	void compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
+	//void preCompute(Job job, const BlockList &in_blk, const BlockList &out_blk);
+	//void postCompute(Job job, const BlockList &in_blk, const BlockList &out_blk);
+	void compute(Job job, const BlockList &in_blk, const BlockList &out_blk);
 
   // vars
 	std::unordered_map<Node*,VariantType> hash;

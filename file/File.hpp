@@ -34,7 +34,7 @@ class IFile
 	 ****************************************/
 
 	static IFile* Factory(std::string file_path);
-	static IFile* Factory(Node *node); // @ Deprecated
+	static IFile* Factory(Node *node); // @ Refactorize
 
 	IFile();
 	IFile(MetaData meta);
@@ -460,21 +460,8 @@ Ferr FILE_DEC::readBlock(Block &block) const {
 		if (block.key.coord.size() != meta.num_dim.toInt()) {
 			assert(0);
 		}
-		if (any(!in_range(block.key.coord,meta.getNumBlock()))) { // @
+		if (any(!in_range(block.key.coord,meta.getNumBlock()))) {
 			assert(!"Error reading, coord is out of range");
-		}
-	}
-
-	if (stats.active) {
-		int idx = proj(block.key.coord,getNumBlock());
-		block.stats.max = stats.maxb[idx];
-		block.stats.mean = stats.meanb[idx];
-		block.stats.min = stats.minb[idx];
-		block.stats.std = stats.stdb[idx];
-		block.stats.active = true;
-		if (block.stats.max.f64 == block.stats.min.f64) { // @
-			block.fixValue( VariantType(block.stats.max,getDataType()) );
-			return 0; // @ No need to read when the value is fixed
 		}
 	}
 
@@ -503,7 +490,7 @@ Ferr FILE_DEC::writeBlock(const Block &block) {
 		if (block.key.coord.size() != meta.num_dim.toInt()) {
 			assert(0);
 		}
-		if (any(!in_range(block.key.coord,meta.getNumBlock()))) { // @
+		if (any(!in_range(block.key.coord,meta.getNumBlock()))) {
 			assert(!"Error writing, coord is out of range");
 		}
 	}

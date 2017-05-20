@@ -69,8 +69,9 @@ void RadialTask::createVersions() {
 	}
 }
 
-void RadialTask::blocksToLoad(Coord coord, KeyList &in_keys) const {
-	Task::blocksToLoad(coord,in_keys);
+void RadialTask::blocksToLoad(Job job, KeyList &in_key) const {
+	Task::blocksToLoad(job,in_key);
+	Coord coord = job.coord;
 
 	// Requires its own output in previous blocks
 	for (auto &node : outputList()) {
@@ -82,7 +83,7 @@ void RadialTask::blocksToLoad(Coord coord, KeyList &in_keys) const {
 			auto lambda = [&](Coord nbc) {
 				HoldType hold = (sum(abs(startb-nbc)) < sum(dif)) ? HOLD_N : HOLD_0;
 				int depend = node->isInput() ? nextInterDepends(node,nbc) : -1; // @
-				in_keys.push_back( std::make_tuple(Key(node,nbc),hold,depend) );
+				in_key.push_back( std::make_tuple(Key(node,nbc),hold,depend) );
 			};
 
 			lambda(coord + Coord{unit[0],0}); // Neighbour in first dir
@@ -92,11 +93,12 @@ void RadialTask::blocksToLoad(Coord coord, KeyList &in_keys) const {
 	}
 }
 
-void RadialTask::blocksToStore(Coord coord, KeyList &out_keys) const {
-	Task::blocksToStore(coord,out_keys);
+void RadialTask::blocksToStore(Job job, KeyList &out_key) const {
+	Task::blocksToStore(job,out_key);
+	Coord coord = job.coord;
 
 	// Adds the intra-dependencies
-	auto it1 = out_keys.begin();
+	auto it1 = out_key.begin();
 	for (auto it2=outputList().begin(); it2!=outputList().end(); it1++, it2++)
 	{
 		if ((*it2)->pattern().is(RADIAL))
@@ -122,10 +124,12 @@ void RadialTask::selfJobs(Job done_job, std::vector<Job> &job_vec) {
 	auto dif = abs(startb - Coord(done_job.coord));
 	for (int y=-1; y<=1; y++) {
 		for (int x=-1; x<=1; x++) {
+			auto iter = done_job.iter;
 			auto nbc = Coord(done_job.coord) + Coord{x,y};
 			// Notifies every coord around which is farther to the start than done_job.coord
 			if (sum(abs(startb-nbc)) > sum(dif) && all(nbc >= 0) && all(nbc < numblock())) {
-				notify(nbc,job_vec);
+				Job new_job = Job(this,nbc,iter);
+				notify(new_job,job_vec);
 			}
 		}
 	}
@@ -133,9 +137,9 @@ void RadialTask::selfJobs(Job done_job, std::vector<Job> &job_vec) {
 
 void RadialTask::nextJobs(Key done_block, std::vector<Job> &job_vec) {
 	if (done_block.node->numdim() == D0) // Case when prev=D0, self=D2
-		notifyAll(job_vec);
+		notifyAll( Job(this,Coord(),done_block.iter), job_vec);
 	else // Case when prev=D2, self=D2
-		notify(done_block.coord,job_vec);
+		notify( Job(this,done_block.coord,done_block.iter), job_vec);
 }
 
 int RadialTask::prevInterDepends(Node *node, Coord coord) const {
@@ -163,8 +167,9 @@ int RadialTask::nextIntraDepends(Node *node, Coord coord) const {
 	}
 }
 
-void RadialTask::compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
+void RadialTask::compute(Job job, const BlockList &in_blk, const BlockList &out_blk) {
 	const int dim = numdim().toInt();
+	auto coord = job.coord;
 	auto dif = abs(startb - coord);
 	Direction first, second;
 	RadialCase rcase;

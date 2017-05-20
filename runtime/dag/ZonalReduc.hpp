@@ -48,6 +48,9 @@ struct ZonalReduc : public Node
 	// const Mask& inputReach(Coord coord) const;
 	// const Mask& outputReach(Coord coord) const;
 
+	// Features
+	ReductionType reductype() const { return type; }
+	
 	// Compute
 	VariantType initialValue() const;
 	void updateValue(VariantType value);

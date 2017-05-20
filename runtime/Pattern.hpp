@@ -4,6 +4,8 @@
  *
  * TODO: a Histogram Pattern is necessary for the kind of computation that needs a lookup table in shared memory.
  * TODO: UpSample and DownSample might also need a patter (which allow accessing more than the inmediate nbh blocks)
+ *
+ * TODO: create variadic AND OR functions that checks if pattern is several patterns at once
  */
 
 #ifndef MAP_RUNTIME_PATTERN_HPP_

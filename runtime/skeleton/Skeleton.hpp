@@ -6,6 +6,7 @@
  *
  * TODO: rename "tag" to "section", like in <Code Section> ?
  * TODO: clean up of declared variables and data structures ?
+ * TODO: SERIOUS CLEAN UP
  */
 
 #ifndef MAP_RUNTIME_SKELETON_HPP_
@@ -170,6 +171,7 @@ struct Skeleton : public Visitor
 	std::vector<Diversity*> diver; //!< Stores diversity nodes
 	std::vector<Rand*> rand; //!< Stores rand nodes
 	std::vector<Merge*> merge_list;
+	std::vector<Switch*> switch_list;
 	std::vector<SkelReduc> reduc_list; //!< Stores reductions nodes
 };
 

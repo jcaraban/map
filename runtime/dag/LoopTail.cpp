@@ -73,7 +73,8 @@ LoopTail::LoopTail(const LoopTail *other, const std::unordered_map<Node*,Node*> 
 
 LoopTail::~LoopTail() {
 	// Notifies its 'loop' about the deletion
-	remove_value(this,owner_loop->tail_list);
+	if (owner_loop != nullptr)
+		remove_value(this,owner_loop->tail_list);
 }
 
 // Methods

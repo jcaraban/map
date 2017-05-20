@@ -165,7 +165,7 @@ void LoopSkeleton::visit(LoopCond *node) {
 	string lvar = var_name(node,SHARED) + "[" + local_proj_zonal(N) + "]";
 	string rvar = var_name(node,SHARED) + "[" + local_proj_zonal(N) + " + i]";
 
-	add_line( lvar + " |= " + rvar + ";" );
+	add_line( lvar + " = " + lvar + " || " + rvar + ";" );
 
 	reduc_list.push_back( SkelReduc(node,node->prev(),rOR,U8) );
 	shared.push_back( std::make_pair(node,prod(ver->groupsize())) );
@@ -185,7 +185,7 @@ void LoopSkeleton::visit(Merge *node) {
 }
 
 void LoopSkeleton::visit(Switch *node) {
-	add_line( var_name(node) + " = " + var_name(node->prev()) + ";" );
+	switch_list.push_back(node);
 }
 
 } } // namespace map::detail

@@ -20,9 +20,10 @@ class Node; // forward declaration
 struct Key {
 	Node *node; //!< Node describing the operation
 	Coord coord; //!< Spatial coordinate of the OP
+	size_t iter; //!< Iteration number inside loops
 	
 	Key();
-	Key(Node *node, Coord coord);
+	Key(Node *node, Coord coord, size_t iter=0);
 	bool operator==(const Key& k) const;
 };
 

@@ -46,7 +46,7 @@ bool SkelTag::isNot(Pattern pat) const {
 };
 
 bool SkelTag::operator==(const SkelTag &tag) const {
-	return this->pat == tag.pat && all(this->ext == tag.ext);
+	return this->pat == tag.pat && coord_equal()(ext,tag.ext);
 };
 
 bool SkelTag::operator<(const SkelTag &tag) const {
@@ -76,7 +76,7 @@ bool SkelTag::operator>(const SkelTag &tag) const {
 };
 
 std::size_t SkelTag::Hash::operator()(const SkelTag& k) const {
-	return std::hash<int>()(k.pat.pat) ^  coord_hash()(k.ext);
+	return std::hash<int>()(k.pat.pat) ^ coord_hash()(k.ext);
 }
 
 /***************
@@ -540,16 +540,18 @@ void Skeleton::dispatch_section(SkelTag tag) {
 	} else {
 		if (tag.is(FREE))
 			free_section(tag);
-		if (tag.is(LOCAL))
+		else if (tag.is(LOCAL))
 			local_section(tag);
-		if (tag.is(FOCAL))
+		else if (tag.is(FOCAL))
 			focal_section(tag);
-		if (tag.is(ZONAL))
+		else if (tag.is(ZONAL))
 			zonal_section(tag);
-		if (tag.is(STATS))
+		else if (tag.is(STATS))
 			stats_section(tag);
-		if (tag.is(LOOP))
+		else if (tag.is(LOOP))
 			loop_section(tag);
+		else if (tag.isNot(OUTPUT))
+			full_code += indented(code_hash[tag]+"\n");
 	}
 	if (tag.is(OUTPUT)) {
 		output_section(tag);
@@ -742,6 +744,11 @@ void Skeleton::loop_section(SkelTag tag) {
 	// Merge inputs
 	for (auto merge : merge_list)
 		add_line( var_name(merge) + " = " + in_var(merge) + ";" );
+	add_line( "" );
+
+	// Switch outputs
+	for (auto swit : switch_list)
+		add_line( var_name(swit) + " = " + var_name(swit->prev()) + ";" );
 	add_line( "" );
 
 	reduc_section(tag);

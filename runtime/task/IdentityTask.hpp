@@ -24,7 +24,7 @@ struct IdentityTask : public Task
 
 	void createVersions();
 
-	void compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
+	void compute(Job job, const BlockList &in_blk, const BlockList &out_blk);
 };
 
 #undef DECLARE_VISIT

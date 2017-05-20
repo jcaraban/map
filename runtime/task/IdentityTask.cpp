@@ -19,7 +19,7 @@ void IdentityTask::createVersions() {
 	return; // No versions needed for IdentityTask
 }
 
-void IdentityTask::compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
+void IdentityTask::compute(Job job, const BlockList &in_blk, const BlockList &out_blk) {
 	assert(in_blk.size() == out_blk.size());
 
 	// @@ Swapping 'dev_mem' pointers, this might not work!
@@ -34,8 +34,7 @@ void IdentityTask::compute(Coord coord, const BlockList &in_blk, const BlockList
 		if (iblk->entry && oblk->entry) {
 			std::swap( iblk->entry->dev_mem, oblk->entry->dev_mem );
 		} else if (iblk->fixed) {
-			oblk->fixed = true;
-			oblk->value = iblk->value;
+			oblk->fixValue(iblk->value);
 		} else {
 			assert(0);
 		}

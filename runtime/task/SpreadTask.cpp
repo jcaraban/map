@@ -34,8 +34,8 @@ void SpreadTask::createVersions() {
 	assert(0);
 }
 
-void SpreadTask::blocksToLoad(Coord coord, KeyList &in_keys) const {
-	in_keys.clear();
+void SpreadTask::blocksToLoad(Job job, KeyList &in_key) const {
+	in_key.clear();
 	for (int i=0; i<inputList().size(); i++)
 	{
 		Node *node = inputList()[i];
@@ -47,14 +47,14 @@ void SpreadTask::blocksToLoad(Coord coord, KeyList &in_keys) const {
 				auto nbc = coord + Coord{x,y};
 				HoldType hold_nbc = (any(nbc < 0) || any(nbc >= numblock())) ? HOLD_0 : hold;
 				int depend = node->isInput() ? nextInterDepends(node,nbc) : -1; // @
-				in_keys.push_back( std::make_tuple(Key(node,nbc),hold_nbc,depend) );
+				in_key.push_back( std::make_tuple(Key(node,nbc),hold_nbc,depend) );
 			}
 		}
 	}
 }
 
-void SpreadTask::blocksToStore(Coord coord, KeyList &out_keys) const {
-	out_keys.clear();
+void SpreadTask::blocksToStore(Job job, KeyList &out_key) const {
+	out_key.clear();
 
 	// All non-SPREAD outputs first
 	for (int i=0; i<outputList().size(); i++)
@@ -67,7 +67,7 @@ void SpreadTask::blocksToStore(Coord coord, KeyList &out_keys) const {
 		HoldType hold = (node->numdim() == D0) ? HOLD_1 : HOLD_N;
 		int depend = -1; // non-discardable because unknown dependencies and stability
 
-		out_keys.push_back( std::make_tuple(Key(node,coord),hold,depend) );
+		out_key.push_back( std::make_tuple(Key(node,coord),hold,depend) );
 	}
 
 	// Requires its own output in previous blocks
@@ -76,7 +76,7 @@ void SpreadTask::blocksToStore(Coord coord, KeyList &out_keys) const {
 		for (int x=-1; x<=1; x++) {
 			auto nbc = coord + Coord{x,y};
 			HoldType hold = (any(nbc < 0) || any(nbc >= numblock())) ? HOLD_0 : HOLD_N;
-			out_keys.push_back( std::make_tuple(Key(scan,nbc),hold,-1) );
+			out_key.push_back( std::make_tuple(Key(scan,nbc),hold,-1) );
 		}
 	}
 	// Spread 3x3 output nodes
@@ -84,13 +84,13 @@ void SpreadTask::blocksToStore(Coord coord, KeyList &out_keys) const {
 		for (int x=-1; x<=1; x++) {
 			auto nbc = coord + Coord{x,y};
 			HoldType hold = (any(nbc < 0) || any(nbc >= numblock())) ? HOLD_0 : HOLD_N;
-			out_keys.push_back( std::make_tuple(Key(scan->spread(),nbc),hold,-1) );
+			out_key.push_back( std::make_tuple(Key(scan->spread(),nbc),hold,-1) );
 		}
 	}
 	// Buffer output block
-	out_keys.push_back( std::make_tuple(Key(scan->buffer(),coord),HOLD_N,-1) );
+	out_key.push_back( std::make_tuple(Key(scan->buffer(),coord),HOLD_N,-1) );
 	// Stable output block
-	out_keys.push_back( std::make_tuple(Key(scan->stable(),coord),HOLD_N,-1) );
+	out_key.push_back( std::make_tuple(Key(scan->stable(),coord),HOLD_N,-1) );
 }
 
 void SpreadTask::initialJobs(std::vector<Job> &job_vec) {
@@ -122,10 +122,10 @@ void SpreadTask::askJobs(Job done_job, std::vector<Job> &job_vec) {
 
 		// Self jobs decremented only in the last iteration
 		mtx.lock(); // thread-safe
-		self_jobs_count--;
-//std::cout << "  " << done_job.task->id() << done_job.coord << " " << self_jobs_count << std::endl;
-		assert(self_jobs_count >= 0);
-		bool zero = (self_jobs_count == 0);
+		self_jobs_count[0]--;
+//std::cout << "  " << done_job.task->id() << done_job.coord << " " << self_jobs_count[0] << std::endl;
+		assert(self_jobs_count[0] >= 0);
+		bool zero = (self_jobs_count[0] == 0);
 		mtx.unlock();
 
 		// Asks next-tasks for their next-jobs, a.k.a inter-dependencies (all Op)
@@ -153,13 +153,13 @@ void SpreadTask::selfJobs(Job done_job, std::vector<Job> &job_vec) {
 	for (int y=-1; y<=1; y++)
 		for (int x=-1; x<=1; x++)
 			if (vec[y+1][x+1])
-				notify(done_job.coord+Coord{x,y},job_vec);
+				notify(done_job.coord+Coord{x,y},done_job.iter,job_vec);
 }
 
 void SpreadTask::nextJobs(Key done_block, std::vector<Job> &job_vec) {
 	if (done_block.node->numdim() == D0) // Case when prev=D0, self=D2
 	{
-		notifyAll(job_vec);
+		notifyAll(done_block.iter,job_vec);
 	}
 	else // Case when prev=D2, self=D2
 	{
@@ -168,9 +168,10 @@ void SpreadTask::nextJobs(Key done_block, std::vector<Job> &job_vec) {
 
 		for (int y=-N; y<=N; y++) {
 			for (int x=-N; x<=N; x++) {
+				auto iter = done_block.iter;
 				auto nbc = done_block.coord + Coord{x,y};
 				if (all(nbc >= 0) && all(nbc < numblock())) {
-					notify(nbc,job_vec);
+					notify(nbc,iter,job_vec);
 				}
 			}
 		}
@@ -212,7 +213,7 @@ int SpreadTask::nextIntraDepends(Node *node, Coord coord) const {
 	// cuantos self-blocks dependen de mi?
 }
 
-void SpreadTask::compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
+void SpreadTask::compute(Job job, const BlockList &in_blk, const BlockList &out_blk) {
 	const Version *ver = getVersion(DEV_ALL,{},""); // Any device, no detail
 	cle::Task tsk = ver->tsk;
 	cle::Queue que = tsk.C().D(Tid.dev()).Q(Tid.rnk());

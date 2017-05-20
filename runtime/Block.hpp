@@ -110,6 +110,7 @@ struct Block
 	HoldType hold_type;
 	short used;
 	bool dirty;
+	char order;
 
 	std::mutex mtx;
 };

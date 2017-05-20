@@ -19,22 +19,24 @@ dire = [0, 1, 2, 4, 8,16,32,64,128]
 def border(raster):
 	ds = raster.datasize()
 	idx1,idx2 = index(raster,D1), index(raster,D2)
-	brd0 = (idx1 == 0) + (idx1 == ds[0]-1)
-	brd1 = (idx2 == 0) + (idx2 == ds[1]-1)
-	return brd0 + brd1
+	brd0 = bor( (idx1 == 0) , (idx1 == ds[0]-1) )
+	brd1 = bor( (idx2 == 0) , (idx2 == ds[1]-1) )
+	return bor( brd0 , brd1 )
 
 def outside(raster,ngb):
 	ds = raster.datasize()
 	idx1,idx2 = index(raster,D1), index(raster,D2)
-	out0 = (idx1+ngb[0] < 0) + (idx1+ngb[0] >= ds[0])
-	out1 = (idx2+ngb[1] < 0) + (idx2+ngb[1] >= ds[1])
-	return out0 + out1
+	out0 = bor( (idx1+ngb[0] < 0) , (idx1+ngb[0] >= ds[0]) )
+	out1 = bor( (idx2+ngb[1] < 0) , (idx2+ngb[1] >= ds[1]) )
+	return bor( out0 , out1 )
 
 def pitFill(orig, stream):
-	acti = stream + border(orig)
+	acti = bor( stream , border(orig) )
 	elev = con(acti, orig, +inf)
 	nbh = [[1,1,1],[1,0,1],[1,1,1]]
 
+	#for i in range(int(sys.argv[3])):
+	#while value(zor(acti)):
 	while zor(acti):
 		newe = max( fmin( elev , nbh ) , orig )
 		acti = elev != newe
@@ -94,9 +96,11 @@ def basinBorder(catch):
 
 dem = read(in_file_path)
 stream = dem < 0.05
+#stream = zeros_like(dem,U8)
 pit = pitFill(dem,stream)
 #
 write( pit, out_file_path)
+sys.exit()
 #
 flow = flowDir(pit,stream)
 flow = flowDirFlat(flow)

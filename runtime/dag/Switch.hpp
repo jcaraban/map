@@ -40,8 +40,8 @@ struct Switch : public Node
 	std::string getName() const;
 	std::string signature() const;
 	char classSignature() const;
-	Node* cond() const;
 	Node* prev() const;
+	Node* cond() const;
 
 	const NodeList& trueList() const;
 	const NodeList& falseList() const;
@@ -52,6 +52,9 @@ struct Switch : public Node
 	Pattern pattern() const { return SWITCH; }
 	// const Mask& inputReach(Coord coord) const;
 	// const Mask& outputReach(Coord coord) const;
+
+	// Features
+	bool canForward() const { return true; };
 
 	// Compute
 	void computeScalar(std::unordered_map<Node*,VariantType> &hash);

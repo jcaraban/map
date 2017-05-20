@@ -60,8 +60,8 @@ std::string ReductionType::code() const {
 	switch (type) {
 		case SUM : return std::string("+");
 		case PROD: return std::string("*");
-		case rAND: return std::string("&");
-		case rOR : return std::string("|");
+		case rAND: return std::string("&&");
+		case rOR : return std::string("||");
 		case MAX : return std::string("max");
 		case MIN : return std::string("min");
 		default : assert(0);

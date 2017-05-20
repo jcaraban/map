@@ -23,8 +23,8 @@ Order::Order(uint x, uint y, uint z, uint t)
 	: order{0,0,0,0}
 {
 	if (Runtime::getConfig().inmem_cache == false) {
-		order[0]=t; order[1]=z; order[2]=y; order[3]=x;
-		return; // return with normal {h,t,y,x} order
+		order[0]=x; order[1]=y; order[2]=z; order[3]=t;
+		return; // return with normal {x,y,z,t} order
 	}
 
 	const uint L = sizeof(int)*8; // 32 bits per int
@@ -59,23 +59,22 @@ bool Order::operator<(const Order &other) const {
 Job::Job()
 	: task(nullptr)
 	, coord()
+	, iter(0)
 	, order()
 { }
 
-Job::Job(Task *task, Coord coord)
+Job::Job(Task *task, Coord coord, size_t iter)
 	: task(task)
 	, coord(coord)
+	, iter(iter)
 	, order()
 {
-	Coord dif;
-	auto *rt = dynamic_cast<RadialTask*>(task); // @
+	auto *rt = dynamic_cast<RadialTask*>(task); // @@
 	if (rt != nullptr) {
-		dif = abs(coord - rt->startb);
-	} else {
-		dif = coord;
+		coord = abs(coord - rt->startb);
 	}
 
-	order = Order(dif[0],dif[1],task->id(),0);
+	order = Order(coord[0],coord[1],task->id(),iter);
 }
 
 bool job_greater::operator() (const Job &lhs, const Job &rhs) const {
@@ -83,14 +82,11 @@ bool job_greater::operator() (const Job &lhs, const Job &rhs) const {
 }
 
 bool job_equal::operator() (const Job &lhs, const Job &rhs) const {
-	return lhs.task == rhs.task && all(lhs.coord == rhs.coord);
+	return lhs.task == rhs.task && all(lhs.coord == rhs.coord) && lhs.iter==rhs.iter;
 }
 
 std::size_t job_hash::operator()(const Job& j) const {
-	std::size_t h = std::hash<Task*>()(j.task);
-	for (int i=0; i<j.coord.size(); i++)
-		h ^= std::hash<int>()(j.coord[i]);
-	return h;
+	return std::hash<Task*>()(j.task) ^ coord_hash()(j.coord) ^ std::hash<int>()(j.iter);
 }
 
 bool Job::isNone() {

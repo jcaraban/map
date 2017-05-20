@@ -43,8 +43,10 @@ void Worker::work(ThreadId thread_id) {
 		Job job = sche.requestJob();
 
 		if (job.isNone()) break; // Exit point
-std::cout << job.task->id() << " " << job.coord << std::endl;
+std::cout << job.task->id() << " " << job.coord << " " << job.iter << std::endl;
 		request_blocks(job);
+
+		// pre_work
 
 		pre_load(job);
 
@@ -59,6 +61,8 @@ std::cout << job.task->id() << " " << job.coord << std::endl;
 		store(job);
 
 		post_store(job);
+
+		post_work(job);
 
 		return_blocks(job);
 
@@ -76,8 +80,8 @@ void Worker::before_work() {
 void Worker::request_blocks(Job job) {
 	TimedRegion region(clock,GET_BLOCK); // Timed function
 
-	job.task->blocksToLoad(job.coord,in_key);
-	job.task->blocksToStore(job.coord,out_key);
+	job.task->blocksToLoad(job,in_key);
+	job.task->blocksToStore(job,out_key);
 
 	cache.requestBlocks(in_key,in_blk);
 	cache.requestBlocks(out_key,out_blk);
@@ -86,11 +90,9 @@ void Worker::request_blocks(Job job) {
 void Worker::pre_load(Job job) {
 	TimedRegion region(clock,PRE_LOAD); // Timed function
 
-	for (auto iblk : in_blk) // @@
-		if (iblk->holdtype() == HOLD_1)
-			cache.loadScalar(iblk,0);
+	cache.preLoadInputBlocks(in_blk);
 
-	job.task->preLoad(job.coord,in_blk,out_blk);
+	job.task->preLoad(job,in_blk,out_blk);
 }
 
 void Worker::load(Job job) {
@@ -106,25 +108,26 @@ void Worker::load(Job job) {
 void Worker::pre_compute(Job job) {
 	TimedRegion region(clock,PRE_COMP); // Timed function
 
-	job.task->preCompute(job.coord,in_blk,out_blk);
+	job.task->preCompute(job,in_blk,out_blk);
 }
 
 void Worker::compute(Job job) {
 	TimedRegion region(clock,COMPUTE); // Timed function
 
-	job.task->compute(job.coord,in_blk,out_blk);
+	job.task->compute(job,in_blk,out_blk);
 }
 
 void Worker::post_compute(Job job) {
 	TimedRegion region(clock,POST_COMP); // Timed function
 
-	job.task->postCompute(job.coord,in_blk,out_blk);
+	job.task->postCompute(job,in_blk,out_blk);
 }
 
 void Worker::store(Job job) {
 	TimedRegion region(clock,STORE); // Timed function
 
 	cache.writeOutputBlocks(out_blk);
+	cache.reduceOutputBlocks(out_blk);
 
 	cache.releaseEntries(in_blk);
 	cache.releaseEntries(out_blk);
@@ -133,7 +136,11 @@ void Worker::store(Job job) {
 void Worker::post_store(Job job) {
 	TimedRegion region(clock,POST_STORE); // Timed function
 
-	job.task->postStore(job.coord,in_blk,out_blk);
+	job.task->postStore(job,in_blk,out_blk);
+}
+
+void Worker::post_work(Job job) {
+	job.task->postWork(job,in_blk,out_blk);
 }
 
 void Worker::return_blocks(Job job) {

@@ -3,8 +3,6 @@
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  * NOTE: there is one worker per physical thread. Tid = per thread local storage for the ID = {node,device,rank}
- *
- * TODO: statistics at block level can be used to speed up the execution (e.g. if max==min -> all values are same)
  */
 
 #ifndef MAP_RUNTIME_WORKER_HPP_
@@ -37,6 +35,7 @@ class Worker
 	Worker& operator=(Worker&&) = default;
 
 	void work(ThreadId thread_id);
+
 	void before_work();
 	void request_blocks(Job job);
 	void pre_load(Job job);
@@ -46,6 +45,7 @@ class Worker
 	void post_compute(Job job);
 	void store(Job job);
 	void post_store(Job job);
+	void post_work(Job job);
 	void return_blocks(Job job);
 	void after_work();
 

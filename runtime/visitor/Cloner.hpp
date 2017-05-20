@@ -30,7 +30,7 @@ struct Cloner : public Visitor
 
   // visit
 	void static_visit(Node *node);
-	//DECLARE_VISIT(...)
+	DECLARE_VISIT(Switch)
 
   // vars
 	OwnerNodeList &clone_list; //!< Aggregation, Cloner does not own the data

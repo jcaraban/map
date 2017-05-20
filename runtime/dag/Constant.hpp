@@ -45,6 +45,9 @@ struct Constant : public Node
 	// const Mask& inputReach(Coord coord) const;
 	// const Mask& outputReach(Coord coord) const;
 	
+	// Features
+	bool isConstant() const { return true; }
+	
 	// Compute
 	void computeScalar(std::unordered_map<Node*,VariantType> &hash);
 	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);

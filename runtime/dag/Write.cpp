@@ -47,8 +47,6 @@ Node* Write::Factory(Node *prev, std::string file_path) {
 	if (ferr) {
 		assert(!"File couldn't be opened\n");
 	}
-	// @ Sets statistics
-	out_file->setDataStats(prev->datastats());
 
 	// Creates and evaluates the Write node
 	return new Write(prev,out_file);
@@ -67,7 +65,7 @@ Write::Write(Node *prev, SharedFile out_file) :
 
 Write::Write(const Write *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: IONode(other,other_to_this)
-	, OutputNode() // @ InputNode(other) ?
+	, OutputNode() // @ OutputNode(other) ?
 { }
 
 // Methods

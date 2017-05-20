@@ -9,8 +9,8 @@
 #include "Task.hpp"
 #include "ScalarTask.hpp"
 #include "RadialTask.hpp"
-#include "SpreadTask.hpp"
 #include "LoopTask.hpp"
+#include "TailTask.hpp"
 #include "IdentityTask.hpp"
 #include "../dag/Group.hpp"
 #include "../Runtime.hpp"
@@ -29,7 +29,7 @@ Task* Task::Factory(Program &prog, Clock &clock, Config &conf, Group *group) {
 	}
 	else if ( pat.is(SPREAD) )
 	{
-		return new SpreadTask(prog,clock,conf,group);
+		assert(0); //return new SpreadTask(prog,clock,conf,group);
 	}
 	else if ( pat.is(RADIAL) )
 	{
@@ -39,8 +39,8 @@ Task* Task::Factory(Program &prog, Clock &clock, Config &conf, Group *group) {
 	{
 		return new ScalarTask(prog,clock,conf,group);
 	}
-	else if ( pat.is(HEAD) || pat.is(TAIL)) {
-		return new IdentityTask(prog,clock,conf,group);
+	else if ( pat.is(TAIL)) {
+		return new TailTask(prog,clock,conf,group);
 	}
 	else {
 		return new Task(prog,clock,conf,group);
@@ -56,8 +56,8 @@ Task::Task(Program &prog, Clock &clock, Config &conf, Group *group)
 	, next_list()
 	, ver_list()
 	, dep_hash()
-	, prev_jobs_count(0)
-	, self_jobs_count(0)
+	, prev_jobs_count()
+	, self_jobs_count()
 	, last()
 	, accu_in_reach_of()
 	, accu_out_reach_of()
@@ -85,24 +85,30 @@ Task::Task(Program &prog, Clock &clock, Config &conf, Group *group)
 	for (auto prev_task : prevList()) {
 		for (auto node : inner_join(inputList(),prev_task->outputList())) {
 			if (node->numdim() == D0) {
-				prev_jobs_count += 1;
+				prev_jobs_count[0] += 1;
 			} else {
-				prev_jobs_count += prod(prev_task->numblock());
+				prev_jobs_count[0] += prod(prev_task->numblock());
 			}
 		}
 	}
 
 	// Number of self jobs that will be issued by this task
-	self_jobs_count = prod(numblock());
+	self_jobs_count[0] = prod(numblock());
 
-	// Filling next_of_out structure of prev_tasks
+	// Filling 'next_of_out' structure with 'prev_tasks'
 	for (auto prev_task : prevList())
 		for (int i=0; i<prev_task->outputList().size(); i++)
-			if (is_included(prev_task->outputList()[i],inputList()))
+			if (is_included(prev_task->outputList()[i],this->inputList()))
 				prev_task->next_of_out[i].push_back(this);
 
 	// Prepares next_of_out structure for the next tasks
 	next_of_out.resize(outputList().size());
+
+	// Filling 'next_of_out' structure with 'back_tasks'
+	for (auto back_task : backList())
+		for (int i=0; i<this->outputList().size(); i++)
+			if (is_included(this->outputList()[i],back_task->inputList()))
+				this->next_of_out[i].push_back(back_task);
 
 	// Filling 'is_input_of' structure, e.g. tells the pre-focal, pre-radial
 	is_input_of.resize(inputList().size());
@@ -266,35 +272,35 @@ const Version* Task::getVersion(DeviceType dev_type, GroupSize group_size, std::
 	return nullptr;
 }
 
-void Task::blocksToLoad(Coord coord, KeyList &in_keys) const {
-	in_keys.clear();
+void Task::blocksToLoad(Job job, KeyList &in_key) const {
+	in_key.clear();
 	
 	for (auto node : inputList()) {
-		auto reach = accuInputReach(node,coord);
+		auto reach = accuInputReach(node,job.coord);
 		auto space = reach.blockSpace(blocksize());
 
 		for (auto offset : space) {	
-			Coord nbc = coord + offset;
+			Coord nbc = job.coord + offset;
 			HoldType hold = node->holdtype(nbc);
 			Depend dep = node->isInput() ? nextInputDepends(node,nbc) : -1;
 
-			in_keys.push_back( std::make_tuple(Key(node,nbc),hold,dep) );
+			in_key.push_back( std::make_tuple(Key(node,nbc,job.iter),hold,dep) );
 		}
 	}
 }
 
-void Task::blocksToStore(Coord coord, KeyList &out_keys) const {
-	out_keys.clear();
+void Task::blocksToStore(Job job, KeyList &out_key) const {
+	out_key.clear();
 
 	for (auto node : outputList()) {
-		auto reach = accuOutputReach(node,coord);
+		auto reach = accuOutputReach(node,job.coord);
 		auto space = reach.blockSpace(blocksize());
 
 		for (auto offset : space) {	
-			Coord nbc = coord + offset;
+			Coord nbc = job.coord + offset;
 			HoldType hold = node->holdtype(nbc);
-			int dep = 1 + nextDependencies(node,coord); // +1 cause out blocks get 1 extra notify()
-			out_keys.push_back( std::make_tuple(Key(node,coord),hold,dep) );
+			int dep = 1 + nextDependencies(node,nbc); // +1 cause out blocks get 1 extra notify()
+			out_key.push_back( std::make_tuple(Key(node,nbc,job.iter),hold,dep) );
 		}
 	}
 }
@@ -315,12 +321,12 @@ void Task::askJobs(Job done_job, std::vector<Job> &job_vec) {
 	this->selfJobs(done_job,job_vec);
 
 	// Asks next-tasks for their next-jobs, a.k.a inter-dependencies (all Op)
-	for (auto next_task : this->nextList()) {
+	for (auto next_task : full_join(nextList(),backList())) {
 		auto common_nodes = inner_join(this->outputList(),next_task->inputList());
 		for (auto node : common_nodes) {
 			if (node->numdim()==D0 && !end)
 				continue; // D0 jobs only notify at the end
-			Key key = Key(node,done_job.coord);
+			Key key = Key(node,done_job.coord,done_job.iter);
 			next_task->nextJobs(key,job_vec);
 		}
 	}
@@ -333,7 +339,7 @@ void Task::selfJobs(Job done_job, std::vector<Job> &job_vec) {
 void Task::nextJobs(Key done_block, std::vector<Job> &job_vec) {
 	if (done_block.node->numdim() == D0) // Case when prev=D0, self!=D0
 	{
-		notifyAll(job_vec);
+		notifyAll( Job(this,Coord(),done_block.iter), job_vec);
 	}
 	else // Case when prev!=D0, self!=D0
 	{
@@ -342,16 +348,20 @@ void Task::nextJobs(Key done_block, std::vector<Job> &job_vec) {
 		auto space = inver.blockSpace(blocksize());
 
 		for (auto offset : space) {
+			auto iter = done_block.iter;
 			auto nbc = done_block.coord + offset;
 			if (all(in_range(nbc,numblock()))) {
-				notify(nbc,job_vec);
+				Job new_job = Job(this,nbc,iter);
+				notify(new_job,job_vec);
 			}
 		}
 	}
 }
 
-void Task::notify(Coord coord, std::vector<Job> &job_vec) {
+void Task::notify(Job new_job, std::vector<Job> &job_vec) {
 	std::lock_guard<std::mutex> lock(mtx); // thread-safe
+	auto coord = new_job.coord;
+	auto iter = new_job.iter;
 
 	auto it = dep_hash.find(coord);
 	if (it == dep_hash.end()) { // not found, inserts an entry with the number of dependencies if one was not found
@@ -367,15 +377,18 @@ void Task::notify(Coord coord, std::vector<Job> &job_vec) {
 	 // Are all dependencies met?
 	if (it->second == 0) {
 		dep_hash.erase(it);
-		job_vec.push_back( Job(this,coord) );
+		job_vec.push_back(new_job);
+
+		if (self_jobs_count.find(iter) == self_jobs_count.end())
+			self_jobs_count[iter] = prod(numblock()); // @@
 	}
 }
 
-void Task::notifyAll(std::vector<Job> &job_vec) {
+void Task::notifyAll(Job new_job, std::vector<Job> &job_vec) {
 	auto beg = Coord(numblock().size(),0);
 	auto end = numblock();
 	for (auto coord : iterSpace(beg,end)) {
-		notify(coord,job_vec);
+		notify( Job(this,coord,new_job.iter), job_vec);
 	}
 }
 
@@ -440,27 +453,31 @@ int Task::nextInputDepends(Node *node, Coord coord) const { // @
 	return dep;
 }
 
-void Task::preLoad(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
+void Task::preLoad(Job job, const BlockList &in_blk, const BlockList &out_blk) {
 	if (not Runtime::getConfig().prediction)
 		return;
 	if (numdim() == D0)
 		return; // for D0, fixing is more costly than just computing D0 values
 
 	std::unordered_map<Key,ValFix,key_hash> val_hash; // Supporting hash for the fixed values
+	auto coord = job.coord;
 
 	// Fills inputs first with 'in_blk'
 	for (auto in : in_blk) {
 		if (in->holdtype() == HOLD_0) // When the block is null, looks for the central block
 		{
-			auto pred = [&](const Block *b){ return b->key == Key{in->key.node,coord}; };
+			Key in_key = Key(in->key.node,job.coord,job.iter);
+			auto pred = [&](const Block *b){ return b->key == in_key; };
 			auto it = std::find_if(in_blk.begin(),in_blk.end(),pred);
 			assert(it != in_blk.end());
 
-			val_hash[in->key] = ValFix((*it)->value,(*it)->fixed);
+			in_key.iter = 0;
+			val_hash[in_key] = ValFix((*it)->value,(*it)->fixed);
 		}
 		else // HOLD_1 or HOLD_N
 		{
-			val_hash[in->key] = ValFix(in->value,in->fixed);
+			Key in_key = Key(in->key.node,job.coord);
+			val_hash[in_key] = ValFix(in->value,in->fixed);
 		}
 	}
 
@@ -477,33 +494,22 @@ void Task::preLoad(Coord coord, const BlockList &in_blk, const BlockList &out_bl
 
 	// Transfer outputs to 'out_blk'
 	for (auto out : out_blk) {
-		assert(val_hash.find(out->key) != val_hash.end());
-		out->fixValue( val_hash[out->key] );
+		Key out_key = Key(out->key.node,job.coord);
+		assert(val_hash.find(out_key) != val_hash.end());
+		out->fixValue( val_hash[out_key] );
 	}
 }
 
-void Task::preCompute(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
+void Task::preCompute(Job job, const BlockList &in_blk, const BlockList &out_blk) {
 	return; // choose a version among the available, according to statistics, devices ?
 }
 
-void Task::postCompute(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
+void Task::postCompute(Job job, const BlockList &in_blk, const BlockList &out_blk) {
 	return; // summary ?
 }
 
-void Task::postStore(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
-	std::lock_guard<std::mutex> lock(mtx); // thread-safe
-	assert(self_jobs_count > 0);
-
-	self_jobs_count--;
-	if (self_jobs_count == 0)
-		last = Tid;
-
-	// @ Integrates reduced zonal value to the node
-	if (self_jobs_count == 0) {
-		for (auto blk : out_blk) {
-			blk->key.node->value = blk->value;
-		}
-	}
+void Task::postStore(Job job, const BlockList &in_blk, const BlockList &out_blk) {
+	auto coord = job.coord;
 
 	// @ Integrates 'stats' to the block and node
 	for (auto blk : out_blk) {
@@ -534,10 +540,10 @@ void Task::postStore(Coord coord, const BlockList &in_blk, const BlockList &out_
 
 			// Fills the 'node' with the statistics
 			int idx = proj(coord,blk->key.node->numblock());
-			blk->key.node->stats.minb[idx] = min.get();
-			blk->key.node->stats.maxb[idx] = max.get();
+			blk->key.node->stats.minb[idx]  = min.get();
+			blk->key.node->stats.maxb[idx]  = max.get();
 			blk->key.node->stats.meanb[idx] = mean.get();
-			blk->key.node->stats.stdb[idx] = std.get();
+			blk->key.node->stats.stdb[idx]  = std.get();
 
 			// If the block values are the same, fix the value
 			if (max == min) {
@@ -547,7 +553,26 @@ void Task::postStore(Coord coord, const BlockList &in_blk, const BlockList &out_
 	}
 }
 
-void Task::compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk) {
+void Task::postWork(Job job, const BlockList &in_blk, const BlockList &out_blk) {
+	std::lock_guard<std::mutex> lock(mtx); // thread-safe
+	auto iter = job.iter;
+	assert(self_jobs_count[iter] > 0);
+
+	self_jobs_count[iter]--;
+	if (self_jobs_count[iter] == 0) {
+		last = Tid;
+		self_jobs_count.erase(iter);
+	}
+
+	// @ Integrates reduced zonal value to the node
+	if (last == Tid) {
+		for (auto blk : out_blk) {
+			blk->key.node->value = blk->value;
+		}
+	}
+}
+
+void Task::compute(Job job, const BlockList &in_blk, const BlockList &out_blk) {
 	const Version *ver = getVersion(DEV_ALL,{},""); // Any device, No detail
 	assert(ver != nullptr);
 
@@ -557,10 +582,10 @@ void Task::compute(Coord coord, const BlockList &in_blk, const BlockList &out_bl
 		return; // All output blocks are fixed, no need to compute
 	}
 
-	computeVersion(coord,in_blk,out_blk,ver);
+	computeVersion(job,in_blk,out_blk,ver);
 }
 
-void Task::computeVersion(Coord coord, const BlockList &in_blk, const BlockList &out_blk, const Version *ver) {
+void Task::computeVersion(Job job, const BlockList &in_blk, const BlockList &out_blk, const Version *ver) {
 	clock.incr(COMPUTED);
 
 	// CL related vars
@@ -575,6 +600,7 @@ void Task::computeVersion(Coord coord, const BlockList &in_blk, const BlockList 
 	const int dim = 2;
 	auto group_size = ver->groupsize();
 	auto block_size = blocksize();
+	auto coord = job.coord;
 
 	auto nsb = ((block_size-1)/group_size+1)*group_size;
 	size_t gws[dim] = {(size_t)nsb[0],(size_t)nsb[1]};
@@ -582,7 +608,7 @@ void Task::computeVersion(Coord coord, const BlockList &in_blk, const BlockList 
 
 	//// Sets kernel arguments
 
-	int arg = 0, bidx = 0;
+	int arg = 0;
 
 	for (auto &b : in_blk) {
 		void *dev_mem = (b->entry != nullptr) ? b->entry->dev_mem : nullptr;
@@ -603,11 +629,11 @@ void Task::computeVersion(Coord coord, const BlockList &in_blk, const BlockList 
 	for (auto &b : out_blk) {
 		/****/ if (b->holdtype() == HOLD_1) { // If HOLD_1, the scalar_page + offset are given
 			clSetKernelArg(*krn, arg++, sizeof(cl_mem), &b->scalar_page);
-			int offset = sizeof(double)*(conf.max_out_block*Tid.rnk() + bidx++);
+			int offset = sizeof(double)*(conf.max_out_block*Tid.rnk() + b->order);
 			clSetKernelArg(*krn, arg++, sizeof(int), &offset);
 		//} else if (b->holdtype() == HOLD_2) {
 		//	clSetKernelArg(*krn, arg++, sizeof(cl_mem), &b->group_page);
-		//	int offset = sizeof(double)*conf.max_group_x_block*(conf.max_out_block*Tid.rnk() + bidx++);
+		//	int offset = sizeof(double)*conf.max_group_x_block*(conf.max_out_block*Tid.rnk() + b->order);
 		//	clSetKernelArg(*krn, arg++, sizeof(int), &offset);
 		} else if (b->holdtype() == HOLD_N) { // In the normal case a valid cl_mem with memory is given
 			clSetKernelArg(*krn, arg++, sizeof(cl_mem), &b->entry->dev_mem);

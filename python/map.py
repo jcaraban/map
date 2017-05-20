@@ -606,6 +606,12 @@ def rmin(raster,coord):
 
 ## Compound functions
 
+def bor(lhs,rhs): # @
+	return Raster( _lib.ma_binary(lhs,rhs,OR))
+
+def band(lhs,rhs): # @
+	return Raster( _lib.ma_binary(lhs,rhs,AND))
+
 def lmax(lst):
 	accu = lst[0]
 	for i in range(1,len(lst)):

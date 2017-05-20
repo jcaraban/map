@@ -62,7 +62,7 @@ NodeList Unlinker::unlink(const OwnerNodeList &node_list) {
 	// Walk Merge nodes to liberate the isolated
 	for (auto it=node_list.rbegin(); it!=node_list.rend(); it++) {
 		Node *node = it->get();
-		if (node->pattern().is(MERGE))
+		if (node->pattern().is(MERGE) || node->pattern().is(SWITCH))
 			node->accept(this);
 	}
 	// Second round, unlinks the liberated nodes
@@ -94,6 +94,14 @@ void Unlinker::visit(Merge *merge) {
 			setLiberated(merge->right());
 		}
 	}
+}
+
+void Unlinker::visit(Switch *swit) {
+	// Clear the unlinked 'true' / 'false' nodes from their lists
+	auto pred = [&](const Node *node) { return not is_included(node,swit->next_list); };
+	auto &next_true = swit->next_true, &next_false = swit->next_false;
+	next_true.erase(std::remove_if(next_true.begin(),next_true.end(),pred),next_true.end());
+	next_false.erase(std::remove_if(next_false.begin(),next_false.end(),pred),next_false.end());
 }
 
 } } // namespace map::detail

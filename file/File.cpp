@@ -57,15 +57,7 @@ IFile* IFile::Factory(Node *node) {
 	if (node->numdim() == D0) // scalar file
 	{
 		File<scalar> *sca_file = new File<scalar>(node->metadata());
-		if (node->pattern().is(ZONAL))
-		{
-			auto *red = dynamic_cast<ZonalReduc*>(node);
-			sca_file->setReductionType(red->type);
-		}
-		else // regular D0, for e.g. ScalarTask
-		{
-			sca_file->setReductionType(NONE_REDUCTION);
-		}
+		sca_file->setReductionType( node->reductype() );
 		return sca_file;
 	}
 	else // binary file

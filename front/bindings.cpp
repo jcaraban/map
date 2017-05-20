@@ -33,7 +33,7 @@ void ma_decreaseRef(Node *node) {
 	}
 }
 
-VariantType get_scalar(Node *node) {
+VariantType get_scalar(Node *node) { // @ still useful?
 	Node *scalar = Scalar::Factory(node);
 	scalar = Runtime::getInstance().addNode(scalar);
 	scalar->increaseRef(); // @ keeps the node referenced and alive 
@@ -52,7 +52,8 @@ void ma_eval(Node **vec, int num) {
 VariantType ma_value(Node *node) {
 	assert(node->numdim() == D0);
 	if (node->value.isNone())
-		assert(0); // @ ma_eval(&node,1);
+		ma_eval(&node,1);
+	assert(not node->value.isNone());
 	return node->value;
 }
 

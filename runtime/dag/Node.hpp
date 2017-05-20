@@ -7,6 +7,8 @@
  * TODO: is 'back'/'forw'List necessary, can we use 'next'/'prev'List only with 'ssa_id' ?
  * TODO: updatePrev() sounds like a hack, get rid of it, nodes should be inmutable entities
  * TODO: move 'static id_count' somewhere outside node, to runtime? to 'session'?
+ *
+ * TODO: a specialized 'Back' or 'Next' node might save the need of forw / back edges everywhere
  */
 
 #ifndef MAP_RUNTIME_DAG_NODE_HPP_
@@ -16,6 +18,7 @@
 #include "../Pattern.hpp"
 #include "../../file/MetaData.hpp"
 #include "../../file/DataStats.hpp"
+#include "../../util/ReductionType.hpp"
 #include <vector>
 #include <string>
 #include <memory>
@@ -72,7 +75,9 @@ struct Node {
 	virtual bool isInput() const; // False by default
 	virtual bool isOutput() const; // False by default
 	virtual bool canForward() const; // False by default
-	bool isReduction() const; // @
+	virtual bool isConstant() const; // False by default
+	virtual bool isReduction() const; // @
+	virtual ReductionType reductype() const;
   // Spatial
 	virtual Pattern pattern() const;
 	virtual const Mask& inputReach(Coord coord=Coord()) const;

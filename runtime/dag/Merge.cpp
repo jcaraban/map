@@ -92,9 +92,7 @@ Merge::Merge(const MetaData &meta, Node *lprev, Node *rprev)
 
 Merge::Merge(const Merge *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
-{
-	//this->spatial_pattern = other->spatial_pattern;
-}
+{ }
 
 // Methods
 

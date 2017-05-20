@@ -37,22 +37,22 @@ namespace { // anonymous namespace
 template <typename T>
 class Array4
 {
-  	static_assert(std::is_arithmetic<T>::value,"Templated type must be of arithmetic type");
+	static_assert(std::is_arithmetic<T>::value,"Templated type must be of arithmetic type");
 
   protected:
-  	static const int N = 2; // @
-  	static const T def = defval<T>::value;
+	static const int N = 2; // @
+	static const T def = defval<T>::value;
 	std::array<T,N> arr;
 	int n;
 
   public:
-  	Array4();
-  	//Array4(T x);
+	Array4();
+	//Array4(T x);
 	//Array4(T x, T y);
 	//Array4(T x, T y, T z);
 	//Array4(T x, T y, T z, T t);
 
-  	/*
+	/*
 	 *
 	 */
 	explicit Array4(int n);

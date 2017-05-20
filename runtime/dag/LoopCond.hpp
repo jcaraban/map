@@ -46,6 +46,7 @@ struct LoopCond : public Node
 	// Constructors
 	LoopCond(const MetaData &meta, Node *prev);
 	LoopCond(const LoopCond *other, const std::unordered_map<Node*,Node*> &other_to_this);
+	~LoopCond();
 
 	// Methods
 	void accept(Visitor *visitor);
@@ -61,6 +62,9 @@ struct LoopCond : public Node
 	Pattern pattern() const { return LOOP; }
 	// const Mask& inputReach(Coord coord) const;
 	// const Mask& outputReach(Coord coord) const;
+
+	// Features
+	ReductionType reductype() const { return rOR; }
 
 	// Compute
 	//void computeScalar(std::unordered_map<Node*,VariantType> &hash);

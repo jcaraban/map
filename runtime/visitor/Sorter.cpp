@@ -2,6 +2,7 @@
  * @file	Sorter.cpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
+ * TODO: inner_join can be accelerated with an std::unord_set of 'included nodes'
  */
 
 #include "Sorter.hpp"
@@ -28,11 +29,11 @@ NodeList Sorter::sort(NodeList list) {
 	// Walks all nodes first to registers them in the data structures
 	for (auto node : list) {
 		int count = node->prevList().size();
-
-		if (count == 0) { // ready nodes with 'prev = 0' go into the prique
+		prev_count.insert({node,count});
+		
+		if (count == 0) { // ready nodes with 'prev = 0' go into the 'prique'
 			prique.push(node);
-		} else { // nodes with 'prev > 0' store the count until 'prev = 0'
-			prev_count.insert({node,count});
+			prev_count.erase(node);
 		}
 	}
 
@@ -41,17 +42,20 @@ NodeList Sorter::sort(NodeList list) {
 		Node *node = prique.top();
 		prique.pop();
 
-		node_list.push_back(node);
+		node_list.push_back(node); // Push into output
 
-		for (auto next : inner_join(node->nextList(),list)) {
+		for (auto next : node->nextList()) {
+			if (prev_count.find(next) == prev_count.end())
+				continue; // not included in 'list'
+
 			auto it = prev_count.find(next);
 			assert(it != prev_count.end());
 			auto &count = it->second;
 
 			count--;
 			if (count == 0) {
-				prev_count.erase(next);
 				prique.push(next);
+				prev_count.erase(next);
 			}
 		}	
 	}

@@ -202,6 +202,7 @@ void Cache::freeEntries() {
 
 void Cache::requestBlocks(const KeyList &key_list, BlockList &blk_list) {
 	blk_list.clear();
+	int idx = 0;
 	for (auto &tuple : key_list) {
 		Key key = std::get<0>(tuple);
 		HoldType hold = std::get<1>(tuple);
@@ -227,6 +228,8 @@ void Cache::requestBlocks(const KeyList &key_list, BlockList &blk_list) {
 		else {
 			assert(0);
 		}
+		// @
+		blk_list.back()->order = idx++;
 	}
 }
 
@@ -236,63 +239,96 @@ void Cache::retainEntries(BlockList &blk_list) {
 			retainEntry(blk);
 }
 
-void Cache::readInputBlocks(BlockList &in_blk_list) {
-	int idx = 0;
+void Cache::preLoadInputBlocks(BlockList &in_blk_list) {
 	for (auto &iblk : in_blk_list)
 	{
 		if (iblk->holdtype() == HOLD_1)
 		{
-			loadScalar(iblk,idx);
+			loadScalar(iblk);
 		}
 		//else if (iblk->holdtype() == HOLD_2)
 		//{
 		//	assert(0);
-		//	loadGroups(iblk,idx);
+		//	loadGroups(iblk);
 		//}
 		else if (iblk->holdtype() == HOLD_N)
 		{
+			Node *node = iblk->key.node;
+			if (node->datastats().active)
+			{
+				int idx = proj(iblk->key.coord,node->numblock());
+				iblk->stats.max  = node->datastats().maxb[idx];
+				iblk->stats.mean = node->datastats().meanb[idx];
+				iblk->stats.min  = node->datastats().minb[idx];
+				iblk->stats.std  = node->datastats().stdb[idx];
+				iblk->stats.active = true;
+				auto max = VariantType(iblk->stats.max,iblk->datatype());
+				auto min = VariantType(iblk->stats.min,iblk->datatype());
+				if (max == min) {
+					iblk->fixValue(max);
+				}
+			}
+		}
+	}
+}
+
+void Cache::readInputBlocks(BlockList &in_blk_list) {
+	for (auto &iblk : in_blk_list)
+	{
+		//if (iblk->holdtype() == HOLD_1)
+		//{
+		//	loadScalar(iblk);
+		//}
+		//else if (iblk->holdtype() == HOLD_2)
+		//{
+		//	assert(0);
+		//	loadGroups(iblk);
+		//}
+		if (iblk->holdtype() == HOLD_N)
+		{
 			readInBlk(iblk);
 		}
-		idx++;
 	}
 }
 
 void Cache::initOutputBlocks(BlockList &out_blk_list) {
-	int idx = 0;
 	for (auto &oblk : out_blk_list)
 	{
 		if (oblk->holdtype() == HOLD_1)
 		{
-			initScalar(oblk,idx);
+			initScalar(oblk);
 		}
 		//else if (oblk->holdtype() == HOLD_2)
 		//{
 		//	assert(0);
-		//	initGroups(oblk,idx);
+		//	initGroups(oblk);
 		//}
-		idx++;
 	}
 }
 
 void Cache::writeOutputBlocks(BlockList &out_blk_list) {
-	int idx = 0;
 	for (auto &oblk : out_blk_list)
 	{
 		if (oblk->holdtype() == HOLD_1)
 		{
-			storeScalar(oblk,idx);
+			storeScalar(oblk);
 		}
 		//else if (oblk->holdtype() == HOLD_2)
 		//{
 		//	assert(0);
-		//	storeGroups(oblk,idx);
+		//	storeGroups(oblk);
 		//}
 		else if (oblk->holdtype() == HOLD_N)
 		{
 			writeOutBlk(oblk);
 		}
-		idx++;
 	}
+}
+
+void Cache::reduceOutputBlocks(BlockList &out_blk_list) {
+	for (auto &oblk : out_blk_list)
+		if (oblk->holdtype() == HOLD_1)
+			reduceScalar(oblk);
 }
 
 void Cache::releaseEntries(BlockList &blk_list) {
@@ -341,10 +377,12 @@ Block* Cache::retainBlock(const Key &key, int depend) {
 	auto it = blk_hash.find(key);
 	if (it != blk_hash.end()) // Found, retrieves the block
 	{
+//std::cout << key.node->getName() << " : " << key.node->id << " , " << key.iter << " found" << std::endl;
 		blk = it->second.get();
 	}
 	else // Not found, creates a block and hashes it
 	{
+//std::cout << key.node->getName() << " : " << key.node->id << " , " << key.iter << " not" << std::endl;
 		assert(depend > DEPEND_UNKNOWN);
 		blk = new Block(key,unit_mem_size,depend);
 		blk_hash[key] = std::unique_ptr<Block>(blk);
@@ -423,7 +461,7 @@ void Cache::releaseEntry(Block *blk) {
 			// If this block was evited to disk, discard the file pages
 			if (isTemporal(blk) && not blk->isDirty()) 
 			{
-				auto *bin_file = dynamic_cast<File<binary>*>( getFile(blk->key.node) );
+				auto *bin_file = dynamic_cast<File<binary>*>( getFile(blk->key) );
 				bin_file->discard(*blk);
 			}
 
@@ -514,42 +552,30 @@ void Cache::evict(Block *old) {
 	old->entry = nullptr;
 }
 
-IFile* Cache::getFile(Node *node) {
+IFile* Cache::getFile(Key key) {
 	// IONodes have their own file
-	IONode *ionode = dynamic_cast<IONode*>(node);
+	IONode *ionode = dynamic_cast<IONode*>(key.node);
 	if (ionode != nullptr)
 		return ionode->file();
 
 	// All other nodes requires a temporal file
+	key.coord = Coord(); // file is shared by the whole data range
 	std::unique_lock<std::mutex> lock(mtx_file); // thread-safe
 
-	auto it = file_hash.find(node);
+	auto it = file_hash.find(key);
 	if (it == file_hash.end())
-		it = file_hash.insert({node,IFile::Factory(node)}).first;
+		it = file_hash.insert({key,IFile::Factory(key.node)}).first;
 
 	return it->second;
 }
 
 // Load, Init, Store
 
-void Cache::store(Block *block) {
-	assert(block->holdtype() == HOLD_N);
-	clock.incr(STORED);
-	//
-	IFile *file = getFile(block->key.node);
-	block->host_mem = pinned_ptr[Tid.proj()]; 
-	//
-	block->recv();
-	block->store(file);
-	//
-	block->host_mem = nullptr;
-}
-
 void Cache::load(Block *block) {
 	assert(block->holdtype() == HOLD_N);
 	clock.incr(LOADED);
 	//
-	IFile *file = getFile(block->key.node);
+	IFile *file = getFile(block->key);
 	block->host_mem = pinned_ptr[Tid.proj()];
 	//
 	block->load(file);
@@ -559,53 +585,45 @@ void Cache::load(Block *block) {
 	block->host_mem = nullptr;
 }
 
-void Cache::storeScalar(Block *block, int blk_idx) {
-	assert(block->holdtype() == HOLD_1);
-	assert(not block->value.isNone());
-
-	if (block->key.node->inputReach().numdim() != D0) // from Dx to D0
-	{
-		cle::Queue que = Runtime::getOclEnv().D(Tid.dev()).Q(Tid.rnk());
-
-		int offset = sizeof(double) * (conf.max_out_block*Tid.rnk() + blk_idx);
-		size_t size = block->datatype().sizeOf();
-
-		cl_int clerr = clEnqueueReadBuffer(*que,scalar_page,CL_TRUE,offset,size,&block->value.ref(),0,nullptr,nullptr);
-		cle::clCheckError(clerr);
-	}
-
-	IFile *file = getFile(block->key.node);
+void Cache::store(Block *block) {
+	assert(block->holdtype() == HOLD_N);
+	clock.incr(STORED);
+	//
+	IFile *file = getFile(block->key);
+	block->host_mem = pinned_ptr[Tid.proj()]; 
+	//
+	block->recv();
 	block->store(file);
-
-	block->load(file); // @ loading to update the block value
+	//
+	block->host_mem = nullptr;
 }
 
-void Cache::loadScalar(Block *block, int blk_idx) {
-	if (block->isReady())
-		return; // @@
-	
+// Scalar
+
+void Cache::loadScalar(Block *block) {
 	assert(block->holdtype() == HOLD_1);
 	assert(block->value.isNone());
 
-	auto *cnode = dynamic_cast<Constant*>(block->key.node);
-	if (cnode != nullptr) { // @@
-		block->fixValue( cnode->cnst );
-		return;
+	if (block->key.node->isConstant())
+	{
+		block->fixValue(block->key.node->value);
 	}
-
-	IFile *file = getFile(block->key.node);
-	block->load(file);
+	else // not constant
+	{
+		IFile *file = getFile(block->key);
+		block->load(file);
+	}
 }
 
-void Cache::initScalar(Block *block, int blk_idx) {
-	if (block->key.node->inputReach().numdim() == D0) // from Dx to D0
+void Cache::initScalar(Block *block) {
+	if (not block->key.node->isReduction()) // from Dx to D0
 		return; // no need for initialization
 	//
 	cle::Queue que = Runtime::getOclEnv().D(Tid.dev()).Q(Tid.rnk());
 
 	block->value = block->key.node->initialValue();
 
-	int offset = sizeof(double) * (conf.max_out_block*Tid.rnk() + blk_idx);
+	int offset = sizeof(double) * (conf.max_out_block*Tid.rnk() + block->order);
 	size_t dtsz = block->datatype().sizeOf();
 	size_t size = dtsz;
 
@@ -614,33 +632,53 @@ void Cache::initScalar(Block *block, int blk_idx) {
 	cle::clCheckError(err);
 }
 
-void Cache::storeGroups(Block *block, int blk_idx) {
+
+void Cache::storeScalar(Block *block) {
+	if (block->key.node->isReduction())
+		return;
+
+	assert(block->holdtype() == HOLD_1);
+	assert(not block->value.isNone());
+	assert(block->fixed);
+
+	IFile *file = getFile(block->key);
+	block->store(file);
+}
+
+void Cache::reduceScalar(Block *block) {
+	if (not block->key.node->isReduction())
+		return;
+
+	assert(block->holdtype() == HOLD_1);
+	assert(not block->value.isNone());
+
 	cle::Queue que = Runtime::getOclEnv().D(Tid.dev()).Q(Tid.rnk());
 
-	int offset = sizeof(double) * conf.max_group_x_block * (conf.max_out_block*Tid.rnk() + blk_idx);
-	int size = block->size();
-	void *ptr = pinned_ptr[Tid.proj()];
+	int offset = sizeof(double) * (conf.max_out_block*Tid.rnk() + block->order);
+	size_t size = block->datatype().sizeOf();
 
-	cl_int clerr = clEnqueueReadBuffer(*que,block->group_page,CL_TRUE,offset,size,ptr,0,nullptr,nullptr);
+	cl_int clerr = clEnqueueReadBuffer(*que,scalar_page,CL_TRUE,offset,size,&block->value.ref(),0,nullptr,nullptr);
 	cle::clCheckError(clerr);
+
+//std::cout << "reduc " << block->value << " : " << block->key.node->id << " " << block->datatype().toString() << std::endl;
+
+	IFile *file = getFile(block->key);
+	block->store(file);
+
+	block->load(file); // @ loading to update the reduced block value
 }
 
-void Cache::loadGroups(Block *block, int blk_idx) {
-	;
+// Groups
+void Cache::storeGroups(Block *block) {
+	assert(0);
 }
 
-void Cache::initGroups(Block *block, int blk_idx) {
-	cle::Queue que = Runtime::getOclEnv().D(Tid.dev()).Q(Tid.rnk());
+void Cache::loadGroups(Block *block) {
+	assert(0);
+}
 
-	block->value = block->key.node->initialValue();
-
-	int offset = sizeof(double) * conf.max_group_x_block * (conf.max_out_block*Tid.rnk() + blk_idx);
-	size_t dtsz = block->datatype().sizeOf();
-	size_t size = block->size();
-
-	// Fill 'groups per block' number of values
-	cl_int err = clEnqueueFillBuffer(*que,block->group_page,&block->value.ref(),dtsz,offset,size,0,nullptr,nullptr);
-	cle::clCheckError(err);
+void Cache::initGroups(Block *block) {
+	assert(0);
 }
 
 } } // namespace map::detail

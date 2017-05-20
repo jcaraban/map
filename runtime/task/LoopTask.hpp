@@ -9,7 +9,6 @@
 
 #include "Task.hpp"
 #include "../dag/LoopCond.hpp"
-#include <array>
 
 
 namespace map { namespace detail {
@@ -21,8 +20,8 @@ struct LoopTask : public Task
 {	
 	LoopTask(Program &prog, Clock &clock, Config &conf, Group *group);	
 
-	void blocksToLoad(Coord coord, KeyList &in_keys) const;
-	void blocksToStore(Coord coord, KeyList &out_keys) const;
+	void blocksToLoad(Job job, KeyList &in_key) const;
+	void blocksToStore(Job job, KeyList &out_key) const;
 
 	void initialJobs(std::vector<Job> &job_vec);
 	void askJobs(Job done_job, std::vector<Job> &job_vec);
@@ -31,15 +30,16 @@ struct LoopTask : public Task
 
 	int prevDependencies(Coord coord) const;
 
-	void postStore(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
-	void compute(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
+	void postStore(Job job, const BlockList &in_blk, const BlockList &out_blk);
+	void compute(Job job, const BlockList &in_blk, const BlockList &out_blk);
 
   // vars
 	LoopCond *cond_node;
 	MergeList merge_list;
 	SwitchList switch_list;
-	bool left_input, right_input; // what input side activated the task
-	bool left_output, right_output; // what output side will be notified
+
+	std::unordered_map<Job,bool,job_hash,job_equal> cycling_input;
+	std::unordered_map<Job,bool,job_hash,job_equal> cycling_output;
 };
 
 } } // namespace map::detail

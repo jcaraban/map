@@ -628,13 +628,13 @@ void Fusioner::linking() {
 		}
 	}
 
-	// Radial, Spread, Stats, Loop require their nodes to become output of their group
+	// Some patterns require their nodes to become output of their group
 
 	for (auto &i : group_list) {  // For every 'group' in group_list...
 		Group *group = i.get();
 		for (auto &node : group->nodeList()) { // For every 'node' in 'group'
 			Pattern pat = node->pattern();
-			if (pat.is(RADIAL) || pat.is(SPREAD) || pat.is(STATS) || pat.is(LOOP)) {
+			if (pat.is(ZONAL) || pat.is(RADIAL) || pat.is(SPREAD) || pat.is(STATS) || pat.is(LOOP)) {
 				group->addOutputNode(node); // 'node' becomes an output of its 'group'
 			}
 		}
