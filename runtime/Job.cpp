@@ -69,12 +69,13 @@ Job::Job(Task *task, Coord coord, size_t iter)
 	, iter(iter)
 	, order()
 {
+	auto diff = coord;
 	auto *rt = dynamic_cast<RadialTask*>(task); // @@
 	if (rt != nullptr) {
-		coord = abs(coord - rt->startb);
+		diff = abs(coord - rt->startb);
 	}
 
-	order = Order(coord[0],coord[1],task->id(),iter);
+	order = Order(diff[0],diff[1],task->id(),iter);
 }
 
 bool job_greater::operator() (const Job &lhs, const Job &rhs) const {

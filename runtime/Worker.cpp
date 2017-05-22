@@ -3,6 +3,8 @@
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  * TODO: for more dynamism, worker should analyse / fuse / compile online ('runtime approach to map algebra')
+ *
+ * // @@@ needs to close files as the loop advances, otherwise the unix limit of 1024 will be reached
  */
 
 #include "Worker.hpp"
@@ -43,7 +45,7 @@ void Worker::work(ThreadId thread_id) {
 		Job job = sche.requestJob();
 
 		if (job.isNone()) break; // Exit point
-std::cout << job.task->id() << " " << job.coord << " " << job.iter << std::endl;
+//std::cout << job.task->id() << " " << job.coord << " " << job.iter << std::endl;
 		request_blocks(job);
 
 		// pre_work

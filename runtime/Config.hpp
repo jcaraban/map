@@ -53,8 +53,8 @@ struct Config {
 	// Default
 	const int def_num_machines = 1;
 	const int def_num_devices = 1;
-	const int def_num_ranks = 1; // @@@ 16;
-	const size_t def_cache_total_size = (size_t)1024*1024 * (512*4); // @ 2 GB
+	const int def_num_ranks = 16;
+	const size_t def_cache_total_size = (size_t)1024*1024 * (512*7); // @ 3.5 GB 
 	const size_t def_cache_chunk_size = (size_t)1024*1024 * 256; // @ 256 MB
 	const size_t def_cache_block_size = max_out_block * max_num_ranks * sizeof(double);
 	const size_t def_cache_group_size = max_group_x_block * def_cache_block_size; // @ max_in_block?

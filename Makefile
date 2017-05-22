@@ -1,7 +1,7 @@
 # Compiler
 CC = g++
 # -O3 -march=native -mtune=native
-CFLAGS = -std=c++11 -m64 -fpic -O0 -g
+CFLAGS = -std=c++11 -m64 -fpic -O2 -g
 IDIR = -I/opt/AMDAPP/include/ -I/usr/local/cuda/include/
 LDIR = 
 LIBS = -ltiff -pthread

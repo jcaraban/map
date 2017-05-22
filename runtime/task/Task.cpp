@@ -315,20 +315,18 @@ void Task::initialJobs(std::vector<Job> &job_vec) {
 
 void Task::askJobs(Job done_job, std::vector<Job> &job_vec) {
 	assert(done_job.task == this);
-	bool end = (Tid == last);
 
 	// Asks itself for self-jobs, a.k.a. intra-dependencies (e.g. Radial, Spread)
 	this->selfJobs(done_job,job_vec);
 
 	// Asks next-tasks for their next-jobs, a.k.a inter-dependencies (all Op)
 	for (auto next_task : full_join(nextList(),backList())) {
-		auto common_nodes = inner_join(this->outputList(),next_task->inputList());
-		for (auto node : common_nodes) {
-			if (node->numdim()==D0 && !end)
-				continue; // D0 jobs only notify at the end
-			Key key = Key(node,done_job.coord,done_job.iter);
-			next_task->nextJobs(key,job_vec);
-		}
+		next_task->nextJobs(done_job,job_vec,Tid==last);
+	}
+
+	if (Tid == last) {
+		std::lock_guard<std::mutex> lock(mtx);
+		last = ThreadId(); // @
 	}
 }
 
@@ -336,23 +334,35 @@ void Task::selfJobs(Job done_job, std::vector<Job> &job_vec) {
 	return; // nothing to do
 }
 
-void Task::nextJobs(Key done_block, std::vector<Job> &job_vec) {
-	if (done_block.node->numdim() == D0) // Case when prev=D0, self!=D0
-	{
-		notifyAll( Job(this,Coord(),done_block.iter), job_vec);
-	}
-	else // Case when prev!=D0, self!=D0
-	{
-		auto reach = accuInputReach(done_block.node,done_block.coord);
-		auto inver = reach.invert(); // Notifies the inverted 'input space'
-		auto space = inver.blockSpace(blocksize());
+void Task::nextJobs(Job done_job, std::vector<Job> &job_vec, bool end) {
+	auto iter = done_job.iter;
+	auto prev_nodes = done_job.task->outputList();
+	auto common_nodes = inner_join(inputList(),prev_nodes);
 
-		for (auto offset : space) {
-			auto iter = done_block.iter;
-			auto nbc = done_block.coord + offset;
-			if (all(in_range(nbc,numblock()))) {
-				Job new_job = Job(this,nbc,iter);
-				notify(new_job,job_vec);
+	for (auto node : common_nodes) {
+		if (node->isReduction()) {
+			if (not end) { // D0 jobs only notify at the end
+				continue;
+			} else { // Case when prev=D0, self!=D0
+				notifyAll( Job(this,Coord(),iter), job_vec);
+			}
+		} else if (node->numdim() == D0 && done_job.task->numdim() == D0 && this->numdim() == D2) {
+			if (not end) {
+				continue;
+			} else {
+				notifyAll( Job(this,Coord(),iter), job_vec);
+			}
+		} else { // Case when prev!=D0, self!=D0
+			auto reach = accuInputReach(node,done_job.coord);
+			auto inver = reach.invert(); // Notifies the inverted 'input space'
+			auto space = inver.blockSpace(blocksize());
+
+			for (auto offset : space) {
+				auto nbc = done_job.coord + offset;
+				if (all(in_range(nbc,numblock()))) {
+					Job new_job = Job(this,nbc,iter);
+					notify(new_job,job_vec);
+				}
 			}
 		}
 	}
@@ -370,6 +380,7 @@ void Task::notify(Job new_job, std::vector<Job> &job_vec) {
 		it = dep_hash.insert(pair).first;
 	}
 
+//std::cout << " " << new_job.task->id() << " " << new_job.coord << " " << new_job.iter << " : " << it->second << std::endl;
 	// Notifies, i.e. reduces dependencies by 1
 	it->second--;
 	assert(it->second >= 0);
@@ -501,11 +512,11 @@ void Task::preLoad(Job job, const BlockList &in_blk, const BlockList &out_blk) {
 }
 
 void Task::preCompute(Job job, const BlockList &in_blk, const BlockList &out_blk) {
-	return; // choose a version among the available, according to statistics, devices ?
+	return; // choose a code version, according to availabe statistics ?
 }
 
 void Task::postCompute(Job job, const BlockList &in_blk, const BlockList &out_blk) {
-	return; // summary ?
+	return; // collect and update statistics ?
 }
 
 void Task::postStore(Job job, const BlockList &in_blk, const BlockList &out_blk) {

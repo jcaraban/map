@@ -5,6 +5,8 @@
  * TODO: There should be 1 cache per physical memory (Dev mem, Host mem, SSD mem, HDD mem)
  * TODO: consider refactorizing the 'block management' functionality out of Cache
  * TODO: move unique_ptr<Block> to a 'vector memory allocator' like 'entry_list'
+ *
+ * // @@@ there is a race condition when high cache pressure leads to entry evitions
  */
 
 #ifndef MAP_RUNTIME_CACHE_HPP_

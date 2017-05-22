@@ -17,6 +17,10 @@ void ma_setupDevices(const char *plat_name, DeviceType dev, const char *dev_name
 	Runtime::getInstance().setupDevices(std::string(plat_name),dev,std::string(dev_name));
 }
 
+void ma_setNumRanks(int ranks) {
+	Runtime::getConfig().setNumRanks(ranks);
+}
+
 /**/
 
 void ma_increaseRef(Node *node) {

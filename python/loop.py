@@ -2,6 +2,7 @@ from map import * ## "Parallel Map Algebra" package
 import sys
 
 setupDevices("",DEV_GPU,"")
+setNumRanks(1)
 
 ## Arguments
 
@@ -95,7 +96,7 @@ def basinBorder(catch):
 ## Computation
 
 dem = read(in_file_path)
-stream = dem < 0.05
+stream = dem < 0.1
 #stream = zeros_like(dem,U8)
 pit = pitFill(dem,stream)
 #

@@ -24,7 +24,7 @@ struct RadialTask : public Task
 	
 	void initialJobs(std::vector<Job> &job_vec);
 	void selfJobs(Job done_job, std::vector<Job> &job_vec);
-	void nextJobs(Key done_block, std::vector<Job> &job_vec);
+	void nextJobs(Job done_job, std::vector<Job> &job_vec, bool end);
 	
 	int prevInterDepends(Node *node, Coord coord) const;
 	int nextInterDepends(Node *node, Coord coord) const;

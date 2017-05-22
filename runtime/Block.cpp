@@ -237,9 +237,8 @@ void Block::fixValue(ValFix vf) {
 }
 
 void Block::notify() {
-	if (dependencies >= 0)
-		dependencies--;
-	// DEPEND_UNKNOWN blocks are only discarded by eviction
+	assert(dependencies > 0); // @@ before there was an "if (dep >= 0)"
+	dependencies--;
 }
 
 bool Block::discardable() const {

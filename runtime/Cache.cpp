@@ -497,6 +497,7 @@ void Cache::releaseBlock(const Key &key, Block *blk) {
 	}
 
 	if (erase) {
+		assert(blk->entry == nullptr);
 		blk_hash.erase(key); // deletes those blocks that are not needed anymore
 	}
 }
@@ -627,9 +628,12 @@ void Cache::initScalar(Block *block) {
 	size_t dtsz = block->datatype().sizeOf();
 	size_t size = dtsz;
 
-	// Fill just 1 value
+	
+	{ // Fill just 1 value
+	TimedRegion region(Runtime::getClock(),SEND);
 	cl_int err = clEnqueueFillBuffer(*que,scalar_page,&block->value.ref(),dtsz,offset,size,0,nullptr,nullptr);
 	cle::clCheckError(err);
+	}
 }
 
 
@@ -657,9 +661,11 @@ void Cache::reduceScalar(Block *block) {
 	int offset = sizeof(double) * (conf.max_out_block*Tid.rnk() + block->order);
 	size_t size = block->datatype().sizeOf();
 
+	{
+	TimedRegion region(Runtime::getClock(),RECV);
 	cl_int clerr = clEnqueueReadBuffer(*que,scalar_page,CL_TRUE,offset,size,&block->value.ref(),0,nullptr,nullptr);
 	cle::clCheckError(clerr);
-
+	}
 //std::cout << "reduc " << block->value << " : " << block->key.node->id << " " << block->datatype().toString() << std::endl;
 
 	IFile *file = getFile(block->key);

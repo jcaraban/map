@@ -28,7 +28,15 @@ std::size_t Identity::Hash::operator()(const Content& k) const {
 
 Node* Identity::Factory(Node *prev) {
 	assert(prev != nullptr);
-	return new Identity(prev->metadata(),prev);
+
+	DataSize ds = prev->datasize();
+	DataType dt = prev->datatype();
+	MemOrder mo = prev->memorder();
+	BlockSize bs = prev->blocksize();
+	GroupSize gs = prev->groupsize();
+	MetaData meta(ds,dt,mo,bs,gs);
+
+	return new Identity(meta,prev);
 }
 
 Node* Identity::clone(const std::unordered_map<Node*,Node*> &other_to_this) {

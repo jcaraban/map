@@ -21,6 +21,7 @@ int main(int argc, char **argv) {
 	std::string file_path;
 	DataSize data_size;
 	BlockSize block_size = {512,512};
+	BlockSize group_size = {16,16};
 	int steep = false;
 
 	//// Arguments
@@ -46,7 +47,7 @@ int main(int argc, char **argv) {
 	setupDevices("",DEV_GPU,"");
 	//setupDevices("Intel",DEV_CPU,"");
 
-	dout = zeros(data_size,F32,ROW+BLK,block_size);
+	dout = zeros(data_size,F32,ROW+BLK,block_size,group_size);
 	info(dout);
 
 	//// Computation

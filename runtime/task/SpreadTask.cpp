@@ -156,7 +156,7 @@ void SpreadTask::selfJobs(Job done_job, std::vector<Job> &job_vec) {
 				notify(done_job.coord+Coord{x,y},done_job.iter,job_vec);
 }
 
-void SpreadTask::nextJobs(Key done_block, std::vector<Job> &job_vec) {
+void SpreadTask::nextJobs(Job done_job, std::vector<Job> &job_vec) {
 	if (done_block.node->numdim() == D0) // Case when prev=D0, self=D2
 	{
 		notifyAll(done_block.iter,job_vec);

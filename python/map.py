@@ -455,6 +455,9 @@ for sym,bt in zip(BinaryTypeSym,BinaryTypeVal):
 def setupDevices(plat_name,dev_type,dev_name):
 	_lib.ma_setupDevices(plat_name,dev_type,dev_name)
 
+def setNumRanks(ranks):
+	_lib.ma_setNumRanks(ranks)
+
 def eval(*args):
 	## Note: shadowing built-in functions is considered herecy
 	cond = [isinstance(a,Raster) for a in args]
@@ -745,6 +748,9 @@ def err_write(result,func,args):
 
 _lib.ma_setupDevices.argtypes = [ct.c_char_p, ct.c_int, ct.c_char_p]
 _lib.ma_setupDevices.restype = None
+
+_lib.ma_setNumRanks.argtypes = [ct.c_int]
+_lib.ma_setNumRanks.restype = None
 
 _lib.ma_increaseRef.argtypes = [Raster]
 _lib.ma_increaseRef.restype = None

@@ -3,8 +3,6 @@
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  * Task base class
- *
- * TODO: shall selfJobs() take a 'Key done_block', or better nextJobs() takes a 'Job done_job' ?
  */
 
 #ifndef MAP_RUNTIME_TASK_HPP_
@@ -78,7 +76,7 @@ struct Task
 	virtual void initialJobs(std::vector<Job> &job_vec);
 	virtual void askJobs(Job done_job, std::vector<Job> &job_vec);
 	virtual void selfJobs(Job done_job, std::vector<Job> &job_vec);
-	virtual void nextJobs(Key done_block, std::vector<Job> &job_vec);
+	virtual void nextJobs(Job done_job, std::vector<Job> &job_vec, bool end); // @
 	void notify(Job new_job, std::vector<Job> &job_vec);
 	void notifyAll(Job new_job, std::vector<Job> &job_vec);
   // Dependencies
@@ -115,7 +113,7 @@ struct Task
 	
 	std::unordered_map<Coord,int,coord_hash,coord_equal> dep_hash; // Structure holding the job dependencies met so far
 	std::unordered_map<int,int> prev_jobs_count, self_jobs_count;//, next_jobs_count;
-	ThreadId last;
+	ThreadId last; // @ per iter?
 
 	std::unordered_map<Node*,Mask> accu_in_reach_of; // Accumulated 'spatial reach' of input nodes (e.g. Focal, Radial)
 	std::unordered_map<Node*,Mask> accu_out_reach_of; // Accumulated 'spatial reach' of output nodes (e.g. Spread)

@@ -38,14 +38,14 @@ void ScalarTask::compute(Job job, const BlockList &in_blk, const BlockList &out_
 	assert(out_blk.size() == outputList().size());
 	assert(job.coord.size() == 0);
 
-	// Checking inputs, @ not necesary ?
+	// Loading scalar inputs
 	for (int i=0; i<in_blk.size(); i++) {
 		Node *node = inputList()[i];
 		Block *blk = in_blk[i];
 
 		assert(node == blk->key.node);
 		assert(node->value.datatype() != NONE_DATATYPE);
-		assert(node->value == blk->value || (node->value.isInf() && blk->value.isInf()));
+		//assert(node->value == blk->value || (node->value.isInf() && blk->value.isInf())); // @@@
 
 		hash[node] = blk->value;
 	}
@@ -56,7 +56,7 @@ void ScalarTask::compute(Job job, const BlockList &in_blk, const BlockList &out_
 		node->value = hash.find(node)->second;
 	}
 
-	// Checking outputs, @ not necesary ?
+	// Storing scalar outputs
 	for (int i=0; i<out_blk.size(); i++) {
 		Node *node = outputList()[i];
 		Block *blk = out_blk[i];

@@ -41,7 +41,9 @@ void LoopTask::blocksToLoad(Job job, KeyList &in_key) const {
 	auto coord = job.coord;
 	auto iter = job.iter;
 
+	mtx.lock();	
 	bool cycling = cycling_input.find(job)->second;
+	mtx.unlock();
 	iter = cycling ? iter - 1 : iter;
 
 	for (auto node : inputList()) {
@@ -75,7 +77,10 @@ void LoopTask::askJobs(Job done_job, std::vector<Job> &job_vec) {
 	assert(done_job.task == this);
 	auto coord = done_job.coord;
 	auto iter = done_job.iter;
+	
+	mtx.lock();	
 	bool cycling = cycling_output[done_job];
+	mtx.unlock();	
 
 	// Asks next-tasks for their next-jobs, a.k.a inter-dependencies (all Op)
 	for (auto next_task : this->nextList()) {
@@ -83,33 +88,33 @@ void LoopTask::askJobs(Job done_job, std::vector<Job> &job_vec) {
 			continue;
 		if (cycling && next_task->pattern().is(TAIL))
 			continue;
-		auto common_nodes = inner_join(this->outputList(),next_task->inputList());
-		for (auto node : common_nodes) {
-			Key key = Key(node,coord,iter);
-			next_task->nextJobs(key,job_vec);
-		}
+		next_task->nextJobs(done_job,job_vec,Tid==last);
 	}
 
 	// Erases the 'cycling' entries for the future job in this same 'coord'
+	mtx.lock();	
 	cycling_input.erase(done_job);
 	cycling_output.erase(done_job);
+	mtx.unlock();	
 }
 
 void LoopTask::selfJobs(Job done_job, std::vector<Job> &job_vec) {
 	return; // nothing to do
 }
 
-void LoopTask::nextJobs(Key done_block, std::vector<Job> &job_vec) {
-	bool cycling = done_block.node->pattern().isNot(HEAD);
+void LoopTask::nextJobs(Job done_job, std::vector<Job> &job_vec, bool end) {
+	bool cycling = done_job.task->pattern().isNot(HEAD);
 	if (cycling)
-		done_block.iter++;
+		done_job.iter++;
 
-	Job new_job = Job(this,done_block.coord,done_block.iter);
+	mtx.lock();
+	Job new_job = Job(this,done_job.coord,done_job.iter);
 	if (cycling_input.find(new_job) == cycling_input.end())
-		cycling_input[new_job] = done_block.node->pattern().isNot(HEAD);
-	assert(cycling_input[new_job] == done_block.node->pattern().isNot(HEAD));
+		cycling_input[new_job] = done_job.task->pattern().isNot(HEAD);
+	assert(cycling_input[new_job] == done_job.task->pattern().isNot(HEAD));
+	mtx.unlock();	
 
-	Task::nextJobs(done_block,job_vec);
+	Task::nextJobs(done_job,job_vec,end);
 }
 
 int LoopTask::prevDependencies(Coord coord) const {
@@ -128,8 +133,12 @@ void LoopTask::postStore(Job job, const BlockList &in_blk, const BlockList &out_
 	assert(cond_blk != nullptr);
 
 	// Sets 'cycling' according to the result of 'cond_blk'
+	bool cycling = cond_blk->value ? true : false;
+
+	mtx.lock();
 	assert(cycling_output.find(job) == cycling_output.end());
-	cycling_output[job] = cond_blk->value ? true : false;
+	cycling_output[job] = cycling;
+	mtx.unlock();
 
 	// Out blocks carry the sum of dependencies of both true and false branches
 	// Needs to consume (i.e. notify) the dependencies of the non-taken branch
@@ -140,12 +149,21 @@ void LoopTask::postStore(Job job, const BlockList &in_blk, const BlockList &out_
 		auto blk = *std::find_if(out_blk.begin(),out_blk.end(),[&](Block *b){ return swit==b->key.node; });
 
 		for (auto next : next_of_out[i]) {
-			if (cycling_output[job]) {
+			if (cycling) {
 				if (inner_join(next->nodeList(),swit->falseList()).size() > 0)
 					blk->notify();
 			} else { // cycling = false
-				if (inner_join(next->nodeList(),swit->trueList()).size() > 0)
+				if (inner_join(next->nodeList(),swit->trueList()).size() > 0) {
 					blk->notify();
+					 // @@ this notify should happen before releaseEntries()
+					if (blk->discardable()) {
+						blk->entry->block = nullptr;
+						if (blk->entry->isDirty())
+							blk->entry->unsetDirty();
+						blk->entry = nullptr;
+					}
+					// @@
+				}
 			}
 		}
 	}
@@ -153,9 +171,10 @@ void LoopTask::postStore(Job job, const BlockList &in_blk, const BlockList &out_
 
 void LoopTask::compute(Job job, const BlockList &in_blk, const BlockList &out_blk) {
 	//return Task::compute(job,in_blk,out_blk);
-	// @@
 	const Version *ver = getVersion(DEV_ALL,{},""); // Any device, No detail
 	assert(ver != nullptr);
+
+	// TODO: forward first, check for fixed after ?
 
 	auto all_pred = [&](Block *b){ return b->fixed || b->key.node->canForward(); };
 	if (std::all_of(out_blk.begin(),out_blk.end(),all_pred)) {
@@ -178,7 +197,7 @@ void LoopTask::compute(Job job, const BlockList &in_blk, const BlockList &out_bl
 			if (iblk->entry && oblk->entry) {
 				//std::cout << "in_blk " << iblk->key.node->id << " " << iblk->numdim().toString() << " --> ";
 				//std::cout << "out_blk " << oblk->key.node->id << " " << oblk->numdim().toString() << std::endl;
-				std::swap( iblk->entry->dev_mem, oblk->entry->dev_mem );
+				std::swap( iblk->entry->dev_mem, oblk->entry->dev_mem ); // @ better swap the entry, careful with cross refs
 			}
 		}
 

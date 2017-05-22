@@ -135,11 +135,14 @@ void RadialTask::selfJobs(Job done_job, std::vector<Job> &job_vec) {
 	}
 }
 
-void RadialTask::nextJobs(Key done_block, std::vector<Job> &job_vec) {
+void RadialTask::nextJobs(Job done_job, std::vector<Job> &job_vec, bool end) {
+	Task::nextJobs(done_job,job_vec,end); // @@
+	/*
 	if (done_block.node->numdim() == D0) // Case when prev=D0, self=D2
 		notifyAll( Job(this,Coord(),done_block.iter), job_vec);
 	else // Case when prev=D2, self=D2
 		notify( Job(this,done_block.coord,done_block.iter), job_vec);
+	*/
 }
 
 int RadialTask::prevInterDepends(Node *node, Coord coord) const {

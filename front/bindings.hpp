@@ -23,6 +23,7 @@ extern "C" {
  ***************/
 
 void ma_setupDevices(const char *plat_name, DeviceType dev, const char *dev_name);
+void ma_setNumRanks(int ranks);
 
 void ma_increaseRef(Node *node);
 void ma_decreaseRef(Node *node);

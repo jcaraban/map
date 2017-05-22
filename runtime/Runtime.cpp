@@ -298,7 +298,7 @@ void Runtime::evaluate(NodeList list_to_eval) {
 	assert(un_priv_link.size() == priv_list.size());
 
 	clock.stop(EVAL);
-	//reportEval(); // @@
+	reportEval();
 }
 
 void Runtime::workflow(NodeList list) {
