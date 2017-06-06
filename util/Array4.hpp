@@ -26,7 +26,7 @@
 namespace map { namespace detail {
 
 namespace { // anonymous namespace
-	template <typename T> struct defval { static const T value = -1;};
+	template <typename T> struct defval { static const T value = 0;};
 	template <> struct defval<bool> { static const bool value = false; };
 }
 
@@ -133,7 +133,7 @@ namespace map { namespace detail {
 template <typename T>
 Array4<T>::Array4() :
 	arr{def,def},//,def,def}
-	n(def)
+	n(-1)
 { }
 /*
 template <typename T>

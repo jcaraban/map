@@ -215,7 +215,7 @@ std::string SpreadSkeleton::versionCode() {
 	// Spread output
 	for (auto &node : ver->task->outputList()) {
 		if (node == spread[0]->buffer()) {
-			add_line( out_var(node) + " = " + var_name(node) + ";" );
+			add_line( out_var(node) + ";" );
 		}
 	}
 
@@ -263,7 +263,7 @@ std::string SpreadSkeleton::versionCode() {
 	// Adds LOCAL_POS output-nodes
 	for (auto &node : ver->task->outputList()) {
 		if (tag_hash[node].pos == LOCAL_POS && node->pattern().isNot(SPREAD)) {
-			add_line( out_var(node) + " = " + var_name(node) + ";" );
+			add_line( out_var(node) + ";" );
 		}
 	}
 

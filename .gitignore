@@ -75,3 +75,4 @@ libmap.so
 ###########
 
 *.sublime-*
+.idea/

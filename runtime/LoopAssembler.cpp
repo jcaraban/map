@@ -9,12 +9,12 @@
  *       - For that a Python front-end needs to parse the While first, (as dag or bytecode)
  *
  * TODO: only the '{body.ref - again.ref} > 0' nodes are alive in Python,
+ *       	( also 'node.ref > node.next_list.size' must be alive ? )
  *       and we can use this information to avoid their Empty+Head+Merge+Switch+Tail nodes
  * TODO: is_included is "expensive", it can be avoided by tagging the nodes during insertion
  */
 
 #include "LoopAssembler.hpp"
-#include "dag/LoopCond.hpp"
 #include <queue>
 #include <set>
 
@@ -146,24 +146,28 @@ void LoopAssembler::extract() {
 				const_set.insert(prev);
 	NodeList const_list = NodeList(const_set.begin(),const_set.end());
 
-	// Remove from 'again' all nodes repeated in 'body'. They were used to find the invariants
-	stru.again = left_join(stru.again,stru.body);
-
-	// All 'body' nodes that only depend on the 'const_list' are in-loop-invariant nodes
+	// Nodes in 'body' && 'again' only depending on 'const_list' are 'in-loop-invariants'
 	i = 0;
 	while (i < stru.body.size()) {
 		Node *node = stru.body[i++];
 		// Do all 'prev' of this 'body' node only depend on 'const' nodes?
 		auto pred = [&](Node *n){ return is_included(n,const_list); };
 		bool is_invar = std::all_of(node->prevList().begin(),node->prevList().end(),pred);
-		// yes? Then 'node' is a in-loop-invariant, move it out of 'body'
-		if (is_invar) {
+		// yes? Then 'node' is a in-loop-invariant, move it out of the loop
+		if (is_invar && is_included(node,stru.again)) {
 			remove_value(node,stru.body);
+			remove_value(node,stru.again);
+			stru.invar_in.push_back(node);
 			stru.prev.push_back(node);
 			const_list.push_back(node);
 			i--;
 		}
 	}
+
+	// @@ This might be unnecessary, or even break some loops
+	if (is_included(stru.cond.back(),stru.again))
+		remove_value(stru.cond.back(),stru.again);
+	assert(inner_join(stru.body,stru.again).empty());
 
 	// Some 'const' / 'prev' of invariants might not be 'prev' anymore
 	i = 0;
@@ -199,13 +203,12 @@ void LoopAssembler::extract() {
 		// Nobody should link here
 		assert(node->nextList().empty());
 		// Inform prev nodes
-		for (auto &prev : node->prevList())
+		for (auto prev : node->prevList())
 			prev->removeNext(node);
 		node->prev_list.clear();
 		// The 'again' nodes are not deleted just yet, Python still points to them.
 		// With loopUpdateVars() Python updates the loop variables to 'tail' nodes
 		// which lets the garbage collector delete the 'again' nodes, sometime later
-		Node::id_count--; // @ a more elegant way of restoring the counter ?
 	}
 
 	// Unreachable 'body' nodes when going up from 'circ_out' are out-loop-invariants
@@ -223,17 +226,17 @@ void LoopAssembler::extract() {
 	}
 
 	// Gets the 'unreachable' out-loop-invariants as the left_join of 'body' with the 'reachable'
-	NodeList out_invar = left_join(stru.body, NodeList(reachable.begin(),reachable.end()) );
+	stru.invar_out = left_join(stru.body, NodeList(reachable.begin(),reachable.end()) );
 	
 	// Removes the out-loop-invariants from 'body' and 'again' (NB: they share the same index)
 	assert(stru.body.size() == stru.again.size());
 	i = 0;
 	while (i < stru.body.size()) {
-		if (is_included(stru.body[i],out_invar)) {
+		if (is_included(stru.body[i],stru.invar_out)) {
 			// First stores the unique pointer value, for python
 			stru.oldpy.push_back(stru.again[i]);
 			stru.newpy.push_back(stru.body[i]);
-			// Then erases them from the list
+			// Then erases the nodes from the lists
 			stru.body.erase(stru.body.begin()+i);
 			stru.again.erase(stru.again.begin()+i);
 		} else {
@@ -244,14 +247,16 @@ void LoopAssembler::extract() {
 
 void LoopAssembler::compose() {
 	LoopStruct &stru = loop_struct[loop_level];
-	NodeList empty_list, empty_body, iden_list, back_list;
+	NodeList empty_body, back_list;
 
 	auto swap_next_nodes = [&](Node *prev, Node *dest, bool neg=false) {
 		// 'next' of 'prev' inside 'body' now hang from 'dest'
 		int i = 0;
 		while (i < prev->nextList().size()) {
 			Node *next = prev->nextList()[i++];
-			if ((is_included(next,stru.body) && next!=dest) ^ neg) {
+			bool inside = is_included(next,stru.body) ||
+						  is_included(next,stru.iden);
+			if ((inside && next!=dest) ^ neg) {
 				dest->addNext(next);
 				next->updatePrev(prev,dest);
 				prev->removeNext(next);
@@ -260,29 +265,13 @@ void LoopAssembler::compose() {
 		}
 	};
 
-	int fix = stru.circ_out.size(); // feed-in/out
-	int num_elem = stru.prev.size() + stru.body.size() - fix;
-
-	// Re-adjusting ssa ids with these offsets
-	int jmp_empty = stru.body.size() - fix; // empty nodes
-	int jmp_loop = num_elem * 3 + 1; // head + merge + switch + cond nodes
-	int jmp_iden = stru.prev.size() - fix; // identity nodes
-	int jmp_body = stru.body.size(); // body nodes
-	int jmp_tail = stru.body.size(); // tail nodes
-
-	// The nodes created below are owned by Runtime::node_list later
-
-	// Re-adjust ssa ids
-	Node::id_count -= jmp_body; // @
+	// The nodes created below are owned by Runtime::node_list and given to it later
 
 	// Completes the 'prev' list with auxiliar 'empty' input nodes
 	for (auto node : left_join(stru.body,stru.circ_out)) {
-		// This should be an Empty node, not a Const // @
-		auto *empty = new Constant(node->metadata(),VariantType(0,node->datatype()));
+		auto *empty = new Empty(node->metadata());
 		stru.prev.push_back(empty);
-		stru.other.push_back(empty);
-
-		empty_list.push_back(empty);
+		stru.empty.push_back(empty);
 		empty_body.push_back(node);
 	}
 
@@ -293,33 +282,23 @@ void LoopAssembler::compose() {
 
 		if (is_included(prev,stru.circ_in))
 		{	// This is a feed-in 'prev', so a 'body' node exists in 'feed-out'
-			int i = value_position(prev,stru.circ_in);
-			back = stru.circ_out[i];
+			int j = value_position(prev,stru.circ_in);
+			back = stru.circ_out[j];
 		}
-		else if (is_included(prev,empty_list))
+		else if (is_included(prev,stru.empty))
 		{	// This is a 'tmp' node in body, an 'empty' node was created
-			int i = value_position(prev,empty_list);
-			back = empty_body[i];
+			int j = value_position(prev,stru.empty);
+			back = empty_body[j];
 		}
 		else
 		{	// is a const-input-node
 			auto *iden = Identity::Factory(prev);
-			stru.body.push_back(iden);
-			iden_list.push_back(iden);
-			stru.other.push_back(iden);
+			stru.iden.push_back(iden);
 			swap_next_nodes(prev,iden);
 			back = iden;
-
-			back->id += jmp_loop;
-			Node::id_count--; // @
 		}
 		back_list.push_back(back);
 	}
-
-	// Re-adjust 'body' ids
-	for (auto node : stru.body)
-		if (not is_included(node,iden_list))
-			node->id += jmp_empty + jmp_loop + jmp_iden;
 
 	// Creates a 'head' node per 'prev' node outside 'loop'
 	for (int i=0; i<stru.prev.size(); i++) {
@@ -334,7 +313,7 @@ void LoopAssembler::compose() {
 		Node *head = stru.head[i];
 		Node *back = back_list[i];
 
-		auto *merge = dynamic_cast<Merge*>( Merge::Factory(head,back) );
+		auto *merge = dynamic_cast<Merge*>( Merge::Factory(head,back,MergeLoopFlag()) );
 		stru.merge.push_back(merge);
 	}
 
@@ -367,14 +346,12 @@ void LoopAssembler::compose() {
 			swit->addTrue(next);
 	}
 
-	Node::id_count += jmp_body; // @
-
 	// Creates a 'tail' node hanging from the 'false' side of 'switch'
 	for (int i=0; i<stru.switc.size(); i++) {
 		Node *node = back_list[i];
 		Switch *swit = stru.switc[i];
 
-		if (is_included(node,iden_list))
+		if (is_included(node,stru.iden))
 			continue; // Identities don't need Tail
 
 		auto tail = dynamic_cast<LoopTail*>( LoopTail::Factory(swit) );

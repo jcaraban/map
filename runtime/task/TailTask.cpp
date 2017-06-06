@@ -2,6 +2,7 @@
  * @file    TailTask.cpp 
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
+ * TODO: iter=0 wont work for nested loops. Needs to use the iter of its twin HeadTask!
  */
 
 #include "TailTask.hpp"

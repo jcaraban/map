@@ -58,6 +58,7 @@ Runtime::Runtime()
 	, scheduler(clock,conf)
 	, workers()
 	, threads()
+	, id_count(0)
 	, node_list()
 	, group_list()
 	, task_list()
@@ -87,13 +88,13 @@ Runtime::~Runtime() {
 }
 
 void Runtime::clear() {
-	node_list.clear();
-	group_list.clear();
-	task_list.clear();
 	program.clear();
 	cache.clear();
 	scheduler.clear();
-	Node::id_count = 0;
+	id_count = 0;
+	node_list.clear();
+	group_list.clear();
+	task_list.clear();
 }
 
 void Runtime::setupDevices(std::string plat_name, DeviceType dev, std::string dev_name) {
@@ -107,7 +108,7 @@ void Runtime::setupDevices(std::string plat_name, DeviceType dev, std::string de
 	clenv.clear();
 
 	// Only 1 device accepted
-	clenv.init("P=# P_NAME=%s, D=1 D_TYPE=%d D_NAME=%s", plat_name.data(), dev, dev_name.data()); //, C=1xD
+	clenv.init("P=# P_NAME=%s, D=1 D_TYPE=%d D_NAME=%s", plat_name.data(), dev, dev_name.data());
 
 	// Apply device fission if: 'Intel' and 'CPU' and 'conf.interpreted'
 	if (plat_name.compare("Intel")==0 && dev==DEV_CPU && conf.interpreted)
@@ -160,13 +161,35 @@ Node* Runtime::loopAssemble() {
 		simplifier.drop(node);
 
 	// Assembling the loop includes:
-	//  - determining the 'prev', 'cond', 'body', feedbacks, etc
-	//  - creating 'head', 'empty', 'merge', 'switch', 'loop', 'tail', ('next'?) nodes
+	//  - determining the 'prev', 'condition', 'body', 'circular', 'invariant' nodes
+	//  - creating 'empty', 'head', 'merge', 'loop', 'switch', 'iden', 'tail' nodes
 	assembler.assemble();
 	
 	// TODO: how to simplify a loop?
 
-	// Inserts 'head' / 'merge' / 'loop' / 'switch' / 'tail' / 'other' nodes into the node_list
+	// Adjusts the SSA ids of the nodes
+	id_count = stru.cond.front()->id + 1;
+	for (auto node : stru.invar_in)
+		node->id = id_count++;
+	for (auto node : stru.empty)
+		node->id = id_count++;
+	for (auto node : stru.head)
+		node->id = id_count++;
+	for (auto node : stru.merge)
+		node->id = id_count++;
+	stru.loop->id = id_count++;
+	for (auto node : stru.switc)
+		node->id = id_count++;
+	for (auto node : stru.iden)
+		node->id = id_count++;
+	for (auto node : stru.body)
+		node->id = id_count++;
+	for (auto node : stru.tail)
+		node->id = id_count++;
+
+	// Inserts 'head' / 'merge' / 'loop' / 'switch' / 'tail' / 'other' nodes into 'node_list'
+	for (auto node : stru.empty)
+		node_list.push_back( std::unique_ptr<Node>(node) );
 	for (auto node : stru.head)
 		node_list.push_back( std::unique_ptr<Node>(node) );
 	for (auto node : stru.merge)
@@ -174,9 +197,9 @@ Node* Runtime::loopAssemble() {
 	node_list.push_back( std::unique_ptr<Node>(stru.loop) );
 	for (auto node : stru.switc)
 		node_list.push_back( std::unique_ptr<Node>(node) );
-	for (auto node : stru.tail)
+	for (auto node : stru.iden)
 		node_list.push_back( std::unique_ptr<Node>(node) );
-	for (auto node : stru.other)
+	for (auto node : stru.tail)
 		node_list.push_back( std::unique_ptr<Node>(node) );
 
 	return stru.loop;
@@ -190,6 +213,9 @@ Node* Runtime::addNode(Node *node) {
 
 	if (assembler.mode() != NORMAL_MODE) // Inside a (possibly nested) loop
 		assembler.addNode(node,orig);
+
+	if (node->id == -1)
+		node->id = id_count++;
 
 	return orig;
 }
@@ -209,18 +235,18 @@ Version* Runtime::addVersion(Version *ver) {
 	return ver;
 }
 
-void print_nodes(const OwnerNodeList &list) {
+void Runtime::print_nodes(const OwnerNodeList &list) {
 	std::cout << "----" << std::endl;
 	for (auto &node : list)
 		std::cout << node->id << "\t" << node->getName() << "\t " << node->ref << std::endl;
 	std::cout << "----" << std::endl;
 }
 
-void print_nodes(const NodeList &list) {
+void Runtime::print_nodes(const NodeList &list) {
 	std::cout << "----" << std::endl;
 	for (auto &node : list)
 		std::cout << node->id << "\t" << node->getName() << "\t " << node->ref << std::endl;
-	std::cout << "---- id_count " << Node::id_count << std::endl;
+	std::cout << "---- id_count " << id_count << std::endl;
 }
 
 void Runtime::evaluate(NodeList list_to_eval) {

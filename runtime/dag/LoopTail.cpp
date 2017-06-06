@@ -30,7 +30,15 @@ std::size_t LoopTail::Hash::operator()(const Content& k) const {
 // Factory
 
 Node* LoopTail::Factory(Node *prev) {
-	MetaData meta = prev->metadata();
+	assert(prev != nullptr);
+
+	DataSize ds = prev->datasize();
+	DataType dt = prev->datatype();
+	MemOrder mo = prev->memorder();
+	BlockSize bs = prev->blocksize();
+	GroupSize gs = prev->groupsize();
+	MetaData meta(ds,dt,mo,bs,gs);
+	
 	return new LoopTail(meta,prev);
 }
 

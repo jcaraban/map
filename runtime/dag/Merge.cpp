@@ -31,7 +31,7 @@ std::size_t Merge::Hash::operator()(const Content& k) const {
 
 // Factory
 
-Node* Merge::Factory(Node *lhs, Node *rhs) {
+Node* Merge::Factory(Node *lhs, Node *rhs, MergeLoopFlag flag) {
 	assert(lhs != nullptr);
 	assert(rhs != nullptr);
 
@@ -49,7 +49,7 @@ Node* Merge::Factory(Node *lhs, Node *rhs) {
 	}
 	meta.data_type = promote(lmt.getDataType(),rmt.getDataType());
 
-	return new Merge(meta,lhs,rhs);
+	return new Merge(meta,lhs,rhs,flag);
 }
 
 Node* Merge::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
@@ -58,34 +58,37 @@ Node* Merge::clone(const std::unordered_map<Node*,Node*> &other_to_this) {
 
 // Constructors
 
-Merge::Merge(const MetaData &meta, Node *lprev, Node *rprev)
+Merge::Merge(const MetaData &meta, Node *lprev, Node *rprev, MergeLoopFlag not_used)
 	: Node(meta)
 {
+	// Merge of a structured while loop	
+	prev_list.reserve(1);
+	this->addPrev(lprev);
+	forw_list.reserve(1);
+	this->addForw(rprev);
+
+	lprev->addNext(this);
+	rprev->addBack(this);
+	
 	//this->spatial_pattern = lprev->pattern() + rprev->pattern();
+	this->in_spatial_reach = Mask(numdim().unitVec(),true);
+	this->out_spatial_reach = Mask(numdim().unitVec(),true);
+}
 
-	if (this->id > rprev->id) // Merge of a structured if-else
-	{
-		assert(0); // @ not this yet
+Merge::Merge(const MetaData &meta, Node *lprev, Node *rprev, MergeIfFlag not_used)
+	: Node(meta)
+{
+	// Merge of a structured if-else
+	assert(0); // @ not this yet
 		
-		prev_list.reserve(2);
-		this->addPrev(lprev);
-		this->addPrev(rprev);
-		
-		lprev->addNext(this);
-		rprev->addNext(this);
-	}
-	else if (this->id < rprev->id) // Merge of a structured while loop
-	{
-		prev_list.reserve(1);
-		this->addPrev(lprev);
-		forw_list.reserve(1);
-		this->addForw(rprev);
+	prev_list.reserve(2);
+	this->addPrev(lprev);
+	this->addPrev(rprev);
+	
+	lprev->addNext(this);
+	rprev->addNext(this);
 
-		lprev->addNext(this);
-		rprev->addBack(this);
-	}
-	assert(lprev->id != rprev->id);
-
+	//this->spatial_pattern = lprev->pattern() + rprev->pattern();
 	this->in_spatial_reach = Mask(numdim().unitVec(),true);
 	this->out_spatial_reach = Mask(numdim().unitVec(),true);
 }

@@ -4,9 +4,9 @@
  *
  * TODO: pinned_list now has 1 cl_mem per worker, it would need 'max_in_block+max_out_block' if events are activated
  * TODO: try 'events' again, make sure events are not re-allocated in the main worker loop (clCreateUserEvent clReleaseEvent)
- *
  * TODO: create a buffer of Blocks (like 'pinned_list') so that HOLD_0/1 blocks are reaused instead than re-allocated non-stop
- * TODO: could the reduction functionality within scalar.cpp be moved to the cache ?
+ *
+ * TODO: refactorize the reduction functionality, maybe create a block/file->reduce() as load()/store() ?
  * TODO: could load / store / getFile be moved out of cache ?
  */
 
@@ -210,16 +210,16 @@ void Cache::requestBlocks(const KeyList &key_list, BlockList &blk_list) {
 
 		/**/ if (hold == HOLD_0) // Null block that holds '0' values
 		{
-			blk_list.push_back( new Block(key) );
+			blk_list.push_back( new Block(key,dep) );
 		}
 		else if (hold == HOLD_1) // Block holds '1' value
 		{
-			blk_list.push_back( new Block(key,scalar_page,nullptr) );
+			blk_list.push_back( new Block(key,dep,scalar_page,nullptr) );
 		}
 		//else if (hold == HOLD_2) // Block holds 'groups per block' values
 		//{
 		//	assert(0);
-		//	blk_list.push_back( new Block(key,nullptr,group_page) );
+		//	blk_list.push_back( new Block(key,dep,nullptr,group_page) );
 		//}
 		else if (hold == HOLD_N) // Normal case, block holds 'N' values
 		{
@@ -368,7 +368,7 @@ void Cache::returnBlocks(const KeyList &key_list, BlockList &blk_list) {
 
 Block* Cache::retainBlock(const Key &key, int depend) {
 	if (not conf.inmem_cache) { // no-cache mode
-		return new Block(key,unit_mem_size,DEPEND_UNKNOWN); // always created / deleted
+		return new Block(key,DEPEND_UNKNOWN,unit_mem_size); // always created / deleted
 	}
 	////////////////////////////
 	std::unique_lock<std::mutex> lock(mtx_blk); // thread-safe
@@ -384,8 +384,15 @@ Block* Cache::retainBlock(const Key &key, int depend) {
 	{
 //std::cout << key.node->getName() << " : " << key.node->id << " , " << key.iter << " not" << std::endl;
 		assert(depend > DEPEND_UNKNOWN);
-		blk = new Block(key,unit_mem_size,depend);
+		blk = new Block(key,depend,unit_mem_size);
 		blk_hash[key] = std::unique_ptr<Block>(blk);
+
+		{
+		std::lock_guard<std::mutex> lock(mtx_file);
+		auto it = file_count.find(Key(key.node,Coord(),key.iter));
+		if (it != file_count.end())
+			it->second = prod(key.node->numblock());
+		}
 	}
 
 	return blk;
@@ -477,6 +484,22 @@ void Cache::releaseEntry(Block *blk) {
 
 	if (give_entry)
 		blk->entry = nullptr;
+
+	// Notifies the 'file counter' and releases the 'files' when done
+	if (blk->discardable()) {
+		std::unique_lock<std::mutex> lock(mtx_file); // thread-safe
+		Key key = blk->key;
+		key.coord = Coord();
+		if (file_hash.find(key) != file_hash.end()) {
+			auto it = file_count.find(key);
+			assert(it != file_count.end());
+			it->second--;
+			if (it->second == 0) {
+				delete file_hash[key];
+				file_hash.erase(key);
+			}
+		}
+	}
 }
 
 void Cache::releaseBlock(const Key &key, Block *blk) {
@@ -564,8 +587,10 @@ IFile* Cache::getFile(Key key) {
 	std::unique_lock<std::mutex> lock(mtx_file); // thread-safe
 
 	auto it = file_hash.find(key);
-	if (it == file_hash.end())
+	if (it == file_hash.end()) {
 		it = file_hash.insert({key,IFile::Factory(key.node)}).first;
+		file_count.insert({key,prod(key.node->numblock())});
+	}
 
 	return it->second;
 }
@@ -617,10 +642,8 @@ void Cache::loadScalar(Block *block) {
 }
 
 void Cache::initScalar(Block *block) {
-	if (not block->key.node->isReduction()) // from Dx to D0
-		return; // no need for initialization
-	//
-	cle::Queue que = Runtime::getOclEnv().D(Tid.dev()).Q(Tid.rnk());
+	if (not block->key.node->isReduction() || block->fixed)
+		return; // only for 'reductions' that were not 'predicted' in the pre_load
 
 	block->value = block->key.node->initialValue();
 
@@ -628,9 +651,9 @@ void Cache::initScalar(Block *block) {
 	size_t dtsz = block->datatype().sizeOf();
 	size_t size = dtsz;
 
-	
 	{ // Fill just 1 value
 	TimedRegion region(Runtime::getClock(),SEND);
+	cle::Queue que = Runtime::getOclEnv().D(Tid.dev()).Q(Tid.rnk());
 	cl_int err = clEnqueueFillBuffer(*que,scalar_page,&block->value.ref(),dtsz,offset,size,0,nullptr,nullptr);
 	cle::clCheckError(err);
 	}
@@ -650,19 +673,18 @@ void Cache::storeScalar(Block *block) {
 }
 
 void Cache::reduceScalar(Block *block) {
-	if (not block->key.node->isReduction())
-		return;
+	if (not block->key.node->isReduction() || block->fixed)
+		return; // only for 'reductions' that were not 'predicted' in the pre_load
 
 	assert(block->holdtype() == HOLD_1);
 	assert(not block->value.isNone());
-
-	cle::Queue que = Runtime::getOclEnv().D(Tid.dev()).Q(Tid.rnk());
 
 	int offset = sizeof(double) * (conf.max_out_block*Tid.rnk() + block->order);
 	size_t size = block->datatype().sizeOf();
 
 	{
 	TimedRegion region(Runtime::getClock(),RECV);
+	cle::Queue que = Runtime::getOclEnv().D(Tid.dev()).Q(Tid.rnk());
 	cl_int clerr = clEnqueueReadBuffer(*que,scalar_page,CL_TRUE,offset,size,&block->value.ref(),0,nullptr,nullptr);
 	cle::clCheckError(clerr);
 	}

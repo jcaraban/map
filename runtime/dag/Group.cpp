@@ -224,7 +224,7 @@ bool Group::isNext(const Group *group) const {
 
 void Group::addBack(Group *group, Pattern pattern) { //
 	assert(group!=this);
-	assert(isPrev(group)); // cyclic
+	// assert(isPrev(group)); // @@ check for this cycle as a post-stage verification of fusion?
 	
 	auto i = std::find(back_list.begin(),back_list.end(),group);
 	if (i == back_list.end()) {
@@ -238,7 +238,7 @@ void Group::removeBack(Group *group) {
 
 void Group::addForw(Group *group, Pattern pattern) { //
 	assert(group!=this);
-	assert(isNext(group)); // cyclic
+	// assert(isNext(group)); // @@ check for this cycle as a post-stage verification of fusion?
 	
 	auto i = std::find(forw_list.begin(),forw_list.end(),group);
 	if (i == forw_list.end()) {

@@ -14,7 +14,8 @@ namespace map { namespace detail {
 #define DEFINE_NODESIGN(node,value) char node::classSignature() const { return value; }
 
 DEFINE_NODESIGN( Constant , 1 )
-DEFINE_NODESIGN( Index , 2 )
+DEFINE_NODESIGN( Empty , 2 )
+DEFINE_NODESIGN( Index , 3 )
 DEFINE_NODESIGN( Identity , 5 )
 DEFINE_NODESIGN( Rand , 6 )
 DEFINE_NODESIGN( Cast , 7 )

@@ -9,7 +9,7 @@
 #define MAP_RUNTIME_LOOPASSEMBLER_HPP_
 
 #include "dag/Node.hpp"
-#include "dag/Constant.hpp"
+#include "dag/Empty.hpp"
 #include "dag/LoopCond.hpp"
 
 
@@ -24,13 +24,16 @@ struct LoopStruct {
 	NodeList again; //!< Again the body, to find circulating nodes
 	NodeList circ_in; //!< Nodes whose data circulates in the loop (input side, € 'prev'),
 	NodeList circ_out; //!< (output side, € 'body'), the 'circ' lists match in size and order
+	NodeList invar_in;
+	NodeList invar_out;
 	
 	LoopCond *loop;
 	HeadList head; //!< Head nodes created by Loop
 	TailList tail; //!< Tail nodes created by Loop
 	MergeList merge; //!< Merge nodes created by Loop
 	SwitchList switc; //!< Switch nodes created by Loop
-	NodeList other; //!< Empry, Identity, etc
+	NodeList empty; //!< Empty nodes created by Loop
+	NodeList iden; //!< Identity nodes created bt Loop
 
 	NodeList oldpy;
 	NodeList newpy;

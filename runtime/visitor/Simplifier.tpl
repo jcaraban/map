@@ -30,9 +30,6 @@ void Simplifier::helper(T *node, std::unordered_map<typename T::Content,T*,typen
 		// Deletes the repeated node, which is last in 'node_list'
 		node_list.pop_back();
 
-		// Reverts Node::id_count, // @ I'd be fired for this
-		Node::id_count--;
-
 		// The existing node was the original
 		orig = i->second;
 	}

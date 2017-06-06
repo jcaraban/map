@@ -55,10 +55,10 @@ struct Block
 {
   // Constructors
 	Block();
-	Block(Key key);
-	Block(Key key, cl_mem scalar_page, cl_mem group_page);
-	Block(Key key, cl_mem group_page, int size);
-	Block(Key key, int total_size, int depend);
+	Block(Key key, int dep);
+	Block(Key key, int dep, cl_mem scalar_page, cl_mem group_page);
+	//Block(Key key, int dep, cl_mem group_page, int size);
+	Block(Key key, int dep, int total_size);
 	~Block();
 
   // Getters

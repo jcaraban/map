@@ -80,6 +80,8 @@ LoopCond::LoopCond(const LoopCond *other, const std::unordered_map<Node*,Node*> 
 	this->tail_list.reserve(other->tail_list.size());
 
 	for (auto other_head : other->head_list) {
+		if (other_to_this.find(other_head) == other_to_this.end())
+			continue; // Some living Heads might not be on the cloned list
 		Node *this_head = other_to_this.find(other_head)->second;
 		this->head_list.push_back( dynamic_cast<LoopHead*>(this_head) );
 		this->head_list.back()->owner_loop = this;  // the 'head' clone is completed now
@@ -125,6 +127,20 @@ const TailList& LoopCond::tailList() const {
 
 Node* LoopCond::prev() const {
 	return prev_list[0];
+}
+
+// Features
+
+//bool LoopCond::isReduction() const {
+//	return numdim() != D0;
+//}
+
+ReductionType LoopCond::reductype() const {
+	return rOR;
+}
+
+VariantType LoopCond::initialValue() const {
+	return ReductionType(rOR).neutral(datatype());
 }
 
 // Compute

@@ -22,7 +22,6 @@ struct CpuFocalSkeleton : public Skeleton
 	std::string generate();
 
   // methods
-	void compact();
 	std::string versionCode();
 
   // visit

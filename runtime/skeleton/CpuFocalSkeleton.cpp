@@ -47,14 +47,6 @@ string CpuFocalSkeleton::generate() {
    Methods
  ***********/
 
-void CpuFocalSkeleton::compact() {
-	Skeleton::compact();
-	//sort_unique(mask,node_id_less(),node_id_equal());
-	//sort_unique(conv,node_id_less(),node_id_equal());
-	//sort_unique(func,node_id_less(),node_id_equal());
-	//sort_unique(percent,node_id_less(),node_id_equal());
-}
-
 string CpuFocalSkeleton::versionCode() {
 	//// Variables ////
 	const int N = 2;
@@ -272,7 +264,7 @@ string CpuFocalSkeleton::versionCode() {
 	// Adds LOCAL_POS output-nodes
 	for (auto &node : ver->task->outputList()) {
 		if (tag_hash[node].pos == LOCAL_POS || tag_hash[node].pos == FOCAL_POS) {
-			add_line( out_var(node) + " = " + var_name(node) + ";" );
+			add_line( out_var(node) + ";" );
 		}
 	}
 

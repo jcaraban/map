@@ -95,7 +95,12 @@ void LoopTask::askJobs(Job done_job, std::vector<Job> &job_vec) {
 	mtx.lock();	
 	cycling_input.erase(done_job);
 	cycling_output.erase(done_job);
-	mtx.unlock();	
+	mtx.unlock();
+
+	if (Tid == last) {
+		std::lock_guard<std::mutex> lock(mtx);
+		last = ThreadId(); // @
+	}
 }
 
 void LoopTask::selfJobs(Job done_job, std::vector<Job> &job_vec) {
@@ -103,15 +108,34 @@ void LoopTask::selfJobs(Job done_job, std::vector<Job> &job_vec) {
 }
 
 void LoopTask::nextJobs(Job done_job, std::vector<Job> &job_vec, bool end) {
-	bool cycling = done_job.task->pattern().isNot(HEAD);
+	bool cycling = not done_job.task->pattern().is(HEAD);
 	if (cycling)
 		done_job.iter++;
 
+	auto common_nodes = inner_join(inputList(),done_job.task->outputList());
 	mtx.lock();
-	Job new_job = Job(this,done_job.coord,done_job.iter);
-	if (cycling_input.find(new_job) == cycling_input.end())
-		cycling_input[new_job] = done_job.task->pattern().isNot(HEAD);
-	assert(cycling_input[new_job] == done_job.task->pattern().isNot(HEAD));
+	for (auto node : common_nodes) {
+		if (node->numdim() == D0)
+		{
+			continue; // @@@
+			auto beg = Coord(numblock().size(),0);
+			auto end = numblock();
+			for (auto coord : iterSpace(beg,end))
+			{
+				Job new_job = Job(this,coord,done_job.iter);
+				if (cycling_input.find(new_job) == cycling_input.end())
+					cycling_input[new_job] = cycling;
+				assert(cycling_input[new_job] == cycling);
+			}
+		}
+		else
+		{
+			Job new_job = Job(this,done_job.coord,done_job.iter);
+			if (cycling_input.find(new_job) == cycling_input.end())
+				cycling_input[new_job] = cycling;
+			assert(cycling_input[new_job] == cycling);
+		}
+	}
 	mtx.unlock();	
 
 	Task::nextJobs(done_job,job_vec,end);
@@ -140,8 +164,8 @@ void LoopTask::postStore(Job job, const BlockList &in_blk, const BlockList &out_
 	cycling_output[job] = cycling;
 	mtx.unlock();
 
-	// Out blocks carry the sum of dependencies of both true and false branches
-	// Needs to consume (i.e. notify) the dependencies of the non-taken branch
+	// Out blocks carry the sum of dependencies for both true and false branches
+	// --> Needs to consume (i.e. notify) the dependencies of the non-taken branch
 	for (int i=0, j=0; i<outputList().size(); i++) {
 		if (outputList()[i]->pattern().isNot(SWITCH))
 			continue; // only switch nodes
@@ -153,18 +177,19 @@ void LoopTask::postStore(Job job, const BlockList &in_blk, const BlockList &out_
 				if (inner_join(next->nodeList(),swit->falseList()).size() > 0)
 					blk->notify();
 			} else { // cycling = false
-				if (inner_join(next->nodeList(),swit->trueList()).size() > 0) {
+				if (inner_join(next->nodeList(),swit->trueList()).size() > 0)
 					blk->notify();
-					 // @@ this notify should happen before releaseEntries()
-					if (blk->discardable()) {
-						blk->entry->block = nullptr;
-						if (blk->entry->isDirty())
-							blk->entry->unsetDirty();
-						blk->entry = nullptr;
-					}
-					// @@
+			}
+			 // @@ this notify should happen before releaseEntries()
+			if (blk->discardable()) {
+				if (blk->entry != nullptr) {
+					blk->entry->block = nullptr;
+					if (blk->entry->isDirty())
+						blk->entry->unsetDirty();
+					blk->entry = nullptr;
 				}
 			}
+			// @@
 		}
 	}
 }
@@ -184,7 +209,7 @@ void LoopTask::compute(Job job, const BlockList &in_blk, const BlockList &out_bl
 		for (auto iblk : in_blk)
 			forward[iblk->key.node] = iblk;
 		for (auto node : nodeList()) {
-			auto prev = node->prevList().front(); // @ forwarding 'prev' goes always first
+			auto prev = node->prevList().front(); // @ always the first 'prev' (Switch)
 			if (forward.find(prev) == forward.end())
 				prev = node->forwList().front(); // @ Merge
 			forward[node] = forward[prev];

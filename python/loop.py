@@ -52,7 +52,7 @@ def flowDir(dem,stream):
 		ngb = [nbh0[i],nbh1[i]]
 		# flows to the steepest NeiGhBor
 		zdif = dem - dem(ngb)
-		dist = con(i%2==0, 1., 1.414213)
+		dist = con(i%2!=0, 1., 1.414213)
 		drop = zdif / dist
 		# borders always flow out
 		drop[outside(dem,ngb)] = +inf
@@ -97,13 +97,12 @@ def basinBorder(catch):
 
 dem = read(in_file_path)
 stream = dem < 0.1
-#stream = zeros_like(dem,U8)
 pit = pitFill(dem,stream)
+flow = flowDir(pit,stream)
 #
-write( pit, out_file_path)
+write( flow, out_file_path)
 sys.exit()
 #
-flow = flowDir(pit,stream)
 flow = flowDirFlat(flow)
 catch = catchAssign(flow,stream)
 basin = basinBorder(catch)

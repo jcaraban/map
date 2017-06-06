@@ -5,6 +5,7 @@
  * TODO: jobs are allocated in the stack now (pqueue). It might be better to allocate Jobs in the heap
  *       It might be good to add Jobs a pointer to their neighbors when they are added to the queue
  *       (think carefully... premature optimization and so on)
+ * TODO: compute and use the 'depth' as the 4th order byte rather than the task 'id'
  */
 
 #ifndef MAP_RUNTIME_JOB_HPP_

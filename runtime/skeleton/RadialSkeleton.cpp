@@ -68,6 +68,7 @@ string RadialSkeleton::versionCode(RadialCase rcase, Direction fst, Direction sn
 
 	bool local_types[N_DATATYPE] = {};
 	bool radial_types[N_DATATYPE] = {};
+	bool out_types[N_DATATYPE] = {};
 	
 	auto any_true = [](bool array[], int num){
 		return std::any_of(array,array+num,[](bool b) { return b; });
@@ -79,6 +80,7 @@ string RadialSkeleton::versionCode(RadialCase rcase, Direction fst, Direction sn
 	}
 	for (auto node : ver->task->outputList()) {
 		DataType dt = node->datatype();
+		out_types[dt.get()] = true;
 		if (node->pattern().is(RADIAL))
 			radial_types[dt.get()] = true;
 	}
@@ -89,6 +91,12 @@ string RadialSkeleton::versionCode(RadialCase rcase, Direction fst, Direction sn
 	if (any_true(local_types,N_DATATYPE))
 		add_line( "" );
 
+	for (auto dt=NONE_DATATYPE; dt<N_DATATYPE; ++dt)
+		if (out_types[dt])
+			add_section( defines_output_type(dt) );
+	if (any_true(out_types,N_DATATYPE))
+		add_line( "" );
+	
 	for (auto dt=NONE_DATATYPE; dt<N_DATATYPE; ++dt)
 		if (radial_types[dt])
 			add_section( defines_radial_type(dt) );

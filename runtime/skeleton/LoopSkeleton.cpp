@@ -24,6 +24,28 @@ LoopSkeleton::LoopSkeleton(Version *ver)
 
 string LoopSkeleton::generate() {
 	tag(); // tag the nodes
+
+	// @@ Collapses 'loop' tags to their greatest dimension (i.e. deletes lowest dims)
+	NumDim max_dim = D0;
+	int max_size = 0;
+	for (auto tag : tag_list)
+		if (tag.is(LOOP))
+			if (tag.ext.size() > max_size) {
+				max_dim = tag.numdim();
+				max_size = tag.ext.size();
+			}
+	int i = 0;
+	while (i < tag_list.size()) {
+		SkelTag tag = tag_list[i++];
+		if (tag.is(LOOP))
+			if (tag.numdim() != max_dim) {
+				tag_list.erase(tag_list.begin() + i-1);
+				for (auto node : node_list_of[tag])
+					remove_value(tag,tag_hash[node]);
+				node_list_of.erase(tag);
+			}
+	}
+
 	fill(); // fill structures
 	compact(); // compact structures
 
@@ -50,6 +72,7 @@ std::string LoopSkeleton::versionCode() {
 	
 
 	bool local_types[N_DATATYPE] = {};
+	bool out_types[N_DATATYPE] = {};
 
 	auto any_true = [](bool array[], int num){
 		return std::any_of(array,array+num,[](bool b) { return b; });
@@ -59,11 +82,21 @@ std::string LoopSkeleton::versionCode() {
 		DataType dt = node->datatype();
 		local_types[dt.get()] = true;
 	}
+	for (auto node : ver->task->outputList()) {
+		DataType dt = node->datatype();
+		out_types[dt.get()] = true;
+	}
 
 	for (auto dt=NONE_DATATYPE; dt<N_DATATYPE; ++dt)
 		if (local_types[dt])
 			add_section( defines_local_type(dt) );
 	if (any_true(local_types,N_DATATYPE))
+		add_line( "" );
+
+	for (auto dt=NONE_DATATYPE; dt<N_DATATYPE; ++dt)
+		if (out_types[dt])
+			add_section( defines_output_type(dt) );
+	if (any_true(out_types,N_DATATYPE))
 		add_line( "" );
 
 	add_section( defines_reduc_type(rOR,U8) );
@@ -81,6 +114,8 @@ std::string LoopSkeleton::versionCode() {
 		add_line( in_arg(node) );
 	}
 	for (auto &node : ver->task->outputList()) {
+		if (node->numdim() == D0 && not node->pattern().is(LOOP))
+			continue;
 		add_line( out_arg(node) );
 	}
 	for (int n=0; n<N; n++) {
@@ -157,7 +192,7 @@ void LoopSkeleton::visit_input(Node *node) {
 void LoopSkeleton::visit_output(Node *node) {
 	if (prod(node->blocksize()) == 1)
 		return; // nothing to output for D0
-	add_line( out_var(node) + " = " + var_name(node) + ";" );
+	add_line( out_var(node) + ";" );
 }
 
 void LoopSkeleton::visit(LoopCond *node) {

@@ -15,6 +15,8 @@
 # spread ssum
 # time   tsum
 # directional dsum
+#
+# TODO: move the 'C API' / 'compund functions' / 'loop assembler' to independent files
 ##
 
 import ast
@@ -28,7 +30,7 @@ import textwrap
 
 import ctypes as ct
 #_lib = ct.CDLL("../libmap.so")
-_lib = ct.CDLL("/home/jcaraban/jesus/Proyectos/map/libmap.so")
+_lib = ct.CDLL("/home/jcaraban/jesus/code/map/libmap.so")
 
 ## Enumerates / Constants
 

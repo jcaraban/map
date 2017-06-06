@@ -70,9 +70,7 @@ string in_arg_focal(const Node *node) {
 }
 
 string out_arg(const Node *node) {
-	bool d0 = (node->numdim() == D0);
 	std::string type = node->datatype().ctypeString();
-
 	string str = "global " + type + " *OUT_" + node->id + ",";
 
 	if (prod(node->blocksize())==1)
@@ -101,7 +99,8 @@ string in_var(const Node *node) {
 
 string out_var(const Node *node) {
 	assert(node->numdim() != D0);
-	string str = string("OUT_") + node->id + "[" + global_proj(node->numdim().toInt()) + "]";
+	string type = node->datatype().toString();
+	string str = string("STORE_L_") + type + "(OUT_" + node->id + "," + type + "_" + node->id + ")";
 	return str;
 }
 
@@ -328,12 +327,12 @@ string local_proj_focal_Hi(int N, int id) {
 	return str;
 }
 
-string local_proj_focal_nbh(int N, Coord nbh) {
+string local_proj_focal_nbh(int N, Coord nbh, int id) {
 	// Recursively ((gc2+H2+nbh2)*(GS1+H1*2) + gc1+H1+nbh1)*(GS0+H0*2) + gc0+H0+nbh0
-	string str = string("gc")+(N-1) + "+H"+(N-1)+"+"+nbh[N-1];
+	string str = string("gc")+(N-1) + "+H"+(N-1)+"_"+id+"+"+nbh[N-1];
 	for (int n=N-2; n>=0; n--) {
-		str = string("(") + str + ")*(GS"+n+"+H"+n+"*2)";
-		str += string("+gc")+n + "+H"+n+"+"+nbh[n];
+		str = string("(") + str + ")*(GS"+n+"+H"+n+"_"+id+"*2)";
+		str += string("+gc")+n + "+H"+n+"_"+id+"+"+nbh[n];
 	}
 	return str;
 }
@@ -466,6 +465,16 @@ string defines_local_type(DataType data_type) {
 	string str =
 	"""" "#define LOAD_L_"+type+"(x) load_L_"+type+"(VAR(x),bc0,bc1,BS0,BS1)"
 	"\n" +ctype+" load_L_"+type+"(TYPE_VAR("+ctype+",IN), int bc0, int bc1, int BS0, int BS1) { return (INf) ?  INv : IN["+global_proj(2)+"]; }"
+	"\n";
+	return str;
+}
+
+string defines_output_type(DataType data_type) {
+	string type = data_type.toString();
+	string ctype = data_type.ctypeString();
+	string str =
+	"""" "#define STORE_L_"+type+"(x,y) store_L_"+type+"(x,y,bc0,bc1,BS0,BS1)"
+	"\n" "void store_L_"+type+"(global "+ctype+" *OUT, "+ctype+" val, int bc0, int bc1, int BS0, int BS1) { if (OUT) OUT["+global_proj(2)+"] = val; }"
 	"\n";
 	return str;
 }

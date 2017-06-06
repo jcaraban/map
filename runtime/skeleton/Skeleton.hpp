@@ -44,6 +44,8 @@ struct SkelTag {
 	DataSize ext; //!< Extension of the 'spatial reach' needed in this section
 
 	bool extendedReach() const;
+	NumDim numdim() const;
+	
 	void add(Pattern pat);
 	void sub(Pattern pat);
 	bool is(Pattern pat) const;
@@ -59,7 +61,8 @@ struct SkelTag {
 };
 
 typedef std::vector<SkelTag> TagList;
-
+typedef std::unordered_set<SkelTag,SkelTag::Hash> TagSet;
+typedef std::unordered_map<SkelTag,TagSet,SkelTag::Hash> TagHashSet;
 
 #define DECLARE_VISIT(class) virtual void visit(class *node);
 
@@ -81,7 +84,7 @@ struct Skeleton : public Visitor
 	void compact();
 	std::string versionCode();
 
-	TagList sort(TagList list);
+	TagList sort(TagList list, TagHashSet next_of, TagHashSet prev_of);
 
 	std::string indent();
 	std::string indented(std::string code);
@@ -107,6 +110,7 @@ struct Skeleton : public Visitor
 	virtual void visit_input(Node *node);
 	virtual void visit_output(Node *node);
 	DECLARE_VISIT(Constant)
+	DECLARE_VISIT(Empty)
 	DECLARE_VISIT(Index)
 	DECLARE_VISIT(Identity)
 	DECLARE_VISIT(Rand)
@@ -149,10 +153,7 @@ struct Skeleton : public Visitor
 	std::unordered_map<Node*,TagList> tag_hash; //!< Stores the 'tag' assigned to each node
 	std::unordered_set<SkelTag,SkelTag::Hash> tag_set; //!< Keeps a list of unique (not repeated) 'tags'
 
-	std::unordered_map<SkelTag, std::unordered_set<SkelTag,SkelTag::Hash> ,SkelTag::Hash> prev_of; // @
-	std::unordered_map<SkelTag, std::unordered_set<SkelTag,SkelTag::Hash> ,SkelTag::Hash> next_of; // @
-	std::priority_queue<SkelTag,std::vector<SkelTag>,std::greater<SkelTag>> prique; // @
-	std::unordered_map<SkelTag,int,SkelTag::Hash> prev_count; // @
+	TagHashSet next_of, prev_of; // Stores next/prev tags of a 'tag' // @
 
 	std::unordered_map<SkelTag,NodeList,SkelTag::Hash> node_list_of; //!< Stores the 'nodes' belonging to a 'tag'
 	std::unordered_map<SkelTag,std::string,SkelTag::Hash> code_hash;

@@ -47,6 +47,7 @@ struct Simplifier : public Visitor
 
   // declarations
 	DECLARE_MAP(Constant)
+	DECLARE_MAP(Empty)
 	DECLARE_MAP(Index)
 	DECLARE_MAP(Identity)
 	DECLARE_MAP(Rand)
@@ -84,6 +85,7 @@ struct Simplifier : public Visitor
   // visit
 	//void static_visit(Node *node);
 	DECLARE_VISIT(Constant)
+	DECLARE_VISIT(Empty)
 	DECLARE_VISIT(Index)
 	DECLARE_VISIT(Identity)
 	DECLARE_VISIT(Rand)

@@ -15,6 +15,9 @@
 
 namespace map { namespace detail {
 
+struct MergeLoopFlag { };
+struct MergeIfFlag { };
+
 struct Merge : public Node
 {
 	// Internal declarations
@@ -29,11 +32,13 @@ struct Merge : public Node
 	};
 
 	// Factory
-	static Node* Factory(Node *lhs, Node *rhs);
+	static Node* Factory(Node *lhs, Node *rhs, MergeLoopFlag flag);
+	//static Node* Factory(Node *lhs, Node *rhs, MergeIfFlag flag);
 	Node* clone(const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Constructors
-	Merge(const MetaData &meta, Node *lprev, Node *rprev);
+	Merge(const MetaData &meta, Node *lprev, Node *rprev, MergeLoopFlag not_used);
+	Merge(const MetaData &meta, Node *lprev, Node *rprev, MergeIfFlag not_used);
 	Merge(const Merge *other, const std::unordered_map<Node*,Node*> &other_to_this);
 
 	// Methods

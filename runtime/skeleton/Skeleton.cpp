@@ -29,6 +29,10 @@ bool SkelTag::extendedReach() const {
 	return prod(ext) > 1;
 }
 
+NumDim SkelTag::numdim() const {
+	return DataSize2NumDim(ext);
+}
+
 void SkelTag::add(Pattern pat) {
 	this->pat += pat;
 };
@@ -121,6 +125,8 @@ string Skeleton::generate() {
  ***********/
 
 void Skeleton::tag() {
+	// @ TagHashSet next_of, prev_of; // Stores next/prev tags of a 'tag'
+
 	// Puts in + body + out nodes into 'all_list', in order
 	auto body_out = full_unique_join(ver->task->nodeList(),ver->task->outputList());
 	auto all_list = full_join(ver->task->inputList(),body_out);
@@ -197,11 +203,13 @@ void Skeleton::tag() {
 	}
 
 	// Topological sort of 'tags', in order of dependencies and tag-order
-	tag_list = sort(tag_list);
+	tag_list = sort(tag_list,next_of,prev_of);
 }
 
-TagList Skeleton::sort(TagList list) {
+TagList Skeleton::sort(TagList list, TagHashSet next_of, TagHashSet prev_of) {
 	assert(not list.empty());
+	std::priority_queue<SkelTag,std::vector<SkelTag>,std::greater<SkelTag>> prique;
+	std::unordered_map<SkelTag,int,SkelTag::Hash> prev_count;
 	TagList ordered_list;
 
 	// Walks all 'tags' first to registers their 'prevs'
@@ -333,6 +341,7 @@ std::string Skeleton::versionCode() {
 	bool focal_types[N_DATATYPE] = {};
 	bool diver_types[N_DATATYPE] = {};
 	bool reduc_def[N_DATATYPE][N_REDUCTION] = {};
+	bool out_types[N_DATATYPE] = {};
 
 	auto any_true = [](bool array[], int num){
 		return std::any_of(array,array+num,[](bool b) { return b; });
@@ -346,6 +355,10 @@ std::string Skeleton::versionCode() {
 		local_types[dt.get()] = true;
 		if (extended)
 			focal_types[dt.get()] = true;
+	}
+	for (auto node : ver->task->outputList()) {
+		DataType dt = node->datatype();
+		out_types[dt.get()] = true;
 	}
 	for (auto node : diver) {
 		DataType dt = node->prev(0)->datatype();
@@ -365,6 +378,12 @@ std::string Skeleton::versionCode() {
 		if (focal_types[dt])
 			add_section( defines_focal_type(dt) );
 	if (any_true(focal_types,N_DATATYPE))
+		add_line( "" );
+
+	for (auto dt=NONE_DATATYPE; dt<N_DATATYPE; ++dt)
+		if (out_types[dt])
+			add_section( defines_output_type(dt) );
+	if (any_true(out_types,N_DATATYPE))
 		add_line( "" );
 
 	for (auto dt=NONE_DATATYPE; dt<N_DATATYPE; ++dt)
@@ -395,6 +414,8 @@ std::string Skeleton::versionCode() {
 		add_line( in_arg(node,extended) );
 	}
 	for (auto &node : ver->task->outputList()) {
+		if (node->numdim() == D0 && not node->isReduction())
+			continue;
 		add_line( out_arg(node) );
 	}
 	for (int n=0; n<N; n++) {
@@ -615,8 +636,6 @@ void Skeleton::reach_bot_section(SkelTag tag) {
 
 void Skeleton::input_section(SkelTag tag) {
 	add_line( "// Input section" );
-	if (tag.ext.size() == 0)
-		add_line( "// " + tag.pat.toString() + " " + to_string(tag.ext) );
 	add_line( "{" );
 	indent_count++;
 	full_code += indented(code_hash[tag]);
@@ -858,11 +877,15 @@ void Skeleton::visit_input(Node *node) {
 void Skeleton::visit_output(Node *node) {
 	if (prod(node->blocksize()) == 1)
 		return; // nothing to output for D0
-	add_line( out_var(node) + " = " + var_name(node) + ";" );
+	add_line( out_var(node) + ";" );
 }
 
 void Skeleton::visit(Constant *node) {
 	add_line( var_name(node) + " = " + node->cnst.toString() + ";" );
+}
+
+void Skeleton::visit(Empty *node) {
+	//assert(0);
 }
 
 void Skeleton::visit(Index *node) {
@@ -980,12 +1003,13 @@ void Skeleton::visit(Neighbor *node) {
 	const int N = node->numdim().toInt();
 	Coord nbh = node->coord();
 	string var = var_name(node);
-	string svar = var_name(node->prev(),SHARED) + "[" + local_proj_focal_nbh(N,nbh) + "]";
+	string svar = var_name(node->prev(),SHARED) + "[" + local_proj_focal_nbh(N,nbh,node->id) + "]";
+
+	for (int n=0; n<N; n++)
+		add_line( string("int ") + "H" + n + "_" + node->id + " = " + node->inputReach().datasize()[n]/2 + ";" );
 
 	add_line( var + " = " + svar + ";" );
 
-	//int shsz = prod(ver->groupsize() + sum(abs(nbh)) * 2);
-	//shared.push_back( std::make_pair(node->prev(),shsz) );
 	ext_shared.push_back(node->prev());
 }
 

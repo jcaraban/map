@@ -321,7 +321,9 @@ int OpenclEnvironment::addQueue(cl_context cid, cl_device_id did, cl_command_que
 }
 
 Platform OpenclEnvironment::platform(int i) {
-	assert(i < platformSize());
+	if (i < 0)
+		i = platformSize() + i;
+	assert(i >= 0 && i < platformSize());
 	return Platform(this,i);
 }
 
@@ -330,7 +332,9 @@ int OpenclEnvironment::platformSize() {
 }
 
 Device OpenclEnvironment::device(int i) {
-	assert(i < deviceSize());
+	if (i < 0)
+		i = deviceSize() + i;
+	assert(i >= 0 && i < deviceSize());
 	return Device(this,i);
 }
 
@@ -339,7 +343,9 @@ int OpenclEnvironment::deviceSize() {
 }
 
 Context OpenclEnvironment::context(int i) {
-	assert(i < contextSize());
+	if (i < 0)
+		i = contextSize() + i;
+	assert(i >= 0 && i < contextSize());
 	return Context(this,i);
 }
 
@@ -348,7 +354,9 @@ int OpenclEnvironment::contextSize() {
 }
 
 Task OpenclEnvironment::task(int i) {
-	assert(i < taskSize());
+	if (i < 0)
+		i = taskSize() + i;
+	assert(i >= 0 && i < taskSize());
 	return Task(this,i);
 }
 
@@ -357,7 +365,9 @@ int OpenclEnvironment::taskSize() {
 }
 
 Kernel OpenclEnvironment::kernel(int i) {
-	assert(i < kernelSize());
+	if (i < 0)
+		i = kernelSize() + i;
+	assert(i >= 0 && i < kernelSize());
 	return Kernel(this,i);
 }
 
@@ -366,7 +376,9 @@ int OpenclEnvironment::kernelSize() {
 }
 
 Queue OpenclEnvironment::queue(int i) {
-	assert(i < queueSize());
+	if (i < 0)
+		i = queueSize() + i;
+	assert(i >= 0 && i < queueSize());
 	return Queue(this,i);
 }
 
@@ -436,7 +448,9 @@ OpenclEnvironment& Platform::environment() {
 }
 
 Device Platform::device(int i) {
-	assert(i < deviceSize());
+	if (i < 0)
+		i = deviceSize() + i;
+	assert(i >= 0 && i < deviceSize());
 	return father->device(father->vPlatform[ref].vrDevice[i]);
 }
 
@@ -445,7 +459,9 @@ int Platform::deviceSize() {
 }
 
 Context Platform::context(int i) {
-	assert(i < contextSize());
+	if (i < 0)
+		i = contextSize() + i;
+	assert(i >= 0 && i < contextSize());
 	return father->context(father->vPlatform[ref].vrContext[i]);
 }
 
@@ -530,7 +546,9 @@ Platform Device::platform() {
 }
 
 Context Device::context(int i) {
-	assert(i < contextSize());
+	if (i < 0)
+		i = contextSize() + i;
+	assert(i >= 0 && i < contextSize());
 	return father->context(father->vDevice[ref].vrContext[i]);
 }
 
@@ -539,7 +557,9 @@ int Device::contextSize() {
 }
 
 Queue Device::queue(int i) {
-	assert(i < queueSize());
+	if (i < 0)
+		i = queueSize() + i;
+	assert(i >= 0 && i < queueSize());
 	return father->queue(father->vDevice[ref].vrQueue[i]);
 }
 
@@ -616,7 +636,9 @@ Platform Context::platform() {
 }
 
 Device Context::device(int i) {
-	assert(i < deviceSize());
+	if (i < 0)
+		i = deviceSize() + i;
+	assert(i >= 0 && i < deviceSize());
 	return father->device(father->vContext[ref].vrDevice[i]);
 }
 
@@ -625,7 +647,9 @@ int Context::deviceSize() {
 }
 
 Task Context::task(int i) {
-	assert(i < taskSize());
+	if (i < 0)
+		i = taskSize() + i;
+	assert(i >= 0 && i < taskSize());
 	return father->task(father->vContext[ref].vrTask[i]);
 }
 
@@ -634,7 +658,9 @@ int Context::taskSize() {
 }
 
 Queue Context::queue(int i) {
-	assert(i < queueSize());
+	if (i < 0)
+		i = queueSize() + i;
+	assert(i >= 0 && i < queueSize());
 	return father->queue(father->vContext[ref].vrQueue[i]);
 }
 
@@ -690,7 +716,9 @@ Context Task::context() {
 }
 
 Kernel Task::kernel(int i) {
-	assert(i < kernelSize());
+	if (i < 0)
+		i = kernelSize() + i;
+	assert(i >= 0 && i < kernelSize());
 	return father->kernel(father->vTask[ref].vrKernel[i]);
 }
 

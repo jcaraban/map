@@ -98,7 +98,7 @@ void Unlinker::visit(Merge *merge) {
 
 void Unlinker::visit(Switch *swit) {
 	// Clear the unlinked 'true' / 'false' nodes from their lists
-	auto pred = [&](const Node *node) { return not is_included(node,swit->next_list); };
+	auto pred = [&](Node *node) { return not is_included(node,swit->next_list); };
 	auto &next_true = swit->next_true, &next_false = swit->next_false;
 	next_true.erase(std::remove_if(next_true.begin(),next_true.end(),pred),next_true.end());
 	next_false.erase(std::remove_if(next_false.begin(),next_false.end(),pred),next_false.end());

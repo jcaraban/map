@@ -102,7 +102,7 @@ std::string local_proj_focal_x(int N, std::string x);
 std::string local_proj_focal_H(int N);
 std::string local_proj_focal_i(int N);
 std::string local_proj_focal_of(int N);
-std::string local_proj_focal_nbh(int N, Coord nbh);
+std::string local_proj_focal_nbh(int N, Coord nbh, int id);
 std::string local_proj_focal_Hi(int N, int id);
 std::string group_size_prod_x(int N, std::string x);
 std::string group_size_prod_H(int N);
@@ -130,6 +130,7 @@ std::string zero_cond_spread(int N);
 
 std::string defines_local();
 std::string defines_local_type(DataType dt);
+std::string defines_output_type(DataType dt);
 std::string defines_diver_type(DataType dt);
 std::string defines_focal();
 std::string defines_focal_type(DataType dt);

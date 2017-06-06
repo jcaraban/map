@@ -9,8 +9,6 @@
 
 namespace map { namespace detail {
 
-int Node::id_count;
-
 Node::Node()
 	: id(-1)
 	, ref(0)
@@ -27,7 +25,7 @@ Node::Node()
 { }
 
 Node::Node(const MetaData &meta)
-	: id(id_count++)
+	: id(-1)
 	, ref(0)
 	, prev_list()
 	, next_list()
@@ -62,6 +60,8 @@ Node::Node(const Node *other, const std::unordered_map<Node*,Node*> &other_to_th
 	}
 
 	for (auto other_back : other->backList()) {
+		if (other_to_this.find(other_back) == other_to_this.end())
+			continue; // Some living Merges might not be on the cloned list
 		Node *this_back = other_to_this.find(other_back)->second;
 		this_back->addForw(this);
 		this->addBack(this_back);

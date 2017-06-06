@@ -3,6 +3,7 @@
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  * TODO: re-check 'conf.num_*' if the scheduler is ever made hierarchical
+ * TODO: try two scheduling fronts and rotating them when the queue gets empty (i.e. after a last zonal job)
  */
 
 #include "Scheduler.hpp"

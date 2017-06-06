@@ -64,7 +64,9 @@ struct LoopCond : public Node
 	// const Mask& outputReach(Coord coord) const;
 
 	// Features
-	ReductionType reductype() const { return rOR; }
+	//bool isReduction() const;
+	ReductionType reductype() const;
+	VariantType initialValue() const;
 
 	// Compute
 	//void computeScalar(std::unordered_map<Node*,VariantType> &hash);

@@ -1,10 +1,10 @@
 /**
- * @file    Worker.cpp 
+ * @file    Worker.cpp
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  * TODO: for more dynamism, worker should analyse / fuse / compile online ('runtime approach to map algebra')
  *
- * // @@@ needs to close files as the loop advances, otherwise the unix limit of 1024 will be reached
+ * // @@ clean up the code related to cache::file, maybe rehinking and refactorize it
  */
 
 #include "Worker.hpp"

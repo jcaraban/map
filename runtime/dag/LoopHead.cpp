@@ -30,7 +30,15 @@ std::size_t LoopHead::Hash::operator()(const Content& k) const {
 // Factory
 
 Node* LoopHead::Factory(Node *prev) {
-	MetaData meta = prev->metadata();
+	assert(prev != nullptr);
+
+	DataSize ds = prev->datasize();
+	DataType dt = prev->datatype();
+	MemOrder mo = prev->memorder();
+	BlockSize bs = prev->blocksize();
+	GroupSize gs = prev->groupsize();
+	MetaData meta(ds,dt,mo,bs,gs);
+
 	return new LoopHead(meta,prev);
 }
 

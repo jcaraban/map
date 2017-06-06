@@ -34,7 +34,7 @@ Node* BlockSummary::Factory(Node *prev, ReductionType type) {
 	DataSize ds = prev->datasize() / prev->blocksize();
 	DataType dt = prev->datatype();
 	MemOrder mo = prev->memorder();
-	BlockSize bs = prev->numdim().unitVec();;
+	BlockSize bs = prev->numdim().unitVec();
 	GroupSize gs = prev->numdim().unitVec();
 	MetaData meta(ds,dt,mo,bs,gs);
 

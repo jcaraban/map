@@ -23,7 +23,7 @@ bool node_id_greater::operator()(const Node *lhs, const Node *rhs) {
 bool group_id_equal::operator()(const Group *lhs, const Group *rhs) {
 	return lhs->id == rhs->id;
 }
-*/
+
 bool is_included(const Node *node, const NodeList &list) {
 	auto pred = [&](Node *n) { return n == node; }; // @ address comparison
 	return std::find_if(list.begin(),list.end(),pred) != list.end();
@@ -69,7 +69,7 @@ NodeList left_join(const NodeList &lhs, const NodeList &rhs) {
 			join.push_back(left);
 	return join;
 }
-/*
+
 void remove_value(const Node *node, NodeList &list) {
 	list.erase(std::remove(list.begin(),list.end(),node),list.end());
 }
@@ -77,13 +77,13 @@ void remove_value(const Node *node, NodeList &list) {
 void remove_value(const Group *group, GroupList &list) {
 	list.erase(std::remove(list.begin(),list.end(),group),list.end());
 }
-*/
+
 int value_position(const Node *node, const NodeList &list) {
 	auto it = std::find(list.begin(),list.end(),node);
 	assert(it != list.end());
 	return std::distance(list.begin(),it);
 }
-
+*/
 Pattern isInputOf(const Node *node, const Group *group) {
 	Pattern pat;
 	for (auto next : node->nextList())

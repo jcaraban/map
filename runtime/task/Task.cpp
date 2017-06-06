@@ -2,8 +2,9 @@
  * @file    Task.cpp 
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * TODO: SPREAD needs another look in nextJobs(), 'for offset : out_space'
+ * TODO: SPREAD needs another loop in nextJobs(), 'for offset : out_space'
  * TODO: nextJob() and the 'inversion' would not work for the central Radial Job
+ * TODO: in preLoad(), can we avoid using iter=0 and make "// no iter" go away ?
  */
 
 #include "Task.hpp"
@@ -340,7 +341,8 @@ void Task::nextJobs(Job done_job, std::vector<Job> &job_vec, bool end) {
 	auto common_nodes = inner_join(inputList(),prev_nodes);
 
 	for (auto node : common_nodes) {
-		if (node->isReduction()) {
+		//if (node->isReduction()) {
+		if (node->numdim() == D0) { // @@@
 			if (not end) { // D0 jobs only notify at the end
 				continue;
 			} else { // Case when prev=D0, self!=D0
@@ -482,12 +484,12 @@ void Task::preLoad(Job job, const BlockList &in_blk, const BlockList &out_blk) {
 			auto it = std::find_if(in_blk.begin(),in_blk.end(),pred);
 			assert(it != in_blk.end());
 
-			in_key.iter = 0;
+			in_key = Key(in->key.node,in->key.coord); // no iter
 			val_hash[in_key] = ValFix((*it)->value,(*it)->fixed);
 		}
 		else // HOLD_1 or HOLD_N
 		{
-			Key in_key = Key(in->key.node,job.coord);
+			Key in_key = Key(in->key.node,in->key.coord); // no iter
 			val_hash[in_key] = ValFix(in->value,in->fixed);
 		}
 	}
@@ -505,7 +507,7 @@ void Task::preLoad(Job job, const BlockList &in_blk, const BlockList &out_blk) {
 
 	// Transfer outputs to 'out_blk'
 	for (auto out : out_blk) {
-		Key out_key = Key(out->key.node,job.coord);
+		Key out_key = Key(out->key.node,job.coord); // no iter
 		assert(val_hash.find(out_key) != val_hash.end());
 		out->fixValue( val_hash[out_key] );
 	}
@@ -623,32 +625,47 @@ void Task::computeVersion(Job job, const BlockList &in_blk, const BlockList &out
 
 	for (auto &b : in_blk) {
 		void *dev_mem = (b->entry != nullptr) ? b->entry->dev_mem : nullptr;
-		/****/ if (b->holdtype() == HOLD_0) { // If HOLD_0, a null argument is given to the kernel
+
+		if (b->holdtype() == HOLD_0) // If HOLD_0, a null argument is given to the kernel
+		{
 			clSetKernelArg(*krn, arg++, sizeof(cl_mem), &dev_mem);
 			clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &b->value.ref());
 			clSetKernelArg(*krn, arg++, sizeof(b->fixed), &b->fixed);
-		} else if (b->holdtype() == HOLD_1) { // If HOLD_1, a scalar argument is given
+		}
+		else if (b->holdtype() == HOLD_1) // If HOLD_1, a scalar argument is given
+		{
 			clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &b->value.ref());
-		} else if (b->holdtype() == HOLD_N) { // In the normal case a valid cl_mem with memory is given
+		}
+		else if (b->holdtype() == HOLD_N) // In the normal case a valid cl_mem with memory is given
+		{
 			clSetKernelArg(*krn, arg++, sizeof(cl_mem), &dev_mem);
 			clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &b->value.ref());
 			clSetKernelArg(*krn, arg++, sizeof(b->fixed), &b->fixed);
-		} else {
+		}
+		else {
 			assert(0);
 		}
 	}
 	for (auto &b : out_blk) {
-		/****/ if (b->holdtype() == HOLD_1) { // If HOLD_1, the scalar_page + offset are given
-			clSetKernelArg(*krn, arg++, sizeof(cl_mem), &b->scalar_page);
-			int offset = sizeof(double)*(conf.max_out_block*Tid.rnk() + b->order);
-			clSetKernelArg(*krn, arg++, sizeof(int), &offset);
+		void *dev_mem = (b->entry != nullptr) ? b->entry->dev_mem : nullptr;
+
+		if (b->holdtype() == HOLD_1) { // If HOLD_1, the scalar_page + offset are given
+			if (b->key.node->isReduction())
+			{
+				clSetKernelArg(*krn, arg++, sizeof(cl_mem), &b->scalar_page);
+				int offset = sizeof(double)*(conf.max_out_block*Tid.rnk() + b->order);
+				clSetKernelArg(*krn, arg++, sizeof(int), &offset);
+			}
+		}
 		//} else if (b->holdtype() == HOLD_2) {
 		//	clSetKernelArg(*krn, arg++, sizeof(cl_mem), &b->group_page);
 		//	int offset = sizeof(double)*conf.max_group_x_block*(conf.max_out_block*Tid.rnk() + b->order);
 		//	clSetKernelArg(*krn, arg++, sizeof(int), &offset);
-		} else if (b->holdtype() == HOLD_N) { // In the normal case a valid cl_mem with memory is given
-			clSetKernelArg(*krn, arg++, sizeof(cl_mem), &b->entry->dev_mem);
-		} else {
+		else if (b->holdtype() == HOLD_N) // In the normal case a valid cl_mem with memory is given
+		{
+			clSetKernelArg(*krn, arg++, sizeof(cl_mem), &dev_mem);
+		}
+		else {
 			assert(0);
 		}
 	}

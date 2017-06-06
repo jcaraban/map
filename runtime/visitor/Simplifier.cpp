@@ -74,6 +74,7 @@ void Simplifier::drop(Node *node) {
 	}
 	
 	DEFINE_VISIT(Constant)
+	DEFINE_VISIT(Empty)
 	DEFINE_VISIT(Index)
 	DEFINE_VISIT(Identity)
 	DEFINE_VISIT(Rand)

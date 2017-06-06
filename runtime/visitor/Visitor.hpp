@@ -29,6 +29,7 @@ struct Visitor
 
   	void visit(Node *node) = delete;
 	DECLARE_VISIT(Constant)
+	DECLARE_VISIT(Empty)
 	DECLARE_VISIT(Index)
 	DECLARE_VISIT(Identity)
 	DECLARE_VISIT(Rand)

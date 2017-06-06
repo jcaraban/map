@@ -75,6 +75,9 @@ class Runtime
 	Group* addGroup(Group *group);
 	Version* addVersion(Version *ver);
 
+	void print_nodes(const OwnerNodeList &list); // @
+	void print_nodes(const NodeList &list); // @
+
 	void evaluate(NodeList list); // Evaluate a list of {0,1,N} nodes 
 
   private:
@@ -86,6 +89,8 @@ class Runtime
 	Scheduler scheduler; //!< Job scheduler
 	std::vector<Worker> workers; //!< Vector of workers
 	std::vector<std::unique_ptr<std::thread>> threads; //!< Vector of threads
+	
+	int id_count; // Counter that give unique SSA ids to the nodes
 
 	OwnerNodeList node_list; //!< Full list of nodes added to the runtime during the script execution
 	OwnerGroupList group_list; //!< 1 fused list is valid for 1 evaluation

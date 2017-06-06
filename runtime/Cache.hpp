@@ -52,6 +52,7 @@ class Cache
 	int unit_dimension;
 
 	std::unordered_map<Key,IFile*,key_hash> file_hash;
+	std::unordered_map<Key,int,key_hash> file_count;
 
   public:
 	Cache(Clock &clock, Config &conf);

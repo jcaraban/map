@@ -104,7 +104,6 @@ struct Node {
 	virtual void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
 
   // Variables
-	static int id_count; // Static counter to give unique ids
 	int id; //!< Unique id of the node
 	int ref; //!< References count
 
