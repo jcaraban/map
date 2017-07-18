@@ -12,33 +12,15 @@
 
 namespace map { namespace detail {
 
-/*********
-   Stats
- *********/
-
-BlockStats::BlockStats()
-	: active(false)
-	, max()
-	, mean()
-	, min()
-	, std()
-	, ming()
-	, maxg()
-	, meang()
-	, stdg()
-{ }
-
-/*********
-   Block
- *********/
-
 Block::Block()
 	: key()
 	, entry(nullptr)
 	, host_mem(nullptr)
+	, file(nullptr)
 	, scalar_page(nullptr)
 	, value()
 	, fixed(false)
+	, forwarded(false)
 	, ready(false)
 	, stats()
 	, total_size(-1)
@@ -54,9 +36,11 @@ Block::Block(Key key, int dep)
 	: key(key)
 	, entry(nullptr)
 	, host_mem(nullptr)
+	, file(nullptr)
 	, scalar_page(nullptr)
 	, value()
 	, fixed(false)
+	, forwarded(false)
 	, ready(false)
 	, stats()
 	, total_size(-1)
@@ -72,10 +56,12 @@ Block::Block(Key key, int dep, cl_mem scalar_page, cl_mem group_page)
 	: key(key)
 	, entry(nullptr)
 	, host_mem(nullptr)
+	, file(nullptr)
 	, scalar_page(scalar_page)
 	, group_page(nullptr)
 	, value()
 	, fixed(false)
+	, forwarded(false)
 	, ready(false)
 	, stats()
 	, total_size(-1)
@@ -91,10 +77,12 @@ Block::Block(Key key, int dep, cl_mem group_page, int size)
 	: key(key)
 	, entry(nullptr)
 	, host_mem(nullptr)
+	, file(nullptr)
 	, scalar_page(nullptr)
 	, group_page(group_page)
 	, value()
 	, fixed(false)
+	, forwarded(false)
 	, ready(false)
 	, stats()
 	, total_size(size)
@@ -110,10 +98,12 @@ Block::Block(Key key, int dep, int max_size)
 	: key(key)
 	, entry(nullptr)
 	, host_mem(nullptr)
+	, file(nullptr)
 	, scalar_page(nullptr)
 	, group_page(nullptr)
 	, value()
 	, fixed(false)
+	, forwarded(false)
 	, ready(false)
 	, stats()
 	, total_size(-1)
@@ -186,7 +176,7 @@ Berr Block::recv() {
 	return berr;
 }
 
-Berr Block::load(IFile *file) {
+Berr Block::load() {
 	TimedRegion region(Runtime::getClock(),READ);
 	StreamDir dir = key.node->streamdir();
 	NumDim dim = key.node->numdim();
@@ -204,7 +194,7 @@ Berr Block::load(IFile *file) {
 	return berr;
 }
 
-Berr Block::store(IFile *file) {
+Berr Block::store() {
 	TimedRegion region(Runtime::getClock(),WRITE);
 	StreamDir dir = key.node->streamdir();
 	NumDim dim = key.node->numdim();
@@ -222,22 +212,46 @@ Berr Block::store(IFile *file) {
 	return berr;
 }
 
-void Block::fixValue(ValFix vf) {
+void Block::fixValue(VariantType val) {
+	assert(not val.isNone());
+	fixed = true;
+	ready = true;
+	value = val;
+}
 
-	fixed = vf.fixed;
-	if (fixed) {
-		ready = true;
-		value = vf.value;
-		stats.active = true;
-		stats.max = vf.max.get();
-		stats.min = vf.min.get();
-		stats.mean = vf.mean.get();
-		stats.std = vf.std.get();
+void Block::setStats(CellStats sta) {
+	assert(sta.active);
+	assert(sta.data_type == datatype());
+
+	stats.data_type = key.node->datatype();
+	stats.num_group = key.node->numgroup();
+	stats.active = true;
+	stats.min = sta.min;
+	stats.max = sta.max;
+	stats.mean = sta.mean;
+	stats.std = sta.std;
+
+	// If the value range is fixed, fix the block
+	if (sta.max == sta.min) {
+		fixValue(sta.max);
 	}
 }
 
+void Block::forwardEntry(Block *out) {
+	// in_blk entry must be valid
+	assert(this->entry);
+	// forward only to the last dependency
+	assert(this->dependencies == 1);
+	// out_blk entry must be null
+	assert(out->entry == nullptr);
+
+	std::swap(this->entry,out->entry);
+	out->entry->block = out;
+	out->entry->dirty = false;
+}
+
 void Block::notify() {
-	assert(dependencies > 0); // @@ before there was an "if (dep >= 0)"
+	assert(dependencies > 0);
 	dependencies--;
 }
 

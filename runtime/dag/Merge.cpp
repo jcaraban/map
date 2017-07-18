@@ -146,7 +146,6 @@ void Merge::computeScalar(std::unordered_map<Node*,VariantType> &hash) {
 }
 
 void Merge::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
-	auto *node = this;
 	ValFix vf = ValFix();
 
 	bool left_found = hash.find({left(),coord}) != hash.end();
@@ -154,16 +153,12 @@ void Merge::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &h
 	assert(left_found xor right_found);
 
 	if (left_found) {
-		auto left = hash.find({node->left(),coord})->second;
-		if (left.fixed) {
-			vf = ValFix(left.value);
-		}
+		vf = hash.find({left(),coord})->second;
 	} else { // right_found
-		auto right = hash.find({node->right(),coord})->second;
-		if (right.fixed)
-			vf = ValFix(right.value);
+		vf = hash.find({right(),coord})->second;
 	}
-	hash[{node,coord}] = vf;
+	
+	hash[{this,coord}] = vf;
 }
 
 } } // namespace map::detail

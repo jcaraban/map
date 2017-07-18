@@ -52,17 +52,17 @@ typedef unsigned int uint;
  ***********/
 
 class OpenclEnvironment;
-struct Platform_;
+struct _platform;
 class Platform;
-struct Device_;
+struct _device;
 class Device;
-struct Context_;
+struct _context;
 class Context;
-struct Task_;
+struct _task;
 class Task;
-struct Kernel_;
+struct _kernel;
 class Kernel;
-struct Queue_;
+struct _queue;
 class Queue;
 
 typedef OpenclEnvironment OclEnv;
@@ -86,12 +86,12 @@ class OpenclEnvironment {
 	friend class Queue;
 
   private:
-	std::vector<Platform_> vPlatform;
-	std::vector<Device_> vDevice;
-	std::vector<Context_> vContext;
-	std::vector<Task_> vTask;
-	std::vector<Kernel_> vKernel;
-	std::vector<Queue_> vQueue;
+	std::vector<_platform> vPlatform;
+	std::vector<_device> vDevice;
+	std::vector<_context> vContext;
+	std::vector<_task> vTask;
+	std::vector<_kernel> vKernel;
+	std::vector<_queue> vQueue;
 	std::shared_ptr<std::mutex> m;
 
 	int parse(const char* str, Trace trace, va_list args);
@@ -149,7 +149,7 @@ class OpenclEnvironment {
    Platform
  ************/
 
-struct Platform_ {
+struct _platform {
 	std::vector<int> vrDevice;
 	std::vector<int> vrContext;
 	cl_platform_id sId;
@@ -202,7 +202,7 @@ class Platform {
    Device
  **********/
 
-struct Device_ {
+struct _device {
 	int rPlatform;
 	std::vector<int> vrContext;
 	std::vector<int> vrQueue;
@@ -259,7 +259,7 @@ class Device {
    Context
  ***********/
 
-struct Context_ {
+struct _context {
 	int rPlatform;
 	std::vector<int> vrDevice;
 	std::vector<int> vrTask;
@@ -317,7 +317,7 @@ class Context {
    Task
  ***********/
 
-struct Task_ {
+struct _task {
 	int rContext;
 	std::vector<int> vrKernel;
 	cl_program sId;
@@ -367,7 +367,7 @@ class Task {
    Kernel
  **********/
 
-struct Kernel_ {
+struct _kernel {
 	int rTask;
 	cl_kernel sId;
 };
@@ -407,7 +407,7 @@ class Kernel {
    Queue
  *********/
 
-struct Queue_ {
+struct _queue {
 	int rDevice;
 	int rContext;
 	cl_command_queue sId;

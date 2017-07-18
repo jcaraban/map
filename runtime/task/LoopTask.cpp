@@ -117,15 +117,18 @@ void LoopTask::nextJobs(Job done_job, std::vector<Job> &job_vec, bool end) {
 	for (auto node : common_nodes) {
 		if (node->numdim() == D0)
 		{
-			continue; // @@@
-			auto beg = Coord(numblock().size(),0);
-			auto end = numblock();
-			for (auto coord : iterSpace(beg,end))
-			{
-				Job new_job = Job(this,coord,done_job.iter);
-				if (cycling_input.find(new_job) == cycling_input.end())
-					cycling_input[new_job] = cycling;
-				assert(cycling_input[new_job] == cycling);
+			if (not end) {
+				continue;
+			} else {
+				auto beg = Coord(numblock().size(),0);
+				auto end = numblock();
+				for (auto coord : iterSpace(beg,end))
+				{
+					Job new_job = Job(this,coord,done_job.iter);
+					if (cycling_input.find(new_job) == cycling_input.end())
+						cycling_input[new_job] = cycling;
+					assert(cycling_input[new_job] == cycling);
+				}
 			}
 		}
 		else
@@ -180,56 +183,41 @@ void LoopTask::postStore(Job job, const BlockList &in_blk, const BlockList &out_
 				if (inner_join(next->nodeList(),swit->trueList()).size() > 0)
 					blk->notify();
 			}
-			 // @@ this notify should happen before releaseEntries()
-			if (blk->discardable()) {
-				if (blk->entry != nullptr) {
-					blk->entry->block = nullptr;
-					if (blk->entry->isDirty())
-						blk->entry->unsetDirty();
-					blk->entry = nullptr;
-				}
-			}
-			// @@
 		}
 	}
 }
 
-void LoopTask::compute(Job job, const BlockList &in_blk, const BlockList &out_blk) {
-	//return Task::compute(job,in_blk,out_blk);
-	const Version *ver = getVersion(DEV_ALL,{},""); // Any device, No detail
-	assert(ver != nullptr);
-
-	// TODO: forward first, check for fixed after ?
-
-	auto all_pred = [&](Block *b){ return b->fixed || b->key.node->canForward(); };
-	if (std::all_of(out_blk.begin(),out_blk.end(),all_pred)) {
-		clock.incr(NOT_COMPUTED);
-
-		std::unordered_map<Node*,Block*> forward;
-		for (auto iblk : in_blk)
-			forward[iblk->key.node] = iblk;
-		for (auto node : nodeList()) {
-			auto prev = node->prevList().front(); // @ always the first 'prev' (Switch)
-			if (forward.find(prev) == forward.end())
-				prev = node->forwList().front(); // @ Merge
-			forward[node] = forward[prev];
-		}
-
-		for (auto oblk : out_blk) {
-			Block *iblk = forward[oblk->key.node];
-			assert(iblk != nullptr);
-			
-			if (iblk->entry && oblk->entry) {
-				//std::cout << "in_blk " << iblk->key.node->id << " " << iblk->numdim().toString() << " --> ";
-				//std::cout << "out_blk " << oblk->key.node->id << " " << oblk->numdim().toString() << std::endl;
-				std::swap( iblk->entry->dev_mem, oblk->entry->dev_mem ); // @ better swap the entry, careful with cross refs
-			}
-		}
-
-		return; // All output blocks are fixed, no need to compute
+void LoopTask::preForward(Job job, const BlockList &in_blk, const BlockList &out_blk) {
+	// Forwarding structures are thread_local, for reutilization
+	std::unordered_map<Node*,Block*> &forward = forward_list[Tid.proj()];
+	assert(forward.empty());
+	auto body_out = full_unique_join(nodeList(),outputList());
+	
+	for (auto iblk : in_blk) {
+		forward[iblk->key.node] = iblk;
 	}
 
-	computeVersion(job,in_blk,out_blk,ver);
+	for (auto node : body_out) {
+		assert(node->canForward() || node->pattern().is(LOOP));
+		auto prev = node->prevList().front();
+
+		bool found = forward.find(prev) != forward.end();
+		if (node->pattern().is(MERGE) && not found)
+			prev = node->forwList().front();
+
+		assert(forward.find(prev) != forward.end());
+		forward[node] = forward[prev];
+	}
+
+	for (auto oblk : out_blk) {
+		if (oblk->fixed || oblk->holdtype() != HOLD_N) {
+			forward.erase(oblk->key.node);
+		} else {
+			assert(forward.find(oblk->key.node) != forward.end());
+			oblk->forwarded = true;
+		}
+	}
 }
+
 
 } } // namespace map::detail

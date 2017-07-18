@@ -36,6 +36,11 @@ def pitFill(orig, stream):
 	elev = con(acti, orig, +inf)
 	nbh = [[1,1,1],[1,0,1],[1,1,1]]
 
+	orig = stats(orig) # @
+	elev = stats(elev) # @
+
+#... continue ... inject the stats automatically
+
 	#for i in range(int(sys.argv[3])):
 	#while value(zor(acti)):
 	while zor(acti):
@@ -96,7 +101,7 @@ def basinBorder(catch):
 ## Computation
 
 dem = read(in_file_path)
-stream = dem < 0.1
+stream = dem == 1
 pit = pitFill(dem,stream)
 flow = flowDir(pit,stream)
 #

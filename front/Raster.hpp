@@ -144,13 +144,13 @@ VariantType value(Raster data);
 Raster read(const std::string &file_path);
 Rerr write(Raster data, const std::string &file_path);
 
-Raster zeros(DataSize ds=DataSize(), DataType dt=F32, MemOrder mo=ROW+BLK, BlockSize bs=BlockSize(), GroupSize gs=GroupSize());
+Raster zeros(DataSize ds=DataSize(0), DataType dt=F32, MemOrder mo=ROW+BLK, BlockSize bs=BlockSize(0), GroupSize gs=GroupSize(0));
 Raster zeros_like(Raster data, DataType type=NONE_DATATYPE, MemOrder mem_order=NONE_MEMORDER);
-Raster ones(DataSize data_size=DataSize(), DataType data_type=F32, MemOrder mem_order=ROW+BLK, BlockSize block_size=BlockSize());
+Raster ones(DataSize data_size=DataSize(0), DataType data_type=F32, MemOrder mem_order=ROW+BLK, BlockSize block_size=BlockSize(0));
 Raster ones_like(Raster data, DataType type=NONE_DATATYPE, MemOrder mem_order=NONE_MEMORDER);
 Raster full_like(VariantType var, Raster data, DataType type=NONE_DATATYPE, MemOrder mem_order=NONE_MEMORDER);
 
-Raster rand(VariantType seed, DataSize ds=DataSize(), DataType dt=F32, MemOrder mo=ROW+BLK, BlockSize bs=BlockSize(), GroupSize gs=GroupSize());
+Raster rand(VariantType seed, DataSize ds=DataSize(0), DataType dt=F32, MemOrder mo=ROW+BLK, BlockSize bs=BlockSize(0), GroupSize gs=GroupSize(0));
 Raster rand(Raster seed, DataType type=NONE_DATATYPE, MemOrder mem_order=NONE_MEMORDER);
 
 Raster astype(Raster data, DataType data_type);

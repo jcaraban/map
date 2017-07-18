@@ -68,7 +68,7 @@ Coord NumDim::unitVec() const {
 		case D0 : return Coord(0);
 		case D1 : return Coord{1};
 		case D2 : return Coord{1,1};
-		case D3 : assert(0);
+		case D3 : return Coord{1,1,1};
 		default : assert(0);
 	}
 }

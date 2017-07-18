@@ -10,6 +10,7 @@
 
 #include "Key.hpp"
 #include "Entry.hpp"
+#include "../file/DataStats.hpp"
 #include "../util/util.hpp"
 #include "../cle/OclEnv.hpp"
 #include <mutex>
@@ -25,28 +26,6 @@ class IFile; // forward declaration
 struct Block;
 typedef std::vector<Block*> BlockList;
 
-
-/*
- * @class BlockStats
- */
-struct BlockStats {
-	//typedef Ctype<F64> type;
-	typedef VariantUnion type;
-
-	bool active;
-
-	type max;
-	type mean;
-	type min;
-	type std;
-
-	std::vector<type> ming;
-	std::vector<type> maxg;
-	std::vector<type> meang;
-	std::vector<type> stdg;
-
-	BlockStats();
-};
 
 /*
  * @class Block
@@ -72,10 +51,12 @@ struct Block
   // Methods
 	Berr send();
 	Berr recv();
-	Berr load(IFile *file);
-	Berr store(IFile *file);
+	Berr load();
+	Berr store();
 
-	void fixValue(ValFix valfix);
+	void fixValue(VariantType val);
+	void setStats(CellStats sta);
+	void forwardEntry(Block *out);
 
 	void notify();
 	bool discardable() const;
@@ -97,11 +78,13 @@ struct Block
 
 	Entry *entry;
 	void *host_mem;
+	std::shared_ptr<IFile> file; // @
 	cl_mem scalar_page; //!< Page reserved for scalar reductions
 	cl_mem group_page; //!< Page reserved for group statistics
 
 	VariantType value;
 	bool fixed; // Value of the block is fixed to a scalar (stored in 'value')
+	bool forwarded; // The memory entry will be forwarded from its input node
 	bool ready; // The data is ready to be used (i.e. loaded in entry)
 	BlockStats stats;
 

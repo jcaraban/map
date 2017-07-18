@@ -25,7 +25,7 @@ LoopSkeleton::LoopSkeleton(Version *ver)
 string LoopSkeleton::generate() {
 	tag(); // tag the nodes
 
-	// @@ Collapses 'loop' tags to their greatest dimension (i.e. deletes lowest dims)
+	// @ Collapses 'loop' tags to their greatest dimension (i.e. deletes lowest dims)
 	NumDim max_dim = D0;
 	int max_size = 0;
 	for (auto tag : tag_list)

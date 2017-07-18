@@ -48,8 +48,8 @@ void Scheduler::initialJobs(const Program &prog) {
 		job_set.insert(job);
 	}
 
-	// Allocates the 'job_vec' for the threads
-	job_vec_vec.resize( conf.num_machines*conf.num_devices*conf.num_ranks );
+	// Allocates the thread_local 'job_vec'
+	job_vec_vec.resize(conf.num_workers);
 }
 
 Job Scheduler::requestJob() {

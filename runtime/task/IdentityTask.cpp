@@ -22,23 +22,13 @@ void IdentityTask::createVersions() {
 void IdentityTask::compute(Job job, const BlockList &in_blk, const BlockList &out_blk) {
 	assert(in_blk.size() == out_blk.size());
 
-	// @@ Swapping 'dev_mem' pointers, this might not work!
-	// definitely doesn't work if 'input' has several dependencies
+	auto all_pred = [&](Block *b){ return b->fixed || b->forwarded; };
+	assert(std::all_of(out_blk.begin(),out_blk.end(),all_pred));
 
-	//for (int i=0; i<in_blk.size(); i++) {
-	for (auto iblk : in_blk) {
-		Block *oblk = nullptr;
-		for (auto b : out_blk)
-			oblk = (b->key.node->prevList()[0] == iblk->key.node) ? b : oblk;
-
-		if (iblk->entry && oblk->entry) {
-			std::swap( iblk->entry->dev_mem, oblk->entry->dev_mem );
-		} else if (iblk->fixed) {
-			oblk->fixValue(iblk->value);
-		} else {
-			assert(0);
-		}
-	}
+	// All blocks in an IdentityTask must forward, 
+	// This happens in ::pre/postForward, here we only assert()
+	
+	clock.incr(NOT_COMPUTED);
 }
 
 } } // namespace map::detail

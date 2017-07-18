@@ -90,10 +90,7 @@ std::string Write::signature() const {
 // Compute
 
 void Write::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
-	auto *node = this;
-
-	auto prev = hash.find({node->prev(),coord})->second;
-	hash[{node,coord}] = ValFix(prev.value,prev.fixed);
+	hash[{this,coord}] = hash.find({prev(),coord})->second;
 }
 
 } } // namespace map::detail

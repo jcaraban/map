@@ -4,7 +4,7 @@
  *
  * TODO: There should be 1 cache per physical memory (Dev mem, Host mem, SSD mem, HDD mem)
  * TODO: consider refactorizing the 'block management' functionality out of Cache
- * TODO: move unique_ptr<Block> to a 'vector memory allocator' like 'entry_list'
+ * TODO: consider creating a pool of Blocks, and remove unique_ptr<Block> from the hash
  *
  * // @@@ there is a race condition when high cache pressure leads to entry evitions
  */
@@ -29,6 +29,8 @@ class Program; // Forward declaration
 class Clock; // Forward declaration
 class Config; // Forward declaration
 
+typedef std::shared_ptr<IFile> SharedFile;
+
 class Cache
 {
   private:
@@ -51,7 +53,7 @@ class Cache
 	BlockSize unit_block_size;
 	int unit_dimension;
 
-	std::unordered_map<Key,IFile*,key_hash> file_hash;
+	std::unordered_map<Key,SharedFile,key_hash> file_hash;
 	std::unordered_map<Key,int,key_hash> file_count;
 
   public:
@@ -83,6 +85,9 @@ class Cache
   	Block* retainBlock(const Key &k, int depend);
 	void retainEntry(Block *blk);
 
+	std::shared_ptr<IFile> retainFile(Key key);
+	void releaseFile(Key key);
+
 	void readInBlk(Block *blk);
 	void writeOutBlk(Block *blk);
 
@@ -93,7 +98,6 @@ class Cache
 	void touchEntry(Entry *entry);
 	void dropEntry(Entry *entry);
 	void evict(Block *block);
-	IFile* getFile(Key key);
 
 	void load(Block *block);
 	void store(Block *block);

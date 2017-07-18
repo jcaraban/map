@@ -180,7 +180,7 @@ class Array(ct.Structure):
 		return [x for x in self.arr if x != -1]
 # class Array
 
-class Node(ct.c_void_p): # empty class to makes ctypes
+class Node(ct.c_void_p): # empty class to make ctypes
 	pass				 # return 'void*' instead of 'int'
 # class Node
 
@@ -193,7 +193,7 @@ class Raster:
 			self._node = node
 			_lib.ma_increaseRef(self)
 		elif node is None:
-			self._node = ct.Node(None)
+			self._node = Node(None)
 		else:
 			assert(0)
 
@@ -473,6 +473,14 @@ def eval(*args):
 	nodearr = NodeArr(*[r._node for r in args])
 	nodeptr = ct.cast(nodearr, ct.POINTER(Node))
 	_lib.ma_eval(nodeptr,num)
+
+def stats(raster,min=None,max=None,mean=None,std=None):
+	if all(n is None for n in [min,max,mean,std]):
+		min = Raster( _lib.ma_blockStats(raster,MIN) )
+		max = Raster( _lib.ma_blockStats(raster,MAX) )
+		mean = Raster() # @
+		std = Raster() # @
+	return Raster( _lib.ma_stats(raster,min,max,mean,std) );
 
 def value(arg):
 	var = _lib.ma_value(arg)
@@ -841,6 +849,12 @@ _lib.ma_zonalReduc.restype = Node
 
 _lib.ma_radialScan.argtypes = [Raster, ct.c_int, Array]
 _lib.ma_radialScan.restype = Node
+
+_lib.ma_stats.argtypes = [Raster, Raster, Raster, Raster, Raster]
+_lib.ma_stats.restype = Node
+
+_lib.ma_blockStats.argtypes = [Raster, ct.c_int]
+_lib.ma_blockStats.restype = Node
 
 _lib.ma_loopStart.argtypes = []
 _lib.ma_loopStart.restype = None

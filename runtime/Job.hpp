@@ -12,6 +12,7 @@
 #define MAP_RUNTIME_JOB_HPP_
 
 #include "../util/util.hpp"
+#include <mutex>
 
 
 namespace map { namespace detail {
@@ -37,6 +38,7 @@ struct Order {
  * Execution and scheduling unit. Composed of a pair {task,block}
  */
 struct Job {
+	static std::mutex mtx;
 	Task *task;
 	Coord coord;
 	size_t iter;

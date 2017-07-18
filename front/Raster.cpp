@@ -112,14 +112,14 @@ Raster Raster::operator=(Raster other) {
  **********************/
 
 Raster::Raster(VariantType val) {
-	node = ma_constant(val,{},val.datatype().get(),ROW,{},{});
+	node = ma_constant(val,DataSize(0),val.datatype().get(),ROW,BlockSize(0),GroupSize(0));
 	incr();
 }
 
 
 Raster Raster::operator=(VariantType val) {
 	decr();
-	node = ma_constant(val,{},val.datatype().get(),ROW,{},{});
+	node = ma_constant(val,DataSize(0),val.datatype().get(),ROW,BlockSize(0),GroupSize(0));
 	incr();
 	return *this;
 }
@@ -482,7 +482,7 @@ Raster convolve(Raster data, const Mask &mask) {
 Raster pick(Raster data, std::vector<VariantType> vec) {
 	assert(!vec.empty());
 
-	Raster acu = zeros({},vec[0].datatype());
+	Raster acu = zeros(DataSize(0),vec[0].datatype());
 	for (int i=0; i<vec.size(); i++)
 		acu = con(data==i, Raster(vec[i]), acu);
 	return acu;
@@ -537,8 +537,8 @@ Raster flowDir(Raster data) {
 	const int offset0[N_DIR] = {1,1,0,-1,-1,-1,0,1};
 	const int offset1[N_DIR] = {0,1,1,1,0,-1,-1,-1};
 
-	auto zero8 = zeros({},S8);
-	auto one8 = ones({},S8);
+	auto zero8 = zeros(DataSize(0),S8);
+	auto one8 = ones(DataSize(0),S8);
 
 	auto maxval = zeros();
 	auto maxpos = -one8;

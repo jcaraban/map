@@ -24,8 +24,8 @@ struct IONode : public Node
 	IONode(SharedFile file, OutputNodeFlag not_used);
 	IONode(const IONode *other, const std::unordered_map<Node*,Node*> &other_to_this);
 
-	IFile* file();
-	const IFile* file() const;
+	SharedFile file();
+	const SharedFile file() const;
 
   // vars
 	SharedFile io_file; //!< File serving as input or output

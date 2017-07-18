@@ -144,6 +144,7 @@ bool canPipeFuse(const Pattern& top, const Pattern& bot) {
 	PIPE(SPREAD,STATS,	false)
 	PIPE(SPREAD,GLOBAL,	false)
 	
+	PIPE(STATS,OUTPUT,	false)
 	PIPE(STATS,FREE,true)
 	PIPE(STATS,LOCAL,	false)
 	PIPE(STATS,FOCAL,	false)

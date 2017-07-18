@@ -31,10 +31,10 @@ Node* GroupSummary::Factory(Node *prev, ReductionType type) {
 	assert(prev != nullptr);
 	assert(prev->numdim() != D0);
 
-	DataSize ds = prev->datasize() / prev->groupsize();
+	DataSize ds = idiv(prev->datasize(),prev->groupsize());
 	DataType dt = prev->datatype();
 	MemOrder mo = prev->memorder();
-	GroupSize bs = prev->blocksize() / prev->groupsize();
+	GroupSize bs = idiv(prev->blocksize(),prev->groupsize());
 	GroupSize gs = prev->numdim().unitVec();
 	MetaData meta(ds,dt,mo,bs,gs);
 
@@ -97,8 +97,8 @@ void GroupSummary::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_h
 	auto prev = hash.find({node->prev(),coord})->second;
 	if (prev.fixed) {
 		switch (node->type.get()) {
-			case SUM:  vf = ValFix( prev.value * prod(blocksize()) ); break;
-			case PROD: vf = ValFix( pow(prev.value,prod(blocksize())) ); break;
+			case SUM:  vf = ValFix( BinaryType(MUL).apply( prev.value , prod(blocksize()) ) ); break;
+			case PROD: vf = ValFix( BinaryType(POW).apply( prev.value , prod(blocksize()) ) ); break;
 			case rAND: vf = ValFix(prev.value); break;
 			case rOR:  vf = ValFix(prev.value); break;
 			case MAX:  vf = ValFix(prev.value); break;

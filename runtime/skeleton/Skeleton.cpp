@@ -749,7 +749,6 @@ void Skeleton::stats_section(SkelTag tag) {
 	indent_count--;
 	add_line( "}" ); // Closes write-if
 
-
 	indent_count--;
 	add_line( "}" );
 	add_line( "" );
@@ -790,7 +789,6 @@ void Skeleton::loop_section(SkelTag tag) {
 
 	indent_count--;
 	add_line( "}" ); // Closes write-if
-
 
 	indent_count--;
 	add_line( "}" );

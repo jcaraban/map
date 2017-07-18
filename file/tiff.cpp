@@ -373,27 +373,44 @@ Ferr tiff::getStats() {
 		return ferr;
 	}
 	stats.active = static_cast<bool>(active);
+	stats.data_type = meta.getDataType();
+	stats.num_block = meta.getNumBlock();
 
-	ret = TIFFGetField(handler, TIFFTAG_MAX, &stats.max);
+	DataStats::type var;
+
+	ret = TIFFGetField(handler, TIFFTAG_MIN, &var);
 	if (ret != 1) {
 		assert(0);
 	}
-	ret = TIFFGetField(handler, TIFFTAG_MEAN, &stats.mean);
+	stats.min = VariantType(var,stats.data_type);
+
+	ret = TIFFGetField(handler, TIFFTAG_MAX, &var);
 	if (ret != 1) {
 		assert(0);
 	}
-	ret = TIFFGetField(handler, TIFFTAG_MIN, &stats.min);
+	stats.max = VariantType(var,stats.data_type);
+
+	ret = TIFFGetField(handler, TIFFTAG_MEAN, &var);
 	if (ret != 1) {
 		assert(0);
 	}
-	ret = TIFFGetField(handler, TIFFTAG_STD, &stats.std);
+	stats.mean = VariantType(var,stats.data_type);
+
+	ret = TIFFGetField(handler, TIFFTAG_STD, &var);
 	if (ret != 1) {
 		assert(0);
 	}
+	stats.std = VariantType(var,stats.data_type);
 
 	DataStats::type *ptr;
 	uint32 n = 0;
 	
+	ret = TIFFGetField(handler, TIFFTAG_MIN_B, &n, &ptr);
+	if (ret != 1) {
+		assert(0);
+	}
+	stats.minb = decltype(stats.minb)(ptr,ptr+n);
+
 	ret = TIFFGetField(handler, TIFFTAG_MAX_B, &n, &ptr);
 	if (ret != 1) {
 		assert(0);
@@ -406,21 +423,15 @@ Ferr tiff::getStats() {
 	}
 	stats.meanb = decltype(stats.meanb)(ptr,ptr+n);
 
-	ret = TIFFGetField(handler, TIFFTAG_MIN_B, &n, &ptr);
-	if (ret != 1) {
-		assert(0);
-	}
-	stats.minb = decltype(stats.minb)(ptr,ptr+n);
-
 	ret = TIFFGetField(handler, TIFFTAG_STD_B, &n, &ptr);
 	if (ret != 1) {
 		assert(0);
 	}
 	stats.stdb = decltype(stats.stdb)(ptr,ptr+n);
 
+	assert(stats.minb.size() == stats.maxb.size());
 	assert(stats.maxb.size() == stats.meanb.size());
-	assert(stats.meanb.size() == stats.minb.size());
-	assert(stats.minb.size() == stats.stdb.size());
+	assert(stats.meanb.size() == stats.stdb.size());
 
 	return ferr;
 }
@@ -438,19 +449,19 @@ Ferr tiff::setStats() {
 	if (ret != 1) {
 		assert(0);
 	}
-	ret = TIFFSetField(handler, TIFFTAG_MAX, stats.max.f64); // @
+	ret = TIFFSetField(handler, TIFFTAG_MIN, stats.min.get());
 	if (ret != 1) {
 		assert(0);
 	}
-	ret = TIFFSetField(handler, TIFFTAG_MEAN, stats.mean);
+	ret = TIFFSetField(handler, TIFFTAG_MAX, stats.max.get());
 	if (ret != 1) {
 		assert(0);
 	}
-	ret = TIFFSetField(handler, TIFFTAG_MIN, stats.min);
+	ret = TIFFSetField(handler, TIFFTAG_MEAN, stats.mean.get());
 	if (ret != 1) {
 		assert(0);
 	}
-	ret = TIFFSetField(handler, TIFFTAG_STD, stats.std);
+	ret = TIFFSetField(handler, TIFFTAG_STD, stats.std.get());
 	if (ret != 1) {
 		assert(0);
 	}

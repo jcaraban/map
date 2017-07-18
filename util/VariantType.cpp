@@ -4,6 +4,7 @@
  */
 
 #include "VariantType.hpp"
+#include "BinaryType.hpp"
 #include <functional>
 #include <limits>
 #include <cmath>
@@ -52,6 +53,10 @@ bool VariantType::isEqual(VariantType other) const {
 			Ctype<F32> a = this->get<F32>();
 			Ctype<F32> b = other.get<F32>();
 			Ctype<F32> eps = std::numeric_limits<Ctype<F32>>::epsilon() * 2;
+			if (std::isinf(a) xor std::isinf(b))
+				return false;
+			if (std::isinf(a) and std::isinf(b))
+				return true;
 			return (std::abs(a - b) <= eps * std::max(std::abs(a),std::abs(b)));
 		}
 		case F64 :
@@ -59,6 +64,10 @@ bool VariantType::isEqual(VariantType other) const {
 			Ctype<F64> a = this->get<F64>();
 			Ctype<F64> b = other.get<F64>();
 			Ctype<F64> eps = std::numeric_limits<Ctype<F64>>::epsilon() * 2;
+			if (std::isinf(a) xor std::isinf(b))
+				return false;
+			if (std::isinf(a) and std::isinf(b))
+				return true;
 			return (std::abs(a - b) <= eps * std::max(std::abs(a),std::abs(b)));
 		}
 		case B8  : return get<B8 >() == other.get<B8 >();
@@ -106,6 +115,7 @@ size_t VariantType::hash() const {
 
 std::string VariantType::toString() const {
 	switch (type.get()) {
+		case NONE_DATATYPE: return "None";
 		case F32 : return std::to_string(get<F32>());
 		case F64 : return std::to_string(get<F64>());
 		case B8  : return std::to_string(get<B8 >());
@@ -154,6 +164,37 @@ bool VariantType::isInf() const {
 		case F64 : return std::isinf(get<F64>());
 		default: assert(0);
 	}
+}
+
+bool VariantType::isNan() const {
+	if (not type.isFloating())
+		return false;
+	switch (type.get()) {
+		case F32 : return std::isnan(get<F32>());
+		case F64 : return std::isnan(get<F64>());
+		default: assert(0);
+	}
+}
+
+bool VariantType::isPos() const {
+	switch (type.get()) {
+		case F32 : return (get<F32>() > 0);
+		case F64 : return (get<F64>() > 0);
+		case B8  : return (get<B8 >() > 0);
+		case U8  : return (get<U8 >() > 0);
+		case U16 : return (get<U16>() > 0);
+		case U32 : return (get<U32>() > 0);
+		case U64 : return (get<U64>() > 0);
+		case S8  : return (get<S8 >() > 0);
+		case S16 : return (get<S16>() > 0);
+		case S32 : return (get<S32>() > 0);
+		case S64 : return (get<S64>() > 0);
+		default: assert(0);
+	}
+}
+
+bool VariantType::isNeg() const {
+	return !isPos() && !isZero() && !isNan();
 }
 
 VariantUnion& VariantType::ref() {
@@ -206,6 +247,36 @@ void VariantType::fill(void *mem, size_t num) const {
 
 std::ostream& operator<<(std::ostream &strm, const VariantType &var) {
 	return strm << var.toString();
+}
+
+// necessary?
+
+VariantType operator+(VariantType lhs, VariantType rhs) {
+	return BinaryType(ADD).apply(lhs,rhs);
+}
+
+VariantType operator-(VariantType lhs, VariantType rhs) {
+	return BinaryType(SUB).apply(lhs,rhs);
+}
+
+VariantType operator*(VariantType lhs, VariantType rhs) {
+	return BinaryType(MUL).apply(lhs,rhs);
+}
+
+VariantType operator/(VariantType lhs, VariantType rhs) {
+	return BinaryType(DIV).apply(lhs,rhs);
+}
+
+VariantType _min(VariantType lhs, VariantType rhs) {
+	return BinaryType(MIN2).apply(lhs,rhs);
+}
+
+VariantType _max(VariantType lhs, VariantType rhs) {
+	return BinaryType(MAX2).apply(lhs,rhs);
+}
+
+VariantType operator>=(VariantType lhs, VariantType rhs) {
+	return BinaryType(GE).apply(lhs,rhs);
 }
 
 } } // namespace map::detail

@@ -18,6 +18,7 @@
 #include "../Pattern.hpp"
 #include "../../file/MetaData.hpp"
 #include "../../file/DataStats.hpp"
+#include "../../util/ValFix.hpp"
 #include "../../util/ReductionType.hpp"
 #include <vector>
 #include <string>

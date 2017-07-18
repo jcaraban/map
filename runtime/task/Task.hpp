@@ -97,6 +97,10 @@ struct Task
 	virtual void compute(Job job, const BlockList &in_blk, const BlockList &out_blk);
 	virtual void computeVersion(Job job, const BlockList &in_blk, const BlockList &out_blk, const Version *ver);
 
+	virtual void fixingValues(Job job, const BlockList &in_blk, const BlockList &out_blk);
+	virtual void preForward(Job job, const BlockList &in_blk, const BlockList &out_blk);
+	virtual void postForward(Job job, const BlockList &in_blk, const BlockList &out_blk);
+
   // vars
 	Program &prog; // Aggregate
   	Clock &clock; // Aggregate
@@ -120,9 +124,11 @@ struct Task
 
 	mutable std::mutex mtx;
 
-  // cached vars
+  // helper vars
 	std::vector<TaskList> next_of_out; //!< Next tasks depending on the respective out-node
 	std::vector<Pattern> is_input_of; //!< Pattern of the nodes using the respective input-node
+
+	std::vector<std::unordered_map<Node*,Block*>> forward_list;
 };
 
 } } // namespace map::detail

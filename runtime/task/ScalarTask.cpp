@@ -2,6 +2,7 @@
  * @file    ScalarTask.cpp 
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
+ * // @@@ there is a race condition making 'node->value == blk->value' false
  */
 
 #include "ScalarTask.hpp"
@@ -45,7 +46,7 @@ void ScalarTask::compute(Job job, const BlockList &in_blk, const BlockList &out_
 
 		assert(node == blk->key.node);
 		assert(node->value.datatype() != NONE_DATATYPE);
-		//assert(node->value == blk->value || (node->value.isInf() && blk->value.isInf())); // @@@
+		assert(node->value == blk->value);
 
 		hash[node] = blk->value;
 	}

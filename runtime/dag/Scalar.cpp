@@ -80,7 +80,7 @@ std::string Scalar::signature() const {
 }
 
 VariantType Scalar::value() {
-	auto *sca_file = dynamic_cast<File<scalar>*>(file());
+	auto *sca_file = dynamic_cast<File<scalar>*>(file().get());
 	assert(sca_file != nullptr);
 	return sca_file->value();
 }
@@ -88,10 +88,7 @@ VariantType Scalar::value() {
 // Compute
 
 void Scalar::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
-	auto *node = this;
-
-	auto prev = hash.find({node->prev(),coord})->second;
-	hash[{node,coord}] = {prev.value,prev.fixed};
+	hash[{this,coord}] = hash.find({prev(),coord})->second;
 }
 
 } } // namespace map::detail

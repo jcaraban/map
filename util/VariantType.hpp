@@ -66,7 +66,7 @@ class VariantType {
   	bool isEqual(VariantType other) const;
   	bool operator==(VariantType other) const;
   	bool operator!=(VariantType other) const;
-  	operator bool() const;
+  	explicit operator bool() const;
   	size_t hash() const;
   	std::string toString() const;
 
@@ -74,6 +74,9 @@ class VariantType {
   	bool isZero() const;
   	bool isOne() const;
   	bool isInf() const;
+  	bool isNan() const;
+  	bool isPos() const;
+  	bool isNeg() const;
 
   	VariantUnion& ref();
   	VariantUnion get() const;
@@ -90,17 +93,15 @@ class VariantType {
 
 static_assert( std::is_standard_layout< VariantType >::value , "VariantType must be C compatible");
 
-/*
- *
- */
-struct ValFix {
-	VariantType value, min, max, mean, std;
-	bool fixed;
+// necessary?
 
-	ValFix() : value(), min(), max(), mean(), std(), fixed(false) { }
-	ValFix(VariantType val) : value(val), min(val), max(val), mean(val), std(val), fixed(true) { } 
-	ValFix(VariantType val, bool fix) : value(val), min(val), max(val), mean(val), std(val), fixed(fix) { } 
-};
+VariantType operator+(VariantType lhs, VariantType rhs);
+VariantType operator-(VariantType lhs, VariantType rhs);
+VariantType operator*(VariantType lhs, VariantType rhs);
+VariantType operator/(VariantType lhs, VariantType rhs);
+VariantType _min(VariantType lhs, VariantType rhs);
+VariantType _max(VariantType lhs, VariantType rhs);
+VariantType operator>=(VariantType lhs, VariantType rhs);
 
 } } // namespace map::detail
 

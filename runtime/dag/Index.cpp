@@ -80,7 +80,23 @@ void Index::computeScalar(std::unordered_map<Node*,VariantType> &hash) {
 }
 
 void Index::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
-	hash[{this,coord}] = ValFix(); // @ not fixed, but we can now set some statistics (e.g. max, min)
+	ValFix vf;
+	int idx;
+
+	if (dim == D1)
+		idx = 0;
+	else if (dim == D2)
+		idx = 1;
+	else if (dim == D3)
+		idx = 2;
+
+	vf.min = VariantType(0,datatype());
+	vf.max = VariantType(datasize()[idx],datatype());
+	vf.mean = (vf.min + vf.max) / 2;
+	vf.std = (vf.max - vf.min) / 4;
+	vf.active = true;
+
+	hash[{this,coord}] = vf;
 }
 
 } } // namespace map::detail

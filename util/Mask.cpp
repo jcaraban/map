@@ -55,7 +55,8 @@ const DataSize& Mask::datasize() const {
 }
 
 bool Mask::isNone() const {
-	return array.isNone();
+	//return array.isNone();
+	return datasize().size() == 0;
 }
 
 //VariantType Mask::operator[](int i) const {
@@ -127,7 +128,6 @@ std::vector<Coord> Mask::blockSpace(BlockSize bs) const {
 }
 
 Mask pipe(const Mask& lhs, const Mask& rhs) {
-	assert(not lhs.isNone() || not rhs.isNone());
 	if (lhs.isNone())
 		return rhs;
 	if (rhs.isNone())
@@ -149,7 +149,6 @@ Mask pipe(const Mask& lhs, const Mask& rhs) {
 }
 
 Mask flat(const Mask& lhs, const Mask& rhs) {
-	assert(not lhs.isNone() || not rhs.isNone());
 	if (lhs.isNone())
 		return rhs;
 	if (rhs.isNone())

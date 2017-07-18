@@ -107,10 +107,85 @@ void Unary::computeScalar(std::unordered_map<Node*,VariantType> &hash) {
 void Unary::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
 	auto *node = this;
 	ValFix vf = ValFix();
+	ValFix zero = ValFix( VariantType(0,datatype()) );
+
+	auto monotonic = [](ValFix prev, UnaryType type) {
+		ValFix vf = ValFix();
+		vf.min = type.apply(prev.min);
+		vf.max = type.apply(prev.max);
+		vf.mean = type.apply(prev.mean);
+		vf.std = prev.std;
+		vf.active = true;
+		assert(not vf.fixed);
+		return vf;
+	};
 
 	auto prev = hash.find({node->prev(),coord})->second;
-	if (prev.fixed)
-		vf = ValFix(node->type.apply(prev.value));
+
+	// If the value is fixed, apply the operation
+	if (prev.fixed) {
+		hash[{node,coord}] = ValFix(node->type.apply(prev.value));
+		return;
+	}
+
+	// Else, if it does not present statistics, nothing to do
+	if (not prev.active) {
+		hash[{node,coord}] = ValFix();
+		return;
+	}
+
+	// Else (both active / perhaps one fixed), try arithmetic simplifications
+	switch (type.get()) {
+		case NONE_UNARY: assert(0);
+		case POS: vf = prev; break;
+		case NEG: {
+			vf.min = type.apply(prev.max); // -max
+			vf.max = type.apply(prev.min); // -min
+			vf.mean = type.apply(prev.mean); // -std
+			vf.std = prev.std;
+			vf.active = true;
+			assert(not vf.fixed);
+			break;
+		}
+		case NOT: {
+			vf.min = type.apply(prev.max); // !max
+			vf.max = type.apply(prev.min); // !min
+			vf.mean = type.apply(prev.mean); // !mean
+			vf.std = zero.std;
+			vf.active = true;
+			assert(not vf.fixed);
+			break;
+		}
+		case bNOT: break;
+		case SIN: break;
+		case COS: break;
+		case TAN: break;
+		case ASIN: break;
+		case ACOS: break;
+		case ATAN: break;
+		case SINH: break;
+		case COSH: break;
+		case TANH: break;
+		case ASINH: break;
+		case ACOSH: break;
+		case ATANH: break;
+		case EXP: vf = monotonic(prev,type); break;
+		case EXP2: break;
+		case EXP10: break;
+		case LOG: break;
+		case LOG2: break;
+		case LOG10: break;
+		case SQRT: vf = monotonic(prev,type); break;
+		case CBRT: break;
+		case ABS: break;
+		case CEIL: break;
+		case FLOOR: break;
+		case TRUNC: break;
+		case ROUND: break;
+	}
+
+	assert(vf.active);
+
 	hash[{node,coord}] = vf;
 }
 

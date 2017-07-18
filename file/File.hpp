@@ -508,11 +508,12 @@ Ferr FILE_DEC::writeBlock(const Block &block) {
 
 	if (stats.active) {
 		assert(block.stats.active);
-		int idx = proj(block.key.coord,getNumBlock());
-		stats.maxb[idx] = block.stats.max;
-		stats.meanb[idx] = block.stats.mean;
-		stats.minb[idx] = block.stats.min;
-		stats.stdb[idx] = block.stats.std;
+		stats.set(block.key.coord,block.stats);
+		//int idx = proj(block.key.coord,getNumBlock());
+		//stats.maxb[idx] = block.stats.max;
+		//stats.meanb[idx] = block.stats.mean;
+		//stats.minb[idx] = block.stats.min;
+		//stats.stdb[idx] = block.stats.std;
 	}
 
 	return ferr;

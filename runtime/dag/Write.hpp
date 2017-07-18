@@ -43,6 +43,9 @@ struct Write : public OutputNode
 	std::string signature() const;
 	char classSignature() const;
 
+	// Features
+	bool canForward() const { return true; };
+
 	// Compute
 	//void computeScalar(std::unordered_map<Node*,VariantType> &hash);
 	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);

@@ -90,7 +90,13 @@ std::size_t job_hash::operator()(const Job& j) const {
 	return std::hash<Task*>()(j.task) ^ coord_hash()(j.coord) ^ std::hash<int>()(j.iter);
 }
 
+std::mutex Job::mtx;
+
 bool Job::isNone() {
+	//std::lock_guard<std::mutex> lock(mtx);
+	//if (task != nullptr)
+	//	std::cout << task->id() << " " << coord << " " << iter << std::endl;
+
 	return task == nullptr;
 }
 

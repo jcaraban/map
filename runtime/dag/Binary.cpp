@@ -23,7 +23,7 @@ bool Binary::Content::operator==(const Content& k) const {
 	return (lprev==k.lprev && rprev==k.rprev && type==k.type);
 }
 
-std::size_t Binary::Hash::operator()(const Content& k) const {
+size_t Binary::Hash::operator()(const Content& k) const {
 	return std::hash<Node*>()(k.lprev) ^ std::hash<Node*>()(k.rprev) ^ std::hash<int>()(k.type.get());
 }
 
@@ -138,21 +138,224 @@ void Binary::computeScalar(std::unordered_map<Node*,VariantType> &hash) {
 void Binary::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
 	auto *node = this;
 	ValFix vf = ValFix();
-	ValFix vf0 = ValFix( VariantType(0,datatype()) );
-	
-	auto lval = hash.find({left(),coord})->second.value;
-	auto lfix = hash.find({left(),coord})->second.fixed;
-	auto rval = hash.find({right(),coord})->second.value;
-	auto rfix = hash.find({right(),coord})->second.fixed;
+	VariantType min, max, mean, std;
 
-	if (lfix && rfix)
-		vf = ValFix(type.apply(lval,rval));
-	else if (type == MUL && lfix && lval.isZero())
-		vf = vf0;
-	else if (type == MUL && rfix && rval.isZero())
-		vf = vf0;
-	else if (type == GT && lfix && lval.isZero()) // @@
-		vf = vf0;
+	ValFix zero = ValFix( VariantType(0,datatype()) );
+	ValFix one = ValFix( VariantType(1,datatype()) );
+	ValFix otoz; // vales range from "one to zero"
+	otoz.min = zero.min;
+	otoz.max = one.max;
+	otoz.mean = zero.mean;
+	otoz.std = zero.std;
+	otoz.active = true;
+	assert(not otoz.fixed);
+	
+	ValFix pinf = ValFix(), ninf = ValFix(); // @
+	if (datatype() == F32) {
+		pinf = ValFix( VariantType(+std::numeric_limits<Ctype< F32 >>::infinity(),datatype()) );
+		ninf = ValFix( VariantType(-std::numeric_limits<Ctype< F32 >>::infinity(),datatype()) );
+	}
+	if (datatype() == F64) {
+		pinf = ValFix( VariantType(+std::numeric_limits<Ctype< F64 >>::infinity(),datatype()) );
+		ninf = ValFix( VariantType(-std::numeric_limits<Ctype< F64 >>::infinity(),datatype()) );
+	}
+	auto isFinite = [](ValFix vf){ return !vf.max.isInf() && !vf.min.isInf() && !vf.mean.isNan(); };
+	auto isNumber = [](ValFix vf){ return !vf.max.isNan() && !vf.min.isNan() && !vf.mean.isNan(); };
+
+	auto lvf = hash.find({left(),coord})->second;
+	auto rvf = hash.find({right(),coord})->second;
+	auto lval = lvf.value;
+	auto lfix = lvf.fixed;
+	auto rval = rvf.value;
+	auto rfix = rvf.fixed;
+
+	// If both values are fixed, just comptute normally
+	if (lfix && rfix) {
+		hash[{node,coord}] = ValFix(type.apply(lval,rval));
+		return;
+	}
+
+	// Else, if some does not presents statistics, nothing to do
+	if (not lvf.active || not rvf.active) {
+		hash[{node,coord}] = ValFix();
+		return;
+	}
+
+	// Else (both active / perhaps one fixed), try arithmetic simplifications
+	switch (type.get()) {
+		case NONE_BINARY: assert(0);
+		case ADD: {
+			vf.min = lvf.min + rvf.min;
+			vf.max = lvf.max + rvf.max;
+			vf.mean = (lvf.mean + rvf.mean) / 2;
+			vf.std = (lvf.std + rvf.std) / 2; // @
+			vf.active = true;
+			assert(not vf.fixed);
+			// @ and the cases related to inf,nan?
+			break;
+		}
+		case SUB:  {
+			vf.min = lvf.min - rvf.max;
+			vf.max = lvf.max - rvf.min;
+			vf.mean = lvf.mean - rvf.mean; // @
+			vf.std = (lvf.std + rvf.std) / 2; // @
+			vf.active = true;
+			assert(not vf.fixed);
+			break;
+		}
+		case MUL: {
+			if (lfix && lval.isZero() && isFinite(rvf)) {
+				vf = zero;
+			} else if (rfix && rval.isZero() && isFinite(lvf)) {
+				vf = zero;
+			} else if (isFinite(lvf) && isFinite(rvf)) {
+				auto a = lvf.min * rvf.min;
+				auto b = lvf.min * rvf.max;
+				auto c = lvf.max * rvf.min;
+				auto d = lvf.max * rvf.max;
+				vf.min = _min(_min(a,b),_min(c,d));
+				vf.max = _max(_max(a,b),_max(c,d));
+				vf.mean = (vf.min + vf.max) / 2; // @
+				vf.std = (vf.max - vf.min) / 4; // @
+				vf.active = true;
+				assert(not vf.fixed);
+			} else if (isNumber(lvf) && isNumber(rvf)) {
+				vf.min = ninf.value;
+				vf.max = pinf.value;
+				vf.mean = zero.value;
+				vf.mean = pinf.value;
+				vf.active = true;
+				assert(not vf.fixed);
+			} else if (true) {
+				assert(0); // @ other cases related to nan?
+			}
+			break;
+		}
+		case DIV: {
+			if (lfix && lval.isZero() && isFinite(rvf)) {
+				vf = zero;
+			} else if (isFinite(lvf) && isFinite(rvf)) {
+				auto a = lvf.min / rvf.min;
+				auto b = lvf.min / rvf.max;
+				auto c = lvf.max / rvf.min;
+				auto d = lvf.max / rvf.max;
+				vf.min = _min(_min(a,b),_min(c,d));
+				vf.max = _max(_max(a,b),_max(c,d));
+				vf.mean = (vf.min + vf.max) / 2; // @
+				vf.std = (vf.max - vf.min) / 4; // @
+				vf.active = true;
+				assert(not vf.fixed);
+			} else if (isNumber(lvf) && isNumber(rvf)) {
+				vf.min = ninf.value;
+				vf.max = pinf.value;
+				vf.mean = zero.value;
+				vf.mean = pinf.value;
+				vf.active = true;
+				assert(not vf.fixed);
+			} else if (true) {
+				assert(0); // @ other cases related to nan?
+			}
+			break;
+		}
+		case MOD: break;
+		case EQ: vf = otoz; break; // inf == inf, nan == nan?
+		case NE: vf = otoz; break; // inf != inf, nan != nan?
+		case LT: {
+			if (type.apply(lvf.max,rvf.min)) {
+				vf = one;
+			} else if (BinaryType(LE).apply(rvf.max,lvf.min)) {
+				vf = zero;
+			} else {
+				vf = zero;
+				vf.max = one.max;
+				vf.active = true;
+				vf.fixed = false;
+			}
+			break; // inf, nan?
+		}
+		case GT: {
+			if (type.apply(lvf.min,rvf.max)) {
+				vf = one;
+			} else if (BinaryType(GE).apply(rvf.min,lvf.max)) {
+				vf = zero;
+			} else {
+				vf = zero;
+				vf.max = one.max;
+				vf.active = true;
+				vf.fixed = false;
+			}
+			break; // inf, nan?
+		}
+		case LE: {
+			if (type.apply(lvf.max,rvf.min)) {
+				vf = one;
+			} else if (BinaryType(LT).apply(rvf.max,lvf.min)) {
+				vf = zero;
+			} else {
+				vf = zero;
+				vf.max = one.max;
+				vf.active = true;
+				vf.fixed = false;
+			}
+			break; // inf, nan?
+		}
+		case GE: {
+			if (type.apply(lvf.min,rvf.max)) {
+				vf = one;
+			} else if (BinaryType(GT).apply(rvf.min,lvf.max)) {
+				vf = zero;
+			} else {
+				vf = zero;
+				vf.max = one.max;
+				vf.active = true;
+				vf.fixed = false;
+			}
+			break; // inf, nan?
+		}
+		case AND: vf = otoz; break;
+		case OR: vf = otoz; break;
+		case bAND: vf = otoz; break; // @
+		case bOR: vf = otoz; break; // @
+		case bXOR: vf = otoz; break; // @
+		case SHL: break;
+		case SHR: break;
+		case MAX2: {
+			if (lvf.min.isInf() && lvf.min.isPos() && !rvf.mean.isNan()) {
+				vf = pinf;
+			} else if (rvf.min.isInf() && rvf.min.isPos() && !lvf.mean.isNan()) {
+				vf = pinf;
+			} else if (lvf.max.isInf() && lvf.min.isNeg() && !rvf.mean.isNan()) {
+				vf = rvf;
+			} else if (rvf.max.isInf() && rvf.min.isNeg() && !lvf.mean.isNan()) {
+				vf = lvf;
+			} else if (isFinite(lvf) && isFinite(rvf)) {
+				vf = otoz;
+			}
+			break;
+		}
+		case MIN2: {
+			if (lvf.max.isInf() && lvf.min.isNeg() && !rvf.mean.isNan()) {
+				vf = ninf;
+			} else if (rvf.max.isInf() && rvf.min.isNeg() && !lvf.mean.isNan()) {
+				vf = ninf;
+			} else if (lvf.min.isInf() && lvf.min.isPos() && !rvf.mean.isNan()) {
+				vf = rvf;
+			} else if (rvf.min.isInf() && rvf.min.isPos() && !lvf.mean.isNan()) {
+				vf = lvf;
+			} else if (isFinite(lvf) && isFinite(rvf)) {
+				vf = otoz;
+			}
+			break;
+		}
+		case ATAN2: break;
+		case POW: break;
+		case HYPOT: break;
+		case FMOD: break;
+	}
+
+	assert(vf.active);
+	assert(vf.max >= vf.min);
+
 	hash[{node,coord}] = vf;
 }
 

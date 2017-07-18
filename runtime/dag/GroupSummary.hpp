@@ -47,6 +47,7 @@ struct GroupSummary : public Node
 	// const Mask& outputReach(Coord coord) const;
 
 	// Features
+	bool isReduction() const { return true; } // @@
 	ReductionType reductype() const { return type; }
 	
 	// Compute

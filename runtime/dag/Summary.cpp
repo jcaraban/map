@@ -28,12 +28,15 @@ std::size_t Summary::Hash::operator()(const Content& k) const {
 
 Node* Summary::Factory(Node *prev, Node *min, Node *max, Node *mean, Node *std) {
 	assert(prev != nullptr);
+	auto block_per_data = idiv(prev->datasize(),prev->blocksize());
+	auto unit_vec = prev->numdim().unitVec();
+
 	if (min != nullptr) {
 		auto node = dynamic_cast<BlockSummary*>(min);
 		assert(node != nullptr);
 		assert(node->type == MIN);
-		assert(all(min->datasize() == prev->datasize()/prev->blocksize()));
-		assert(all(min->blocksize() == prev->blocksize()/prev->blocksize()));
+		assert(all(min->datasize() == block_per_data));
+		assert(all(min->blocksize() == unit_vec));
 		assert(min->datatype() == prev->datatype());
 		assert(min->numdim() == prev->numdim());
 	}
@@ -41,8 +44,8 @@ Node* Summary::Factory(Node *prev, Node *min, Node *max, Node *mean, Node *std) 
 		auto node = dynamic_cast<BlockSummary*>(max);
 		assert(node != nullptr);
 		assert(node->type == MAX);
-		assert(all(max->datasize() == prev->datasize()/prev->blocksize()));
-		assert(all(max->blocksize() == prev->blocksize()/prev->blocksize()));
+		assert(all(max->datasize() == block_per_data));
+		assert(all(max->blocksize() == unit_vec));
 		assert(max->datatype() == prev->datatype());
 		assert(max->numdim() == prev->numdim());
 	}
@@ -101,6 +104,8 @@ Summary::Summary(const MetaData &meta, Node *prev, Node *min, Node *max, Node *m
 
 	// Prepares statistics structure
 	const int num = prod(numblock());
+	this->stats.data_type = datatype();
+	this->stats.num_block = numblock();
 	this->stats.active = true;
 	this->stats.maxb.resize(num);
 	this->stats.meanb.resize(num);

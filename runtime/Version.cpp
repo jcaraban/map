@@ -48,7 +48,7 @@ Version::Version(Verkey key)
 	ver_sign = task->group()->signature() + detail + std::to_string(deviceType());
 	// Filling rest...
 	shared_size = -1;
-	num_group = (task->blocksize() - 1) / groupsize() + 1;
+	num_group = idiv(task->blocksize(),groupsize());
 
 	assert(all(task->blocksize() % groupsize() == 0)); // 'groupsize' must divide 'blocksize' exactly!
 }

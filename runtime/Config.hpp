@@ -62,7 +62,7 @@ struct Config {
 	const int def_group_size = 16*16*sizeof(float);
 
 	// Limits
-	const int hard_nodes_limit = 1050; // @@ 1024
+	const int hard_nodes_limit = 1024;
 	const int soft_nodes_limit = 512;
 	const int loop_nested_limit = 4;
 

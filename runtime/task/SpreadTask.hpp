@@ -2,7 +2,7 @@
  * @file    SpreadTask.hpp 
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * Note: atm Spread-GPU is done with an specific SpreadTask, in the future it could be composed by a succession of Focals
+ * To be filled by some specialized spreading operation? e.g. 'flow accumulation'
  */
 
 #ifndef MAP_RUNTIME_TASK_SPREAD_HPP_
@@ -40,17 +40,8 @@ struct SpreadTask : public Task
 	
 	Pattern pattern() const { return SPREAD; }
 
-	void fillScanBuffer(Coord coord, const BlockList &in_blk, const BlockList &out_blk, cle::Queue que);
-	void fillSpreadBuffer(Coord coord, const BlockList &in_blk, const BlockList &out_blk, cle::Queue que);
-	void fillStableBuffer(Coord coord, const BlockList &in_blk, const BlockList &out_blk, cle::Queue que);
-	void swapSpreadBuffer(Coord coord, const BlockList &in_blk, const BlockList &out_blk, cle::Queue que);
-	stable_vec readStableVec(Coord coord, const BlockList &in_blk, const BlockList &out_blk, cle::Queue que);
-	unsigned int height(Coord coord) const;
-
   // vars
 	SpreadScan *scan;
-	std::unordered_map<Coord,stable_vec,coord_hash,coord_equal> stable_hash;
-	std::unordered_set<Coord,coord_hash,coord_equal> first_time; // @ Used to fill spread->spread() only the 'first time'
 };
 
 } } // namespace map::detail

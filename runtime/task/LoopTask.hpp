@@ -31,7 +31,8 @@ struct LoopTask : public Task
 	int prevDependencies(Coord coord) const;
 
 	void postStore(Job job, const BlockList &in_blk, const BlockList &out_blk);
-	void compute(Job job, const BlockList &in_blk, const BlockList &out_blk);
+	
+	void preForward(Job job, const BlockList &in_blk, const BlockList &out_blk);
 
   // vars
 	LoopCond *cond_node;

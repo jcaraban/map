@@ -97,8 +97,8 @@ void DataSummary::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_ha
 	auto prev = hash.find({node->prev(),coord})->second;
 	if (prev.fixed) {
 		switch (node->type.get()) {
-			case SUM:  vf = ValFix( prev.value * prod(blocksize()) ); break;
-			case PROD: vf = ValFix( pow(prev.value,prod(blocksize())) ); break;
+			case SUM:  vf = ValFix( BinaryType(MUL).apply( prev.value , prod(blocksize()) ) ); break;
+			case PROD: vf = ValFix( BinaryType(POW).apply( prev.value , prod(blocksize()) ) ); break;
 			case rAND: vf = ValFix(prev.value); break;
 			case rOR:  vf = ValFix(prev.value); break;
 			case MAX:  vf = ValFix(prev.value); break;

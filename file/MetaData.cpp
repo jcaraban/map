@@ -19,8 +19,8 @@ DataShape::DataShape(DataSize data_size, BlockSize block_size, GroupSize group_s
 	, block_size( block_size )
 	, group_size( group_size )
 {
-	num_block = (data_size + block_size - 1) / block_size;
-	num_group = (block_size + group_size - 1) / group_size;
+	num_block = idiv(data_size,block_size);
+	num_group = idiv(block_size,group_size);
 }
 
 bool DataShape::operator==(const DataShape &other) {
@@ -63,9 +63,9 @@ MetaData::MetaData(DataSize data_size, DataType data_type, MemOrder mem_order, B
 	/*
 	, data_size( data_size )
 	, block_size( block_size )
-	, num_block( (data_size + block_size - 1) / block_size )
+	, num_block( idiv(data_size,block_size) )
 	, group_size( group_size )
-	, num_group( (block_size + group_size - 1) / group_size )
+	, num_group( idiv(block_size,group_size) )
 	*/
 	, data_shape(data_size,block_size,group_size)
 {
@@ -197,7 +197,7 @@ void MetaData::setBlockSize(BlockSize block_size) {
 	assert(all(getDataSize() >= block_size));
 
 	data_shape.block_size = block_size;
-	data_shape.num_block = (getDataSize() + getBlockSize() - 1) / getBlockSize();
+	data_shape.num_block = idiv(getDataSize(),getBlockSize());
 }
 
 void MetaData::setGroupSize(GroupSize group_size) {
@@ -207,7 +207,7 @@ void MetaData::setGroupSize(GroupSize group_size) {
 	assert(all(getBlockSize() >= group_size));
 
 	data_shape.group_size = group_size;
-	data_shape.num_group = (getBlockSize() + getGroupSize() - 1) / getGroupSize();
+	data_shape.num_group = idiv(getBlockSize(),getGroupSize());
 }
 
 size_t MetaData::totalDataSize() const {

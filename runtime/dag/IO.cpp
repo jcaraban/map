@@ -29,12 +29,12 @@ IONode::IONode(const IONode *other, const std::unordered_map<Node*,Node*> &other
 	, io_file(other->io_file)
 { }
 
-IFile* IONode::file() {
-	return io_file.get();
+SharedFile IONode::file() {
+	return io_file;
 }
 
-const IFile* IONode::file() const {
-	return io_file.get();
+const SharedFile IONode::file() const {
+	return io_file;
 }
 
 /******

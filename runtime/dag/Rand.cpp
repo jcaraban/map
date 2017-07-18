@@ -222,7 +222,19 @@ void Rand::computeScalar(std::unordered_map<Node*,VariantType> &hash) {
 }
 
 void Rand::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
-	hash[{this,coord}] = ValFix(); // @ something more? max / min ?
+	ValFix vf;
+	if (datatype().isUnsigned() || datatype().isSigned()) {
+		auto def = defaultStats(datatype());
+		vf = ValFix(vf.value,vf.fixed,def);
+	} else { // isFloating(), F32 or F64
+		vf.min = VariantType(0,datatype());
+		vf.max = VariantType(1,datatype());
+		vf.mean = VariantType(0.5,datatype());
+		vf.std = VariantType(0.25,datatype());
+		vf.active = true;
+	}
+	assert(not vf.fixed);
+	hash[{this,coord}] = vf;
 }
 
 } } // namespace map::detail

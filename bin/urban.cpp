@@ -15,7 +15,9 @@ int main(int argc, char **argv)
 {	
 	//// Arguments
 
-	assert(argc > 8);
+	assert(argc > 2);
+	auto iwd = std::string(argv[1]); // input directory
+	auto ext = std::string(".tif");  // raster files extension
 
 	//// Configuration
 
@@ -34,15 +36,15 @@ int main(int argc, char **argv)
 	float d = 5; // dispersion parameter
 	int q = 16000; // max # of cells to be converted per it (user defined / from historic data)
 
-	auto x1 = read(argv[1]); // Elevation layer
-	auto x2 = read(argv[2]); // Slope layer
-	auto x3 = read(argv[3]); // Distance to centers layer
-	auto x4 = read(argv[4]); // Distance to transportations layers
-	auto x5 = read(argv[5]); // Land use layers
-	auto e  = read(argv[6]); // exclusion layer (user defined)
-	auto s  = read(argv[7]); // initial urban state
+	auto x1 = read(iwd+"dem"+ext);     // Elevation layer
+	auto x2 = read(iwd+"slope"+ext);   // Slope layer
+	auto x3 = read(iwd+"center"+ext);  // Distance to centers layer
+	auto x4 = read(iwd+"transp"+ext);  // Distance to transportations layers
+	auto x5 = read(iwd+"landuse"+ext); // Land use layers
+	auto e  = read(iwd+"excl"+ext);    // exclusion layer (user defined)
+	auto s  = read(iwd+"urban"+ext);   // initial urban state
 	
-	int N = (argc > 9) ? atoi(argv[9]) : 1 ;
+	int N = (argc > 3) ? atoi(argv[3]) : 1 ;
 
 	//// Computation
 
@@ -68,5 +70,5 @@ int main(int argc, char **argv)
 		s = s || ps > rand(seed); // ps > rand() becomes urban
 	}
 
-	write(s,argv[8]);
+	write(s,argv[2]);
 }

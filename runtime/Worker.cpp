@@ -3,8 +3,6 @@
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  * TODO: for more dynamism, worker should analyse / fuse / compile online ('runtime approach to map algebra')
- *
- * // @@ clean up the code related to cache::file, maybe rehinking and refactorize it
  */
 
 #include "Worker.hpp"
@@ -45,7 +43,7 @@ void Worker::work(ThreadId thread_id) {
 		Job job = sche.requestJob();
 
 		if (job.isNone()) break; // Exit point
-//std::cout << job.task->id() << " " << job.coord << " " << job.iter << std::endl;
+
 		request_blocks(job);
 
 		// pre_work
@@ -130,9 +128,6 @@ void Worker::store(Job job) {
 
 	cache.writeOutputBlocks(out_blk);
 	cache.reduceOutputBlocks(out_blk);
-
-	cache.releaseEntries(in_blk);
-	cache.releaseEntries(out_blk);
 }
 
 void Worker::post_store(Job job) {
@@ -147,6 +142,9 @@ void Worker::post_work(Job job) {
 
 void Worker::return_blocks(Job job) {
 	TimedRegion region(clock,RET_BLOCK); // Timed function
+
+	cache.releaseEntries(in_blk);
+	cache.releaseEntries(out_blk);
 
 	cache.returnBlocks(in_key,in_blk);
 	cache.returnBlocks(out_key,out_blk);

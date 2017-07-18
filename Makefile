@@ -19,19 +19,19 @@ endif
 
 # Sources
 S_FRON = $(addprefix front/, Raster.cpp bindings.cpp)
-S_UTIL = $(addprefix util/, StreamDir.cpp DataType.cpp NumDim.cpp MemOrder.cpp VariantType.cpp UnaryType.cpp BinaryType.cpp ReductionType.cpp DiversityType.cpp PercentType.cpp null.cpp common.cpp Mask.cpp)
+S_UTIL = $(addprefix util/, StreamDir.cpp DataType.cpp NumDim.cpp MemOrder.cpp VariantType.cpp UnaryType.cpp BinaryType.cpp ReductionType.cpp DiversityType.cpp PercentType.cpp null.cpp common.cpp Mask.cpp ValFix.cpp)
 S_RUNT = $(addprefix runtime/, Runtime.cpp Clock.cpp Program.cpp Cache.cpp Scheduler.cpp Worker.cpp Job.cpp Key.cpp Entry.cpp Block.cpp Pattern.cpp Version.cpp ThreadId.cpp LoopAssembler.cpp)
 S_DAG  = $(addprefix runtime/dag/, dag.cpp util.cpp Node.cpp Group.cpp Constant.cpp Empty.cpp Index.cpp Identity.cpp Rand.cpp Cast.cpp Unary.cpp Binary.cpp Conditional.cpp Diversity.cpp Neighbor.cpp BoundedNeighbor.cpp SpreadNeighbor.cpp Convolution.cpp FocalFunc.cpp FocalPercent.cpp ZonalReduc.cpp RadialScan.cpp SpreadScan.cpp IO.cpp Read.cpp Write.cpp Scalar.cpp Temporal.cpp Access.cpp LhsAccess.cpp Summary.cpp DataSummary.cpp BlockSummary.cpp GroupSummary.cpp Barrier.cpp Checkpoint.cpp LoopCond.cpp LoopHead.cpp LoopTail.cpp Merge.cpp Switch.cpp)
 S_VISI = $(addprefix runtime/visitor/, Visitor.cpp Simplifier.cpp Fusioner.cpp Exporter.cpp Lister.cpp Sorter.cpp Unlinker.cpp Cloner.cpp Predictor.cpp Partitioner.cpp)
 S_TASK = $(addprefix runtime/task/, Task.cpp ScalarTask.cpp RadialTask.cpp LoopTask.cpp TailTask.cpp IdentityTask.cpp) # SpreadTask.cpp 
 S_SKEL = $(addprefix runtime/skeleton/, util.cpp Skeleton.cpp RadialSkeleton.cpp LoopSkeleton.cpp)
-S_FILE = $(addprefix file/, File.cpp Format.cpp MetaData.cpp tiff.cpp binary.cpp scalar.cpp)
+S_FILE = $(addprefix file/, File.cpp Format.cpp MetaData.cpp DataStats.cpp tiff.cpp binary.cpp scalar.cpp)
 S_OCL  = $(addprefix cle/, OclEnv.cpp)
 S_ALL  = $(S_FRON) $(S_UTIL) $(S_RUNT) $(S_DAG) $(S_VISI) $(S_TASK) $(S_SKEL) $(S_FILE) $(S_OCL)
 
 # Headers
 H_FRON = $(addprefix front/, Raster.hpp bindings.hpp)
-H_UTIL = $(addprefix util/, util.hpp StreamDir.hpp DataType.hpp NumDim.hpp MemOrder.hpp Array.hpp Array4.hpp VariantType.hpp UnaryType.hpp BinaryType.hpp ReductionType.hpp DiversityType.hpp PercentType.hpp null.hpp common.hpp Mask.hpp Direction.hpp)
+H_UTIL = $(addprefix util/, util.hpp StreamDir.hpp DataType.hpp NumDim.hpp MemOrder.hpp Array.hpp Array4.hpp VariantType.hpp UnaryType.hpp BinaryType.hpp ReductionType.hpp DiversityType.hpp PercentType.hpp null.hpp common.hpp Mask.hpp Direction.hpp ValFix.hpp)
 H_RUNT = $(addprefix runtime/, Runtime.hpp Config.hpp Clock.hpp Program.hpp Cache.hpp Scheduler.hpp Worker.hpp Job.hpp Key.hpp Entry.hpp Block.hpp Pattern.hpp Version.hpp ThreadId.hpp LoopAssembler.hpp)
 H_DAG  = $(addprefix runtime/dag/, dag.hpp util.hpp Node.hpp Group.hpp Constant.hpp Empty.hpp Index.hpp Identity.hpp Rand.hpp Cast.hpp Unary.hpp Binary.hpp Conditional.hpp Diversity.hpp Neighbor.hpp BoundedNeighbor.hpp SpreadNeighbor.hpp Convolution.hpp FocalFunc.hpp FocalPercent.hpp ZonalReduc.hpp RadialScan.hpp SpreadScan.hpp IO.hpp Read.hpp Write.hpp Scalar.hpp Temporal.hpp Access.hpp LhsAccess.hpp Summary.hpp DataSummary.cpp BlockSummary.cpp GroupSummary.cpp Barrier.hpp Checkpoint.hpp LoopCond.hpp LoopHead.hpp LoopTail.hpp Merge.hpp Switch.hpp)
 H_VISI = $(addprefix runtime/visitor/, Visitor.hpp Simplifier.hpp Fusioner.hpp Exporter.hpp Lister.hpp Sorter.hpp Unlinker.hpp Cloner.hpp Predictor.hpp Partitioner.hpp)

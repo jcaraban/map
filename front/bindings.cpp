@@ -25,14 +25,12 @@ void ma_setNumRanks(int ranks) {
 
 void ma_increaseRef(Node *node) {
 	if (node != nullptr) {
-		//std::cout << "incr " << node->id << " " << node->getName() << std::endl;
 		node->increaseRef();
 	}
 }
 
 void ma_decreaseRef(Node *node) {
 	if (node != nullptr) {
-		//std::cout << "\tdecr " << node->id << " " << node->getName() << std::endl;
 		node->decreaseRef();
 	}
 }

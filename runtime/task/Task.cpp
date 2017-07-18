@@ -4,7 +4,7 @@
  *
  * TODO: SPREAD needs another loop in nextJobs(), 'for offset : out_space'
  * TODO: nextJob() and the 'inversion' would not work for the central Radial Job
- * TODO: in preLoad(), can we avoid using iter=0 and make "// no iter" go away ?
+ * TODO: in fixingValues(), can we avoid using iter=0 and make "// no iter" go away ?
  */
 
 #include "Task.hpp"
@@ -148,6 +148,9 @@ Task::Task(Program &prog, Clock &clock, Config &conf, Group *group)
 
 		accu_out_reach_of.insert({node,reach});
 	}
+
+	// Allocates the thread_local 'forward' storage
+	forward_list.resize(conf.num_workers);
 }
 
 int Task::id() const {
@@ -280,7 +283,7 @@ void Task::blocksToLoad(Job job, KeyList &in_key) const {
 		auto reach = accuInputReach(node,job.coord);
 		auto space = reach.blockSpace(blocksize());
 
-		for (auto offset : space) {	
+		for (auto offset : space) {
 			Coord nbc = job.coord + offset;
 			HoldType hold = node->holdtype(nbc);
 			Depend dep = node->isInput() ? nextInputDepends(node,nbc) : -1;
@@ -297,7 +300,7 @@ void Task::blocksToStore(Job job, KeyList &out_key) const {
 		auto reach = accuOutputReach(node,job.coord);
 		auto space = reach.blockSpace(blocksize());
 
-		for (auto offset : space) {	
+		for (auto offset : space) {
 			Coord nbc = job.coord + offset;
 			HoldType hold = node->holdtype(nbc);
 			int dep = 1 + nextDependencies(node,nbc); // +1 cause out blocks get 1 extra notify()
@@ -341,17 +344,10 @@ void Task::nextJobs(Job done_job, std::vector<Job> &job_vec, bool end) {
 	auto common_nodes = inner_join(inputList(),prev_nodes);
 
 	for (auto node : common_nodes) {
-		//if (node->isReduction()) {
-		if (node->numdim() == D0) { // @@@
+		if (node->numdim() == D0) {
 			if (not end) { // D0 jobs only notify at the end
 				continue;
 			} else { // Case when prev=D0, self!=D0
-				notifyAll( Job(this,Coord(),iter), job_vec);
-			}
-		} else if (node->numdim() == D0 && done_job.task->numdim() == D0 && this->numdim() == D2) {
-			if (not end) {
-				continue;
-			} else {
 				notifyAll( Job(this,Coord(),iter), job_vec);
 			}
 		} else { // Case when prev!=D0, self!=D0
@@ -382,7 +378,6 @@ void Task::notify(Job new_job, std::vector<Job> &job_vec) {
 		it = dep_hash.insert(pair).first;
 	}
 
-//std::cout << " " << new_job.task->id() << " " << new_job.coord << " " << new_job.iter << " : " << it->second << std::endl;
 	// Notifies, i.e. reduces dependencies by 1
 	it->second--;
 	assert(it->second >= 0);
@@ -470,55 +465,23 @@ void Task::preLoad(Job job, const BlockList &in_blk, const BlockList &out_blk) {
 	if (not Runtime::getConfig().prediction)
 		return;
 	if (numdim() == D0)
-		return; // for D0, fixing is more costly than just computing D0 values
+		return; // for D0, just computing is cheaper
 
-	std::unordered_map<Key,ValFix,key_hash> val_hash; // Supporting hash for the fixed values
-	auto coord = job.coord;
+	fixingValues(job,in_blk,out_blk);
+	preForward(job,in_blk,out_blk);
 
-	// Fills inputs first with 'in_blk'
-	for (auto in : in_blk) {
-		if (in->holdtype() == HOLD_0) // When the block is null, looks for the central block
-		{
-			Key in_key = Key(in->key.node,job.coord,job.iter);
-			auto pred = [&](const Block *b){ return b->key == in_key; };
-			auto it = std::find_if(in_blk.begin(),in_blk.end(),pred);
-			assert(it != in_blk.end());
-
-			in_key = Key(in->key.node,in->key.coord); // no iter
-			val_hash[in_key] = ValFix((*it)->value,(*it)->fixed);
-		}
-		else // HOLD_1 or HOLD_N
-		{
-			Key in_key = Key(in->key.node,in->key.coord); // no iter
-			val_hash[in_key] = ValFix(in->value,in->fixed);
-		}
-	}
-
-	// Iterates the nodes to fill 'value_list' and 'fixed_list'
-	NodeList nodes_to_fill = full_unique_join(nodeList(),outputList());
-
-	for (auto node : nodes_to_fill) {
-		auto reach = accuInputReach(node,coord);
-		auto space = reach.blockSpace(blocksize());
-		for (auto offset : space) {
-			node->computeFixed(coord+offset,val_hash);
-		}
-	}
-
-	// Transfer outputs to 'out_blk'
-	for (auto out : out_blk) {
-		Key out_key = Key(out->key.node,job.coord); // no iter
-		assert(val_hash.find(out_key) != val_hash.end());
-		out->fixValue( val_hash[out_key] );
-	}
+	// TODO: backward pass to mark what input blocks are to be loaded
 }
 
 void Task::preCompute(Job job, const BlockList &in_blk, const BlockList &out_blk) {
-	return; // choose a code version, according to availabe statistics ?
+	return; // choose a code version, according to fixed/forward and execution statistics ?
 }
 
 void Task::postCompute(Job job, const BlockList &in_blk, const BlockList &out_blk) {
-	return; // collect and update statistics ?
+
+	postForward(job,in_blk,out_blk);
+
+	return; // collect and update execution statistics ?
 }
 
 void Task::postStore(Job job, const BlockList &in_blk, const BlockList &out_blk) {
@@ -539,29 +502,27 @@ void Task::postStore(Job job, const BlockList &in_blk, const BlockList &out_blk)
 				if (b->key.node == summary->max())
 					max = b->value;
 				if (b->key.node == summary->mean())
-					mean = b->value;
+					assert(0); //mean = b->value;
 				if (b->key.node == summary->std())
-					std = b->value;
+					assert(0); //std = b->value;
 			}
+			// @@
+			mean = BinaryType(DIV).apply(BinaryType(ADD).apply(min, max), 2);
+			std = BinaryType(DIV).apply(BinaryType(SUB).apply(max, min), 4);
+
+			CellStats sta;
+			sta.active = true;
+			sta.data_type = blk->datatype();
+			sta.min = min;
+			sta.max = max;
+			sta.mean = mean;
+			sta.std = std;
 
 			// Fills the 'block' with the statistics
-			blk->stats.active = true;
-			blk->stats.min = min.get();
-			blk->stats.max = max.get();
-			blk->stats.mean = mean.get();
-			blk->stats.std = std.get();
+			blk->setStats(sta);
 
 			// Fills the 'node' with the statistics
-			int idx = proj(coord,blk->key.node->numblock());
-			blk->key.node->stats.minb[idx]  = min.get();
-			blk->key.node->stats.maxb[idx]  = max.get();
-			blk->key.node->stats.meanb[idx] = mean.get();
-			blk->key.node->stats.stdb[idx]  = std.get();
-
-			// If the block values are the same, fix the value
-			if (max == min) {
-				blk->fixValue( ValFix(max,true) );
-			}
+			blk->key.node->stats.set(coord,sta);
 		}
 	}
 }
@@ -577,10 +538,16 @@ void Task::postWork(Job job, const BlockList &in_blk, const BlockList &out_blk) 
 		self_jobs_count.erase(iter);
 	}
 
-	// @ Integrates reduced zonal value to the node
-	if (last == Tid) {
+	// The last job of the task has been completed
+	if (last == Tid)
+	{
+		// @ Integrates reduced zonal value to the node
 		for (auto blk : out_blk) {
-			blk->key.node->value = blk->value;
+			if (blk->key.node->isReduction()) {
+				// Loads the last reduced value
+				blk->load(); // saves it in the node
+				blk->key.node->value = blk->value;
+			}
 		}
 	}
 }
@@ -589,10 +556,12 @@ void Task::compute(Job job, const BlockList &in_blk, const BlockList &out_blk) {
 	const Version *ver = getVersion(DEV_ALL,{},""); // Any device, No detail
 	assert(ver != nullptr);
 
-	auto all_fixed = [&](Block *b){ return b->fixed; };
-	if (std::all_of(out_blk.begin(),out_blk.end(),all_fixed)) {
+	auto all_pred = [&](Block *b){ return b->fixed || b->forwarded; };
+
+	if (std::all_of(out_blk.begin(),out_blk.end(),all_pred)) {
 		clock.incr(NOT_COMPUTED);
-		return; // All output blocks are fixed, no need to compute
+//std::cout << "No Comp: " << job.task->id() << " " << job.coord << std::endl;
+		return; // All output blocks are fixed or forwarded, no need to compute
 	}
 
 	computeVersion(job,in_blk,out_blk,ver);
@@ -687,6 +656,121 @@ void Task::computeVersion(Job job, const BlockList &in_blk, const BlockList &out
 	cle::clCheckError(err);
 
 	clock.stop(KERNEL);
+}
+
+void Task::fixingValues(Job job, const BlockList &in_blk, const BlockList &out_blk) {
+	std::unordered_map<Key,ValFix,key_hash> val_hash; // Supporting hash for the fixed values
+	auto coord = job.coord;
+
+	// Fills inputs first with 'in_blk'
+	for (auto in : in_blk) {
+		if (in->holdtype() == HOLD_0) // When the block is null, looks for the central block
+		{
+			//assert(not all(in->key.coord == job.coord));
+
+			Key in_key = Key(in->key.node,job.coord,job.iter);
+			auto pred = [&](const Block *b){ return b->key == in_key; };
+			auto it = std::find_if(in_blk.begin(),in_blk.end(),pred);
+			assert(it != in_blk.end());
+
+			in_key = Key(in->key.node,in->key.coord); // no iter
+			val_hash[in_key] = ValFix((*it)->value,(*it)->fixed,(*it)->stats);
+		}
+		else // HOLD_1 or HOLD_N
+		{
+			Key in_key = Key(in->key.node,in->key.coord); // no iter
+			val_hash[in_key] = ValFix(in->value,in->fixed,in->stats);
+		}
+	}
+
+	// Iterates the nodes to fill 'value_list' and 'fixed_list'
+	NodeList nodes_to_fill = full_unique_join(nodeList(),outputList());
+
+	for (auto node : nodes_to_fill) {
+		auto reach = accuInputReach(node,coord);
+		auto space = reach.blockSpace(blocksize());
+		for (auto offset : space) {
+			node->computeFixed(coord+offset,val_hash);
+			// @@
+			auto vf = val_hash[Key(node,coord)];
+			if (not vf.active) {
+				auto def = defaultStats(node->datatype());
+				auto _vf = ValFix(vf.value,vf.fixed,def);
+				val_hash[Key(node,coord)] = _vf;
+			}
+		}
+	}
+
+	// Transfer outputs to 'out_blk'
+	for (auto out : out_blk) {
+		Key out_key = Key(out->key.node,job.coord); // no iter
+		assert(val_hash.find(out_key) != val_hash.end());
+		auto vf = val_hash[out_key];
+
+		if (vf.fixed) {
+			out->fixValue(vf.value);
+		} else if (vf.active) {
+			out->setStats(vf.stats());
+		}
+	}
+}
+
+void Task::preForward(Job job, const BlockList &in_blk, const BlockList &out_blk) {
+	// Forwarding structures are thread_local, for reutilization
+	std::unordered_map<Node*,Block*> &forward = forward_list[Tid.proj()];
+	std::unordered_set<Node*> taken;
+	assert(forward.empty());
+	auto body_out = full_unique_join(nodeList(),outputList());
+
+	for (auto iblk : in_blk) {
+		if (iblk->fixed || iblk->holdtype() != HOLD_N);
+			continue; // no entry to forward
+		assert(not iblk->entry);
+
+		auto next_list = iblk->key.node->nextList();
+		auto outside = left_join(next_list,body_out);
+		// Cannot forward with external dependencies
+		if (outside.empty())
+			forward[iblk->key.node] = iblk;
+	}
+
+	for (auto node : body_out) {
+		if (node->canForward()) {
+			auto prev = node->prevList().front();
+			if (forward.find(prev) != forward.end())
+				forward[node] = forward[prev];
+		}
+	}
+
+	for (auto oblk : out_blk) {
+		bool forw = forward.find(oblk->key.node) != forward.end();
+		bool free = taken.find(oblk->key.node) == taken.end();
+		// Only one output node can receive the forwarded input,
+		// other nodes will perform a copy of the memory block
+		if (forw and free) {
+			oblk->forwarded = true;
+			taken.insert(oblk->key.node);
+		}
+	}
+}
+
+void Task::postForward(Job job, const BlockList &in_blk, const BlockList &out_blk) {
+	// Forwarding structures are thread_local, for reutilization
+	std::unordered_map<Node*,Block*> &forward = forward_list[Tid.proj()];
+
+	for (auto oblk : out_blk) {
+		if (forward.find(oblk->key.node) != forward.end()) {
+			Block *iblk = forward[oblk->key.node];
+			assert(is_included(iblk,in_blk));
+			assert(oblk->stats == iblk->stats);
+			assert(oblk->forwarded && not oblk->fixed);
+			
+			iblk->forwardEntry(oblk);
+			oblk->forwarded = false; // The 'forwarding' state ends
+		}
+	}
+
+	forward.clear();
 }
 
 } } // namespace map::detail

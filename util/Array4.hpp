@@ -482,6 +482,9 @@ std::ostream& operator<<(std::ostream &strm, const Array4<T> &array4) {
 	return strm << to_string(array4);
 }
 
+inline Array4<int> idiv(Array4<int> lhs, Array4<int> rhs) {
+	return (lhs + rhs - 1) / rhs;
+}
 
 /**********
    Coord
@@ -490,6 +493,7 @@ std::ostream& operator<<(std::ostream &strm, const Array4<T> &array4) {
 inline int proj(const Coord &coord, const DataSize &dim_size) {
 	if (coord.size() == 0)
 		return 0; // @
+	assert(coord.size() == dim_size.size());
 	// Recursively ((z_coord)*y_size + y_coord)*x_size + x_coord
 	int acu = coord[ coord.size()-1 ];
 	for (int i=coord.size()-2; i>=0; i--) {
@@ -501,7 +505,8 @@ inline int proj(const Coord &coord, const DataSize &dim_size) {
 
 inline int proj(const Coord &coord, const DataSize &dim_size, const Coord &offset) {
 	if (coord.size() == 0)
-		return 0;
+		return 0; // @
+	assert(coord.size() == dim_size.size());
 	// Recursively ((z_coord + z_off)*y_size + y_coord + y_off)*x_size + x_coord + x_off
 	int acu = coord[ coord.size()-1 ] + offset[ coord.size()-1 ];
 	for (int i=coord.size()-2; i>=0; i--) {
@@ -514,6 +519,9 @@ inline int proj(const Coord &coord, const DataSize &dim_size, const Coord &offse
 inline Array4<bool> in_range(const Coord &coord, const DataSize &dim_size) {
 	if (coord.size() == 0)
 		return Array4<bool>(coord.size(),true); // @
+	if (dim_size.size() == 0)
+		return Array4<bool>(coord.size(),false); // @@
+	assert(coord.size() == dim_size.size());
 	//
 	Array4<bool> array4(coord.size());
 	for (int i=0; i<coord.size(); i++)
