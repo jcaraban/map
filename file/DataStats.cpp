@@ -19,6 +19,18 @@ CellStats::CellStats()
 	, std()
 { }
 
+bool CellStats::operator==(const CellStats &other) {
+	bool b = true;
+	b = b && data_type == other.data_type;
+	if (data_type != NONE_DATATYPE) {
+		b = b && min == other.min;
+		b = b && max == other.max;
+		b = b && mean == other.mean;
+		b = b && std == other.std;
+	}
+	return b;
+}
+
 // DataStats
 
 DataStats::DataStats()

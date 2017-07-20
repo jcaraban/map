@@ -11,7 +11,7 @@
 #include "../dag/Group.hpp"
 #include "../Job.hpp"
 #include "../Version.hpp"
-#include "../Block.hpp"
+#include "../block/Block.hpp"
 #include "../ThreadId.hpp"
 #include "../../util/util.hpp"
 #include <string>

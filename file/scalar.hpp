@@ -18,6 +18,8 @@
 
 namespace map { namespace detail {
 
+struct Block; // forward declaration
+
 /*
  *
  */
@@ -42,8 +44,8 @@ class scalar : public IFormat<scalar>
 	Ferr read(void* dst, const Coord& beg_coord, const Coord& end_coord) { return -1; } // @
 	Ferr write(const void* src, const Coord& beg_coord, const Coord& end_coord) { return -1; } // @
     
-	Ferr readBlock(Block &block) const;
-	Ferr writeBlock(const Block &block);
+	Ferr readBlock(Block *block) const;
+	Ferr writeBlock(const Block *block);
 
 	Ferr setReductionType(const ReductionType &type);
 	VariantType value() const;

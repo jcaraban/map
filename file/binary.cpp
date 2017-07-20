@@ -5,11 +5,10 @@
  * TODO: maybe check erroneous file by comparing its length (seek_end-seek_beg) with data_size
  * TODO: consider spliting the StreamDir IO into InOut and OutIn, to model the case where we want to write
  *       but also to have a temporal file backing the data (to be reused later). OI would cover this case
- * TODO: move c_func into anonymous namespace?
- * TODO: remove meta.ref() in exchange for meta.set()
  */
 
 #include "binary.hpp"
+#include "../runtime/block/Block.hpp"
 #include <cstring>
 #include <iostream>
 #include <cassert>
@@ -31,6 +30,8 @@ namespace map { namespace detail {
    Utils
  *********/
 
+namespace { // anonymous namespace
+
 // C Posix wrappers to avoid name collisions with internal open() / read() / etc
 int c_open(const char *a, int b) { return open(a,b); }
 int c_open(const char *a, int b, mode_t c) { return open(a,b,c); }
@@ -39,6 +40,8 @@ ssize_t c_write(int a, const void *b, size_t c) { return write(a,b,c); }
 ssize_t c_pread(int a, void *b, size_t c, off_t d) { return pread(a,b,c,d); }
 ssize_t c_pwrite(int a, const void *b, size_t c, off_t d) { return pwrite(a,b,c,d); }
 int c_close(int a) { return close(a); }
+
+}
 
 /***********
    Support
@@ -354,15 +357,15 @@ Ferr binary::write(const void* src, const Coord& beg_coord, const Coord& end_coo
 	return ferr;
 }
 
-Ferr binary::readBlock(Block &block) const {
+Ferr binary::readBlock(Block *block) const {
 	if (meta.getMemOrder() != ROW+BLK) {
 		assert(0);
 	}
 
-	size_t offset = proj(block.key.coord,meta.getNumBlock()) * total_block_size;
+	size_t offset = proj(block->coord(),meta.getNumBlock()) * total_block_size;
 	Ferr ferr = 0;
 	size_t ret, len = 0;
-	char *mem = (char*)block.host_mem;
+	char *mem = (char*)block->getHostMem();
 
 	offset += initial_offset;
 	while (len < total_block_size) {
@@ -378,15 +381,15 @@ Ferr binary::readBlock(Block &block) const {
 	return ferr;
 }
 
-Ferr binary::writeBlock(const Block &block) {
+Ferr binary::writeBlock(const Block *block) {
 	if (meta.getMemOrder() != ROW+BLK) {
 		assert(0);
 	}
 
-	size_t offset = proj(block.key.coord,meta.getNumBlock()) * total_block_size;
+	size_t offset = proj(block->coord(),meta.getNumBlock()) * total_block_size;
 	Ferr ferr = 0;
 	size_t ret, len = 0;
-	char *mem = (char*)block.host_mem;
+	char *mem = (char*)block->getHostMem();
 
 	offset += initial_offset;
 	while (len < total_block_size) {
@@ -410,9 +413,9 @@ Ferr binary::writeBlock(const Block &block) {
 #define FALLOC_FL_PUNCH_HOLE   0x02
 #endif
 
-Ferr binary::discard(const Block &block) {
+Ferr binary::discard(const Block *block) {
 	Ferr ferr = 0;
-	size_t offset = proj(block.key.coord,meta.getNumBlock()) * total_block_size;
+	size_t offset = proj(block->coord(),meta.getNumBlock()) * total_block_size;
 
 	//ferr = fallocate(fd, FALLOC_FL_ZERO_RANGE, offset+initial_offset, total_block_size);
 	ferr = fallocate(fd, FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE, offset+initial_offset, total_block_size);

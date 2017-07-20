@@ -78,9 +78,9 @@ void LoopTask::askJobs(Job done_job, std::vector<Job> &job_vec) {
 	auto coord = done_job.coord;
 	auto iter = done_job.iter;
 	
-	mtx.lock();	
+	mtx.lock();
 	bool cycling = cycling_output[done_job];
-	mtx.unlock();	
+	mtx.unlock();
 
 	// Asks next-tasks for their next-jobs, a.k.a inter-dependencies (all Op)
 	for (auto next_task : this->nextList()) {
@@ -156,11 +156,11 @@ void LoopTask::postStore(Job job, const BlockList &in_blk, const BlockList &out_
 	// Finds 'cond_blk' among the blocks
 	Block *cond_blk = nullptr;
 	for (auto blk : out_blk)
-		cond_blk = (blk->key.node == cond_node) ? blk : cond_blk;
+		cond_blk = (blk->node() == cond_node) ? blk : cond_blk;
 	assert(cond_blk != nullptr);
 
 	// Sets 'cycling' according to the result of 'cond_blk'
-	bool cycling = cond_blk->value ? true : false;
+	bool cycling = cond_blk->getValue() ? true : false;
 
 	mtx.lock();
 	assert(cycling_output.find(job) == cycling_output.end());
@@ -173,7 +173,7 @@ void LoopTask::postStore(Job job, const BlockList &in_blk, const BlockList &out_
 		if (outputList()[i]->pattern().isNot(SWITCH))
 			continue; // only switch nodes
 		auto *swit = switch_list[j++];
-		auto blk = *std::find_if(out_blk.begin(),out_blk.end(),[&](Block *b){ return swit==b->key.node; });
+		auto blk = *std::find_if(out_blk.begin(),out_blk.end(),[&](Block *b){ return swit==b->node(); });
 
 		for (auto next : next_of_out[i]) {
 			if (cycling) {
@@ -194,7 +194,7 @@ void LoopTask::preForward(Job job, const BlockList &in_blk, const BlockList &out
 	auto body_out = full_unique_join(nodeList(),outputList());
 	
 	for (auto iblk : in_blk) {
-		forward[iblk->key.node] = iblk;
+		forward[iblk->node()] = iblk;
 	}
 
 	for (auto node : body_out) {
@@ -210,11 +210,11 @@ void LoopTask::preForward(Job job, const BlockList &in_blk, const BlockList &out
 	}
 
 	for (auto oblk : out_blk) {
-		if (oblk->fixed || oblk->holdtype() != HOLD_N) {
-			forward.erase(oblk->key.node);
+		if (oblk->holdtype() != HOLD_N || oblk->isFixed()) {
+			forward.erase(oblk->node());
 		} else {
-			assert(forward.find(oblk->key.node) != forward.end());
-			oblk->forwarded = true;
+			assert(forward.find(oblk->node()) != forward.end());
+			oblk->forward(true);
 		}
 	}
 }

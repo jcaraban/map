@@ -5,6 +5,7 @@
  */
 
 #include "scalar.hpp"
+#include "../runtime/block/Block.hpp"
 #include <limits>
 #include <cassert>
 
@@ -61,19 +62,19 @@ scalar::scalar(MetaData& meta, DataStats& stats)
 
 scalar::~scalar() { }
 
-Ferr scalar::readBlock(Block &block) const {
-	assert(block.holdtype() == HOLD_1);
-	block.fixValue(val);
+Ferr scalar::readBlock(Block *block) const {
+	assert(block->holdtype() == HOLD_1);
+	block->fixValue(val);
 	return 0;
 }
 
-Ferr scalar::writeBlock(const Block &block) {
-	assert(block.holdtype() == HOLD_1);
+Ferr scalar::writeBlock(const Block *block) {
+	assert(block->holdtype() == HOLD_1);
 	if (type == NONE_REDUCTION) {
-		val = block.value;
+		val = block->getValue();
 	} else {
 		std::lock_guard<std::mutex> lock(mtx); // thread-safe
-		val = type.apply(val,block.value);
+		val = type.apply(val,block->getValue());
 	}
 	return 0;
 }

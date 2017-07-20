@@ -14,6 +14,8 @@
 
 namespace map { namespace detail {
 
+struct Block; // forward declaration
+
 /*
  *
  */
@@ -43,8 +45,8 @@ class tiff : public IFormat<tiff>
     
 	//Ferr readBlock(void* dst, const Coord& block_coord);
 	//Ferr writeBlock(const void* src, const Coord& block_coord);
-	Ferr readBlock(Block &block) const;
-	Ferr writeBlock(const Block &block);
+	Ferr readBlock(Block *block) const;
+	Ferr writeBlock(const Block *block);
 };
 
 } } // namespace map::detail

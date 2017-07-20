@@ -10,7 +10,7 @@
 
 #include "Format.hpp"
 #include "../util/util.hpp"
-#include "../runtime/Block.hpp"
+#include "../runtime/block/Block.hpp"
 #include <string>
 
 
@@ -80,8 +80,8 @@ class IFile
 	virtual Ferr read(void* dst, const Coord& beg_coord, const Coord& end_coord) = 0;
 	virtual Ferr write(const void* src, const Coord& beg_coord, const Coord& end_coord) = 0;
 	
-	virtual Ferr readBlock(Block &block) const = 0;
-	virtual Ferr writeBlock(const Block &block) = 0;
+	virtual Ferr readBlock(Block *block) const = 0;
+	virtual Ferr writeBlock(const Block *block) = 0;
 
   protected:
 	/*************
@@ -147,11 +147,11 @@ class File : public IFile, public Format
 	virtual Ferr read(void* dst, const Coord& beg_coord, const Coord& end_coord);
 	virtual Ferr write(const void* src, const Coord& beg_coord, const Coord& end_coord);
 	
-	virtual Ferr readBlock(Block &block) const;
-	virtual Ferr writeBlock(const Block &block);
+	virtual Ferr readBlock(Block *block) const;
+	virtual Ferr writeBlock(const Block *block);
 	
 	Ferr create_temp_file(std::string file_path); // @
-	Ferr discard(const Block &block);
+	Ferr discard(const Block *block);
 	Ferr setReductionType(const ReductionType &type); // @
 	VariantType value(); // @
 };
@@ -450,17 +450,17 @@ Ferr FILE_DEC::write(const void* src, const Coord& beg_coord, const Coord& end_c
 }
 
 template <FILE_TPL>
-Ferr FILE_DEC::readBlock(Block &block) const {
+Ferr FILE_DEC::readBlock(Block *block) const {
 	Ferr ferr;
 
 	if (!is_open) {
 		assert(!"Error reading, no file was open yet!");
 	}
 	if (meta.num_dim.get() != D0) {
-		if (block.key.coord.size() != meta.num_dim.toInt()) {
+		if (block->coord().size() != meta.num_dim.toInt()) {
 			assert(0);
 		}
-		if (any(!in_range(block.key.coord,meta.getNumBlock()))) {
+		if (any(!in_range(block->coord(),meta.getNumBlock()))) {
 			assert(!"Error reading, coord is out of range");
 		}
 	}
@@ -480,17 +480,17 @@ Ferr FILE_DEC::readBlock(Block &block) const {
 }
 
 template <FILE_TPL>
-Ferr FILE_DEC::writeBlock(const Block &block) {
+Ferr FILE_DEC::writeBlock(const Block *block) {
 	Ferr ferr;
 
 	if (!is_open) {
 		assert(!"Error writing, no file was open yet!");
 	}
 	if (meta.num_dim.get() != D0) {
-		if (block.key.coord.size() != meta.num_dim.toInt()) {
+		if (block->coord().size() != meta.num_dim.toInt()) {
 			assert(0);
 		}
-		if (any(!in_range(block.key.coord,meta.getNumBlock()))) {
+		if (any(!in_range(block->coord(),meta.getNumBlock()))) {
 			assert(!"Error writing, coord is out of range");
 		}
 	}
@@ -507,13 +507,8 @@ Ferr FILE_DEC::writeBlock(const Block &block) {
 		access_mtx.unlock();
 
 	if (stats.active) {
-		assert(block.stats.active);
-		stats.set(block.key.coord,block.stats);
-		//int idx = proj(block.key.coord,getNumBlock());
-		//stats.maxb[idx] = block.stats.max;
-		//stats.meanb[idx] = block.stats.mean;
-		//stats.minb[idx] = block.stats.min;
-		//stats.stdb[idx] = block.stats.std;
+		assert(block->getStats().active);
+		stats.set(block->coord(),block->getStats());
 	}
 
 	return ferr;
@@ -548,7 +543,7 @@ Ferr FILE_DEC::create_temp_file(std::string file_path) { // @
 }
 
 template <FILE_TPL>
-Ferr FILE_DEC::discard(const Block &block) { // @
+Ferr FILE_DEC::discard(const Block *block) { // @
 	Ferr ferr;
 	
 	if (getStreamDir() == IN) {

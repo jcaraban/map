@@ -9,7 +9,7 @@
 #define MAP_RUNTIME_WORKER_HPP_
 
 #include "Job.hpp"
-#include "Block.hpp"
+#include "block/Block.hpp"
 #include "ThreadId.hpp"
 #include "Config.hpp"
 #include <vector>

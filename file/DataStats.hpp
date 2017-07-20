@@ -33,6 +33,7 @@ struct CellStats {
 	VariantType std;
 
 	CellStats();
+	bool operator==(const CellStats &other);
 };
 
 /*

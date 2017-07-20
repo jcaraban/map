@@ -13,7 +13,6 @@
 
 #include "MetaData.hpp"
 #include "DataStats.hpp"
-#include "../runtime/Block.hpp" // @
 
 
 namespace map { namespace detail {

@@ -201,23 +201,34 @@ void RadialTask::compute(Job job, const BlockList &in_blk, const BlockList &out_
 		int arg = 0;
 		
 		for (auto &b : in_blk) {
-			void *dev_mem = (b->entry != nullptr) ? b->entry->dev_mem : nullptr;
-			/****/ if (b->holdtype() == HOLD_0) { // If HOLD_0, a null argument is given to the kernel
+			void *dev_mem = b->getDevMem();
+			VariantType val = b->getValue();
+			bool fixed = b->isFixed();
+
+			if (b->holdtype() == HOLD_0) // If HOLD_0, a null argument is given to the kernel
+			{
 				clSetKernelArg(*krn, arg++, sizeof(cl_mem), &dev_mem);
-				clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &b->value.ref());
-				clSetKernelArg(*krn, arg++, sizeof(b->fixed), &b->fixed);
-			} else if (b->holdtype() == HOLD_1) { // If HOLD_1, a scalar argument is given
-				clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &b->value.ref());
-			} else if (b->holdtype() == HOLD_N) { // In the normal case a valid cl_mem with memory is given
+				clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &val.ref());
+				clSetKernelArg(*krn, arg++, sizeof(fixed), &fixed);
+			}
+			else if (b->holdtype() == HOLD_1) // If HOLD_1, a scalar argument is given
+			{
+				clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &val.ref());
+			}
+			else if (b->holdtype() == HOLD_N) // In the normal case a valid cl_mem with memory is given
+			{
 				clSetKernelArg(*krn, arg++, sizeof(cl_mem), &dev_mem);
-				clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &b->value.ref());
-				clSetKernelArg(*krn, arg++, sizeof(b->fixed), &b->fixed);
-			} else {
+				clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &val.ref());
+				clSetKernelArg(*krn, arg++, sizeof(fixed), &fixed);
+			}
+			else {
 				assert(0);
 			}
 		}
-		for (auto b : out_blk)
-			clSetKernelArg(*krn, arg++, sizeof(cl_mem), &b->entry->dev_mem);
+		for (auto b : out_blk) {
+			void *dev_mem = b->getDevMem();
+			clSetKernelArg(*krn, arg++, sizeof(cl_mem), &dev_mem);
+		}
 		for (int i=0; i<dim; i++)
 			clSetKernelArg(*krn, arg++, sizeof(int), &block_size[i]);
 		for (int i=0; i<dim; i++)

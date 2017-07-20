@@ -101,7 +101,7 @@ void Worker::load(Job job) {
 	cache.retainEntries(in_blk);
 	cache.retainEntries(out_blk);
 
-	cache.readInputBlocks(in_blk);
+	cache.loadInputBlocks(in_blk);
 	cache.initOutputBlocks(out_blk);
 }
 

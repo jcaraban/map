@@ -5,14 +5,18 @@
  * TODO: pinned_list now has 1 cl_mem per worker, it would need 'max_in_block+max_out_block' if events are activated
  * TODO: try 'events' again, make sure events are not re-allocated in the main worker loop (clCreateUserEvent clReleaseEvent)
  * TODO: create a pool of Blocks (like 'pinned_list') so that HOLD_0/1 blocks are reused instead than re-allocated non-stop
+ *
+ * TODO: releaseFile() fails for HOLD_1, becase the Block1 with coord {0,0} is deleted and recreated
+ *       since blocks own the file, the file is erased when this happens. Fix the del/new part in blocksToLoad() ?
  */
-
-... continue ... TODO: could load / store / retainFile be moved out of cache ?
 
 #include "Cache.hpp"
 #include "Program.hpp"
 #include "Clock.hpp"
 #include "Config.hpp"
+#include "block/Block0.hpp"
+#include "block/Block1.hpp"
+#include "block/BlockN.hpp"
 #include "../file/binary.hpp" // @ needed for retainFile
 #include <algorithm>
 #include "Runtime.hpp"
@@ -197,6 +201,8 @@ void Cache::freeEntries() {
 	file_count.clear();
 }
 
+//
+
 void Cache::requestBlocks(const KeyList &key_list, BlockList &blk_list) {
 	blk_list.clear();
 	int idx = 0;
@@ -207,17 +213,18 @@ void Cache::requestBlocks(const KeyList &key_list, BlockList &blk_list) {
 
 		/**/ if (hold == HOLD_0) // Null block that holds '0' values
 		{
-			blk_list.push_back( new Block(key,dep) );
+			blk_list.push_back( new Block0(key,dep) );
 		}
 		else if (hold == HOLD_1) // Block holds '1' value
 		{
-			blk_list.push_back( new Block(key,dep,scalar_page,nullptr) );
-			blk_list.back()->file = retainFile(blk_list.back()->key); // @@
+			blk_list.push_back( new Block1(key,dep,scalar_page) );
+			blk_list.back()->setFile( retainFile(blk_list.back()->key) ); // @@
 		}
 		//else if (hold == HOLD_2) // Block holds 'groups per block' values
 		//{
 		//	assert(0);
-		//	blk_list.push_back( new Block(key,dep,nullptr,group_page) );
+		//	blk_list.push_back( new Block2(key,dep,group_page) );
+		//	blk_list.back()->setFile( retainFile(blk_list.back()->key) ); // @@
 		//}
 		else if (hold == HOLD_N) // Normal case, block holds 'N' values
 		{
@@ -237,88 +244,39 @@ void Cache::retainEntries(BlockList &blk_list) {
 			retainEntry(blk);
 }
 
-void Cache::preLoadInputBlocks(BlockList &in_blk_list) {
+void Cache::preLoadInputBlocks(BlockList &in_blk_list) { // @
 	for (auto &iblk : in_blk_list)
 	{
-		if (iblk->holdtype() == HOLD_1)
-		{
-			loadScalar(iblk);
-		}
-		//else if (iblk->holdtype() == HOLD_2)
-		//{
-		//	assert(0);
-		//	loadGroups(iblk);
-		//}
-		else if (iblk->holdtype() == HOLD_N)
-		{
-			Node *node = iblk->key.node;
-			if (not iblk->isReady() && node->datastats().active)
-			{
-				auto coord = iblk->key.coord;
-				auto stats = node->datastats().get(coord);
-				iblk->setStats(stats);
-			}
-		}
+		iblk->preLoad();
 	}
 }
 
-void Cache::readInputBlocks(BlockList &in_blk_list) {
+void Cache::loadInputBlocks(BlockList &in_blk_list) { // @
 	for (auto &iblk : in_blk_list)
 	{
-		//if (iblk->holdtype() == HOLD_1)
-		//{
-		//	loadScalar(iblk);
-		//}
-		//else if (iblk->holdtype() == HOLD_2)
-		//{
-		//	assert(0);
-		//	loadGroups(iblk);
-		//}
-		if (iblk->holdtype() == HOLD_N)
-		{
-			readInBlk(iblk);
-		}
+		iblk->load();
 	}
 }
 
-void Cache::initOutputBlocks(BlockList &out_blk_list) {
+void Cache::initOutputBlocks(BlockList &out_blk_list) { // @
 	for (auto &oblk : out_blk_list)
 	{
-		if (oblk->holdtype() == HOLD_1)
-		{
-			initScalar(oblk);
-		}
-		//else if (oblk->holdtype() == HOLD_2)
-		//{
-		//	assert(0);
-		//	initGroups(oblk);
-		//}
+		oblk->init();
 	}
 }
 
-void Cache::writeOutputBlocks(BlockList &out_blk_list) {
+void Cache::writeOutputBlocks(BlockList &out_blk_list) { // @
 	for (auto &oblk : out_blk_list)
 	{
-		if (oblk->holdtype() == HOLD_1)
-		{
-			storeScalar(oblk);
-		}
-		//else if (oblk->holdtype() == HOLD_2)
-		//{
-		//	assert(0);
-		//	storeGroups(oblk);
-		//}
-		else if (oblk->holdtype() == HOLD_N)
-		{
-			writeOutBlk(oblk);
-		}
+		oblk->store();
 	}
 }
 
-void Cache::reduceOutputBlocks(BlockList &out_blk_list) {
+void Cache::reduceOutputBlocks(BlockList &out_blk_list) { // @
 	for (auto &oblk : out_blk_list)
-		if (oblk->holdtype() == HOLD_1)
-			reduceScalar(oblk);
+	{
+		oblk->reduce();
+	}
 }
 
 void Cache::releaseEntries(BlockList &blk_list) {
@@ -342,6 +300,7 @@ void Cache::returnBlocks(const KeyList &key_list, BlockList &blk_list) {
 		else if (hold == HOLD_1) // D0 block, holds '1' value
 		{
 			delete blk;
+			//releaseFile(key); // @@
 		}
 		else if (hold == HOLD_N) // Regular block, holds 'N' values
 		{
@@ -358,7 +317,7 @@ void Cache::returnBlocks(const KeyList &key_list, BlockList &blk_list) {
 
 Block* Cache::retainBlock(const Key &key, int depend) {
 	if (not conf.inmem_cache) { // no-cache mode
-		return new Block(key,DEPEND_UNKNOWN,unit_mem_size); // always created / deleted
+		return new BlockN(key,DEPEND_UNKNOWN,unit_mem_size); // always created / deleted
 	}
 	////////////////////////////
 	std::unique_lock<std::mutex> lock(mtx_blk); // thread-safe
@@ -373,8 +332,8 @@ Block* Cache::retainBlock(const Key &key, int depend) {
 	{
 		assert(depend > DEPEND_UNKNOWN);
 
-		blk = new Block(key,depend,unit_mem_size);
-		blk->file = retainFile(blk->key);
+		blk = new BlockN(key,depend,unit_mem_size);
+		blk->setFile( retainFile(blk->key) );
 
 		blk_hash[key] = std::unique_ptr<Block>(blk);
 	}
@@ -391,6 +350,8 @@ std::shared_ptr<IFile> Cache::retainFile(Key key) {
 	// All other nodes requires a temporal file
 	key.coord = Coord(); // file is shared by the whole data range
 	std::unique_lock<std::mutex> lock(mtx_file); // thread-safe
+
+	// @@ change 'if' to 'assert', 'retainFile' is only called once now
 
 	auto it = file_hash.find(key);
 	if (it == file_hash.end()) {
@@ -409,10 +370,7 @@ void Cache::retainEntry(Block *blk) {
 	////////////////////////////
 	std::unique_lock<std::mutex> lock(blk->mtx); // thread-safe
 
-	// Conditions for a block to require a cache entry
-	bool need_entry = not blk->entry && not blk->fixed && not blk->forwarded;
-
-	if (need_entry) {
+	if (blk->needEntry()) {
 		assert(not blk->isReady());
 		Entry *entry = getEntry(); // gets one for the block
 		entry->block = blk; // Links entry --> block
@@ -420,55 +378,19 @@ void Cache::retainEntry(Block *blk) {
 	}
 
 	blk->setUsed(); // Marked as used
-	blk->host_mem = pinned_ptr[Tid.proj()];
-}
-
-void Cache::readInBlk(Block *blk) {
-	////////////////////////////
-	std::unique_lock<std::mutex> lock(blk->mtx); // thread-safe
-
-	if (blk->isReady()) // No need to read when the value is 'ready'
-	{
-		clock.incr(NOT_LOADED);
-	}
-	else // not 'ready', loads the block from its file
-	{
-		load(blk);
-	}
-}
-
-void Cache::writeOutBlk(Block *blk) {
-	////////////////////////////
-	std::unique_lock<std::mutex> lock(blk->mtx); // thread-safe
-
-	if (not blk->isReady()) {
-		blk->setReady();
-		blk->setDirty();
-	}
-
-	// Inmediatelly stores 'output blocks', or when cache is deactivated
-	if (blk->key.node->isOutput() || !conf.inmem_cache) {
-		if (blk->isDirty())
-			blk->unsetDirty();
-		store(blk);
-	} else {
-		clock.incr(NOT_STORED);
-	}
+	blk->setHostMem(pinned_ptr[Tid.proj()]);
 }
 
 void Cache::releaseEntry(Block *blk) {
 	////////////////////////////
 	std::unique_lock<std::mutex> lock(blk->mtx); // thread-safe
-	auto isTemporal = [](Block *blk){ return !blk->key.node->isInput() && !blk->key.node->isOutput(); };
+	auto isTemporal = [](Block *blk){ return !blk->node()->isInput() && !blk->node()->isOutput(); };
 
 	// Notifying that block has been used
 	blk->notify();
 
-	// Conditions for a block to give its cache entry away
-	bool give_entry = blk->discardable() || blk->fixed;
-
 	// Discards blocks that will not be used anymore
-	if (give_entry)
+	if (blk->giveEntry())
 	{
 		clock.incr(DISCARDED);
 
@@ -477,8 +399,8 @@ void Cache::releaseEntry(Block *blk) {
 			// If this block was evited to disk, discard the file pages
 			if (isTemporal(blk) && not blk->isDirty()) 
 			{
-				auto *bin_file = dynamic_cast<File<binary>*>( blk->file.get() );
-				bin_file->discard(*blk);
+				auto *bin_file = dynamic_cast<File<binary>*>( blk->getFile().get() );
+				bin_file->discard(blk);
 			}
 
 			blk->entry->block = nullptr;
@@ -490,9 +412,9 @@ void Cache::releaseEntry(Block *blk) {
 
 	// Removes the 'used' mark
 	blk->unsetUsed();
-	blk->host_mem = nullptr;
+	blk->unsetHostMem();
 
-	if (give_entry)
+	if (blk->giveEntry())
 		blk->entry = nullptr;
 }
 
@@ -524,16 +446,15 @@ void Cache::releaseFile(Key key) {
 	std::unique_lock<std::mutex> lock(mtx_file); // thread-safe
 	key.coord = Coord();
 
-	// Excludes files owned by IO-nodes
-	if (file_hash.find(key) != file_hash.end()) {
-		auto it = file_count.find(key);
-		assert(it != file_count.end());
+	if (file_hash.find(key) == file_hash.end())
+		return; // Excludes non-allocated files, i.e. IO-nodes files
 
-		// Notifies the 'file counter' and releases the 'files' when done
-		it->second--; // count--
-		if (it->second == 0)
-			file_hash.erase(key);
-	}
+	auto it = file_count.find(key);
+	assert(it != file_count.end());
+	
+	it->second--; // Notifies the 'file', i.e. counter--
+	if (it->second == 0) // Releases the 'files' when done
+		file_hash.erase(key);
 }
 
 //
@@ -581,114 +502,17 @@ void Cache::evict(Block *old) {
 		old->unsetDirty();
 
 		mtx_lru.unlock();
-		store(old);
+		{ // @@
+			assert(old->holdtype() == HOLD_N);
+			clock.incr(STORED);
+			old->recv();
+			old->store();
+		}
 		mtx_lru.lock();
 	}
 
 	old->unsetReady();
 	old->entry = nullptr;
-}
-
-// Load, Init, Store
-
-void Cache::load(Block *block) {
-	assert(block->holdtype() == HOLD_N);
-	clock.incr(LOADED);
-
-	block->load();
-	block->send();
-	block->setReady();
-}
-
-void Cache::store(Block *block) {
-	assert(block->holdtype() == HOLD_N);
-	clock.incr(STORED);
-
-	block->recv();
-	block->store();
-}
-
-// Scalar
-
-void Cache::loadScalar(Block *block) {
-	assert(block->holdtype() == HOLD_1);
-	assert(block->value.isNone());
-
-	if (block->key.node->isConstant())
-	{
-		block->fixValue(block->key.node->value);
-	}
-	else // not constant
-	{
-		//IFile *file = retainFile(block->key);
-		block->load();
-	}
-}
-
-void Cache::initScalar(Block *block) {
-	if (not block->key.node->isReduction() || block->fixed)
-		return; // only for 'reductions' that were not 'predicted' in the pre_load
-
-	block->value = block->key.node->initialValue();
-
-	int offset = sizeof(double) * (conf.max_out_block*Tid.rnk() + block->order);
-	size_t dtsz = block->datatype().sizeOf();
-	size_t size = dtsz;
-
-	{ // Fill just 1 value
-	TimedRegion region(Runtime::getClock(),SEND);
-	cle::Queue que = Runtime::getOclEnv().D(Tid.dev()).Q(Tid.rnk());
-	cl_int err = clEnqueueFillBuffer(*que,scalar_page,&block->value.ref(),dtsz,offset,size,0,nullptr,nullptr);
-	cle::clCheckError(err);
-	}
-}
-
-
-void Cache::storeScalar(Block *block) {
-	if (block->key.node->isReduction())
-		return;
-
-	assert(block->holdtype() == HOLD_1);
-	assert(not block->value.isNone());
-	assert(block->fixed);
-
-	//IFile *file = retainFile(block->key);
-	block->store();
-}
-
-void Cache::reduceScalar(Block *block) {
-	if (not block->key.node->isReduction() || block->fixed)
-		return; // only for 'reductions' that were not 'predicted' in the pre_load
-
-	assert(block->holdtype() == HOLD_1);
-	assert(not block->value.isNone());
-
-	int offset = sizeof(double) * (conf.max_out_block*Tid.rnk() + block->order);
-	size_t size = block->datatype().sizeOf();
-
-	{
-	TimedRegion region(Runtime::getClock(),RECV);
-	cle::Queue que = Runtime::getOclEnv().D(Tid.dev()).Q(Tid.rnk());
-	cl_int clerr = clEnqueueReadBuffer(*que,scalar_page,CL_TRUE,offset,size,&block->value.ref(),0,nullptr,nullptr);
-	cle::clCheckError(clerr);
-	}
-
-	//IFile *file = retainFile(block->key);
-	block->store();
-}
-
-// Group
-
-void Cache::storeGroups(Block *block) {
-	assert(0);
-}
-
-void Cache::loadGroups(Block *block) {
-	assert(0);
-}
-
-void Cache::initGroups(Block *block) {
-	assert(0);
 }
 
 } } // namespace map::detail

@@ -489,22 +489,22 @@ void Task::postStore(Job job, const BlockList &in_blk, const BlockList &out_blk)
 
 	// @ Integrates 'stats' to the block and node
 	for (auto blk : out_blk) {
-		if (blk->key.node->pattern().isNot(STATS))
+		if (blk->node()->pattern().isNot(STATS))
 			continue;
-		auto *summary = dynamic_cast<Summary*>(blk->key.node);
+		auto *summary = dynamic_cast<Summary*>(blk->node());
 		if (summary != nullptr) {
 			VariantType min, max, mean, std;
 
 			// Finds the blocks storing the individual statistics
 			for (auto b : out_blk) {
-				if (b->key.node == summary->min())
-					min = b->value;
-				if (b->key.node == summary->max())
-					max = b->value;
-				if (b->key.node == summary->mean())
-					assert(0); //mean = b->value;
-				if (b->key.node == summary->std())
-					assert(0); //std = b->value;
+				if (b->node() == summary->min())
+					min = b->getValue();
+				if (b->node() == summary->max())
+					max = b->getValue();
+				if (b->node() == summary->mean())
+					assert(0); //mean = b->getValue();
+				if (b->node() == summary->std())
+					assert(0); //std = b->getValue();
 			}
 			// @@
 			mean = BinaryType(DIV).apply(BinaryType(ADD).apply(min, max), 2);
@@ -522,7 +522,7 @@ void Task::postStore(Job job, const BlockList &in_blk, const BlockList &out_blk)
 			blk->setStats(sta);
 
 			// Fills the 'node' with the statistics
-			blk->key.node->stats.set(coord,sta);
+			blk->node()->stats.set(coord,sta);
 		}
 	}
 }
@@ -543,10 +543,10 @@ void Task::postWork(Job job, const BlockList &in_blk, const BlockList &out_blk) 
 	{
 		// @ Integrates reduced zonal value to the node
 		for (auto blk : out_blk) {
-			if (blk->key.node->isReduction()) {
+			if (blk->node()->isReduction()) {
 				// Loads the last reduced value
 				blk->load(); // saves it in the node
-				blk->key.node->value = blk->value;
+				blk->node()->value = blk->getValue();
 			}
 		}
 	}
@@ -556,7 +556,7 @@ void Task::compute(Job job, const BlockList &in_blk, const BlockList &out_blk) {
 	const Version *ver = getVersion(DEV_ALL,{},""); // Any device, No detail
 	assert(ver != nullptr);
 
-	auto all_pred = [&](Block *b){ return b->fixed || b->forwarded; };
+	auto all_pred = [&](Block *b){ return b->isFixed() || b->forward(); };
 
 	if (std::all_of(out_blk.begin(),out_blk.end(),all_pred)) {
 		clock.incr(NOT_COMPUTED);
@@ -593,35 +593,37 @@ void Task::computeVersion(Job job, const BlockList &in_blk, const BlockList &out
 	int arg = 0;
 
 	for (auto &b : in_blk) {
-		void *dev_mem = (b->entry != nullptr) ? b->entry->dev_mem : nullptr;
+		void *dev_mem = b->getDevMem();
+		VariantType val = b->getValue();
+		bool fixed = b->isFixed();
 
 		if (b->holdtype() == HOLD_0) // If HOLD_0, a null argument is given to the kernel
 		{
 			clSetKernelArg(*krn, arg++, sizeof(cl_mem), &dev_mem);
-			clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &b->value.ref());
-			clSetKernelArg(*krn, arg++, sizeof(b->fixed), &b->fixed);
+			clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &val.ref());
+			clSetKernelArg(*krn, arg++, sizeof(fixed), &fixed);
 		}
 		else if (b->holdtype() == HOLD_1) // If HOLD_1, a scalar argument is given
 		{
-			clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &b->value.ref());
+			clSetKernelArg(*krn, arg++, val.datatype().sizeOf(), &val.ref());
 		}
 		else if (b->holdtype() == HOLD_N) // In the normal case a valid cl_mem with memory is given
 		{
 			clSetKernelArg(*krn, arg++, sizeof(cl_mem), &dev_mem);
-			clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &b->value.ref());
-			clSetKernelArg(*krn, arg++, sizeof(b->fixed), &b->fixed);
+			clSetKernelArg(*krn, arg++, b->datatype().sizeOf(), &val.ref());
+			clSetKernelArg(*krn, arg++, sizeof(fixed), &fixed);
 		}
 		else {
 			assert(0);
 		}
 	}
 	for (auto &b : out_blk) {
-		void *dev_mem = (b->entry != nullptr) ? b->entry->dev_mem : nullptr;
+		void *dev_mem = b->getDevMem();
 
 		if (b->holdtype() == HOLD_1) { // If HOLD_1, the scalar_page + offset are given
-			if (b->key.node->isReduction())
+			if (b->node()->isReduction())
 			{
-				clSetKernelArg(*krn, arg++, sizeof(cl_mem), &b->scalar_page);
+				clSetKernelArg(*krn, arg++, sizeof(cl_mem), &dev_mem);
 				int offset = sizeof(double)*(conf.max_out_block*Tid.rnk() + b->order);
 				clSetKernelArg(*krn, arg++, sizeof(int), &offset);
 			}
@@ -666,20 +668,20 @@ void Task::fixingValues(Job job, const BlockList &in_blk, const BlockList &out_b
 	for (auto in : in_blk) {
 		if (in->holdtype() == HOLD_0) // When the block is null, looks for the central block
 		{
-			//assert(not all(in->key.coord == job.coord));
+			//assert(not all(in->coord() == job.coord));
 
-			Key in_key = Key(in->key.node,job.coord,job.iter);
+			Key in_key = Key(in->node(),job.coord,job.iter);
 			auto pred = [&](const Block *b){ return b->key == in_key; };
 			auto it = std::find_if(in_blk.begin(),in_blk.end(),pred);
 			assert(it != in_blk.end());
 
-			in_key = Key(in->key.node,in->key.coord); // no iter
-			val_hash[in_key] = ValFix((*it)->value,(*it)->fixed,(*it)->stats);
+			in_key = Key(in->node(),in->coord()); // no iter
+			val_hash[in_key] = ValFix((*it)->getValue(),(*it)->isFixed(),(*it)->getStats());
 		}
 		else // HOLD_1 or HOLD_N
 		{
-			Key in_key = Key(in->key.node,in->key.coord); // no iter
-			val_hash[in_key] = ValFix(in->value,in->fixed,in->stats);
+			Key in_key = Key(in->node(),in->coord()); // no iter
+			val_hash[in_key] = ValFix(in->getValue(),in->isFixed(),in->getStats());
 		}
 	}
 
@@ -703,7 +705,7 @@ void Task::fixingValues(Job job, const BlockList &in_blk, const BlockList &out_b
 
 	// Transfer outputs to 'out_blk'
 	for (auto out : out_blk) {
-		Key out_key = Key(out->key.node,job.coord); // no iter
+		Key out_key = Key(out->node(),job.coord); // no iter
 		assert(val_hash.find(out_key) != val_hash.end());
 		auto vf = val_hash[out_key];
 
@@ -723,15 +725,15 @@ void Task::preForward(Job job, const BlockList &in_blk, const BlockList &out_blk
 	auto body_out = full_unique_join(nodeList(),outputList());
 
 	for (auto iblk : in_blk) {
-		if (iblk->fixed || iblk->holdtype() != HOLD_N);
-			continue; // no entry to forward
-		assert(not iblk->entry);
+		if (iblk->holdtype() != HOLD_N || iblk->isFixed())
+			continue; // no entry holder? no forward
+		// It is ok if 'iblk' gets its entry later (i.e. Read)
 
-		auto next_list = iblk->key.node->nextList();
+		auto next_list = iblk->node()->nextList();
 		auto outside = left_join(next_list,body_out);
 		// Cannot forward with external dependencies
 		if (outside.empty())
-			forward[iblk->key.node] = iblk;
+			forward[iblk->node()] = iblk;
 	}
 
 	for (auto node : body_out) {
@@ -743,13 +745,13 @@ void Task::preForward(Job job, const BlockList &in_blk, const BlockList &out_blk
 	}
 
 	for (auto oblk : out_blk) {
-		bool forw = forward.find(oblk->key.node) != forward.end();
-		bool free = taken.find(oblk->key.node) == taken.end();
+		bool forw = forward.find(oblk->node()) != forward.end();
+		bool free = taken.find(oblk->node()) == taken.end();
 		// Only one output node can receive the forwarded input,
 		// other nodes will perform a copy of the memory block
 		if (forw and free) {
-			oblk->forwarded = true;
-			taken.insert(oblk->key.node);
+			oblk->forward(true);
+			taken.insert(oblk->node());
 		}
 	}
 }
@@ -759,14 +761,14 @@ void Task::postForward(Job job, const BlockList &in_blk, const BlockList &out_bl
 	std::unordered_map<Node*,Block*> &forward = forward_list[Tid.proj()];
 
 	for (auto oblk : out_blk) {
-		if (forward.find(oblk->key.node) != forward.end()) {
-			Block *iblk = forward[oblk->key.node];
+		if (forward.find(oblk->node()) != forward.end()) {
+			Block *iblk = forward[oblk->node()];
 			assert(is_included(iblk,in_blk));
-			assert(oblk->stats == iblk->stats);
-			assert(oblk->forwarded && not oblk->fixed);
+			assert(oblk->getStats() == iblk->getStats());
+			assert(oblk->forward() && not oblk->isFixed());
 			
 			iblk->forwardEntry(oblk);
-			oblk->forwarded = false; // The 'forwarding' state ends
+			oblk->forward(false); // The 'forwarding' state ends
 		}
 	}
 

@@ -13,13 +13,12 @@
 #define MAP_RUNTIME_CACHE_HPP_
 
 #include "Entry.hpp"
-#include "Block.hpp"
+#include "block/Block.hpp"
 #include <vector>
 #include <list>
 #include <unordered_map>
 #include <memory>
 #include <mutex>
-#include <condition_variable>
 #include <functional>
 
 
@@ -33,6 +32,45 @@ typedef std::shared_ptr<IFile> SharedFile;
 
 class Cache
 {
+  public:
+	Cache(Clock &clock, Config &conf);
+	~Cache();
+	Cache(const Cache&) = delete;
+	Cache& operator=(const Cache&) = delete;
+
+	void clear();
+
+	void allocChunks(cle::Context ctx);
+	void freeChunks();
+	void allocEntries(const Program &prog);
+	void freeEntries();
+
+	void requestBlocks(const KeyList &key_list, BlockList &blk_list);
+	void retainEntries(BlockList &blk_list);
+
+	void returnBlocks(const KeyList &key_list, BlockList &blk_list);
+	void releaseEntries(BlockList &blk_list);
+
+	void preLoadInputBlocks(BlockList &in_blk_list); // @
+	void loadInputBlocks(BlockList &in_blk_list); // @
+	void initOutputBlocks(BlockList &out_blk_list); // @
+	void writeOutputBlocks(BlockList &out_blk_list); // @
+	void reduceOutputBlocks(BlockList &out_blk_list); // @
+
+  private:
+  	Block* retainBlock(const Key &k, int depend);
+	std::shared_ptr<IFile> retainFile(Key key);
+	void retainEntry(Block *blk);
+
+	void releaseEntry(Block *blk);
+	void releaseBlock(const Key &key, Block *blk);
+	void releaseFile(Key key);
+
+	Entry* getEntry();
+	void touchEntry(Entry *entry);
+	void dropEntry(Entry *entry);
+	void evict(Block *block);
+
   private:
 	Clock &clock; // Aggregate
 	Config &conf; // Aggregate
@@ -55,61 +93,6 @@ class Cache
 
 	std::unordered_map<Key,SharedFile,key_hash> file_hash;
 	std::unordered_map<Key,int,key_hash> file_count;
-
-  public:
-	Cache(Clock &clock, Config &conf);
-	~Cache();
-	Cache(const Cache&) = delete;
-	Cache& operator=(const Cache&) = delete;
-
-	void clear();
-
-	void allocChunks(cle::Context ctx);
-	void freeChunks();
-	void allocEntries(const Program &prog);
-	void freeEntries();
-
-	void requestBlocks(const KeyList &key_list, BlockList &blk_list);
-	void retainEntries(BlockList &blk_list);
-
-	void preLoadInputBlocks(BlockList &in_blk_list);
-	void readInputBlocks(BlockList &in_blk_list);
-	void initOutputBlocks(BlockList &out_blk_list);
-	void writeOutputBlocks(BlockList &out_blk_list);
-	void reduceOutputBlocks(BlockList &out_blk_list);
-
-	void releaseEntries(BlockList &blk_list);
-	void returnBlocks(const KeyList &key_list, BlockList &blk_list);
-
-  private:
-  	Block* retainBlock(const Key &k, int depend);
-	void retainEntry(Block *blk);
-
-	std::shared_ptr<IFile> retainFile(Key key);
-	void releaseFile(Key key);
-
-	void readInBlk(Block *blk);
-	void writeOutBlk(Block *blk);
-
-	void releaseEntry(Block *blk);
-	void releaseBlock(const Key &key, Block *blk);
-
-	Entry* getEntry();
-	void touchEntry(Entry *entry);
-	void dropEntry(Entry *entry);
-	void evict(Block *block);
-
-	void load(Block *block);
-	void store(Block *block);
-
-	void loadScalar(Block *block);
-	void initScalar(Block *block);
-	void storeScalar(Block *block);
-	void reduceScalar(Block *block);
-
-	void loadGroups(Block *block);
-	void initGroups(Block *blocks);
-	void storeGroups(Block *block);
 };
 
 } } // namespace map::detail

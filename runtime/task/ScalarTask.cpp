@@ -2,7 +2,6 @@
  * @file    ScalarTask.cpp 
  * @author  Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * // @@@ there is a race condition making 'node->value == blk->value' false
  */
 
 #include "ScalarTask.hpp"
@@ -44,17 +43,19 @@ void ScalarTask::compute(Job job, const BlockList &in_blk, const BlockList &out_
 		Node *node = inputList()[i];
 		Block *blk = in_blk[i];
 
-		assert(node == blk->key.node);
+		assert(node == blk->node());
 		assert(node->value.datatype() != NONE_DATATYPE);
-		assert(node->value == blk->value);
+		assert(node->value == blk->getValue());
 
-		hash[node] = blk->value;
+		hash[node] = blk->getValue();
+std::cout << "iblk " << node->id << ":\t" << blk->getValue() << std::endl;
 	}
 	
 	// Actual scalar computation, in forward order
 	for (auto node : nodeList()) {
 		node->computeScalar(hash);
 		node->value = hash.find(node)->second;
+std::cout << "node " << node->id << ":\t" << node->value << std::endl;
 	}
 
 	// Storing scalar outputs
@@ -62,9 +63,9 @@ void ScalarTask::compute(Job job, const BlockList &in_blk, const BlockList &out_
 		Node *node = outputList()[i];
 		Block *blk = out_blk[i];
 
-		assert(node == blk->key.node);
+		assert(node == blk->node());
 		assert(node->value.datatype() != NONE_DATATYPE);
-		assert(blk->value.datatype() == NONE_DATATYPE);
+		assert(blk->getValue().datatype() == NONE_DATATYPE);
 
 		blk->fixValue( hash.find(node)->second );
 	}
