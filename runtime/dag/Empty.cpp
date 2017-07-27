@@ -55,7 +55,11 @@ void Empty::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string Empty::getName() const {
+std::string Empty::shortName() const {
+	return "Empty";
+}
+
+std::string Empty::longName() const {
 	return "Empty";
 }
 
@@ -75,7 +79,7 @@ void Empty::computeScalar(std::unordered_map<Node*,VariantType> &hash) {
 }
 
 void Empty::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
-	hash[{this,coord}] = ValFix(); // @@ ValFix(VariantType());
+	hash[{this,coord}] = ValFix(VariantType(0,datatype())); // @@
 }
 
 } } // namespace map::detail

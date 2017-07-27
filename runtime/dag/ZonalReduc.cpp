@@ -71,8 +71,13 @@ void ZonalReduc::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string ZonalReduc::getName() const {
+std::string ZonalReduc::shortName() const {
 	return "ZonalReduc";
+}
+
+std::string ZonalReduc::longName() const {
+	std::string str = "ZonalReduc {" + std::to_string(prev()->id) + "}";
+	return str;
 }
 
 std::string ZonalReduc::signature() const {
@@ -104,10 +109,15 @@ void ZonalReduc::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_has
 	ValFix vf = ValFix();
 
 	auto prev = hash.find({node->prev(),coord})->second;
+
 	if (prev.fixed) {
+		Ctype<F64> num = prod(blocksize());
+		Ctype<F64> val = prev.value.convert(F64).get<F64>();
+		// @ sure about using F64 ?
+
 		switch (node->type.get()) {
-			case SUM:  vf = ValFix( BinaryType(MUL).apply( prev.value , prod(blocksize()) ) ); break;
-			case PROD: vf = ValFix( BinaryType(POW).apply( prev.value , prod(blocksize()) ) ); break;
+			case SUM:  vf = ValFix(VariantType( val * num, datatype() )); break;
+			case PROD: vf = ValFix(VariantType( std::pow(val,num), datatype() )); break;
 			case rAND: vf = ValFix(prev.value); break;
 			case rOR:  vf = ValFix(prev.value); break;
 			case MAX:  vf = ValFix(prev.value); break;

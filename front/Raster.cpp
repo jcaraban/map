@@ -209,6 +209,10 @@ Raster barrier(Raster data) {
 	return Raster( ma_barrier(data.node) );
 }
 
+Raster identity(Raster data) {
+	return Raster( ma_identity(data.node) );
+}
+
 VariantType value(Raster data) {
 	return ma_value(data.node);
 }

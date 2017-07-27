@@ -71,8 +71,13 @@ void DataSummary::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string DataSummary::getName() const {
+std::string DataSummary::shortName() const {
 	return "DataSummary";
+}
+
+std::string DataSummary::longName() const {
+	std::string str = "DataSummary {" + std::to_string(prev()->id) + "}";
+	return str;
 }
 
 std::string DataSummary::signature() const {

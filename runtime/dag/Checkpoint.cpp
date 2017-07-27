@@ -74,8 +74,13 @@ void Checkpoint::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string Checkpoint::getName() const {
+std::string Checkpoint::shortName() const {
 	return "Checkpoint";
+}
+
+std::string Checkpoint::longName() const {
+	std::string str = "Checkpoint {" + std::to_string(prev()->id) + "}";
+	return str;
 }
 
 std::string Checkpoint::signature() const {

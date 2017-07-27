@@ -15,7 +15,7 @@ namespace map { namespace detail {
 
 Write::Content::Content(Write *node) {
 	prev = node->prev();
-	path = node->file()->getFilePath();
+	path = node->getFile()->getFilePath();
 }
 
 bool Write::Content::operator==(const Content& k) const {
@@ -74,8 +74,13 @@ void Write::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string Write::getName() const {
+std::string Write::shortName() const {
 	return "Write";
+}
+
+std::string Write::longName() const {
+	std::string str = "Write {" + std::to_string(prev()->id) + "}";
+	return str;
 }
 
 std::string Write::signature() const {
@@ -83,7 +88,7 @@ std::string Write::signature() const {
 	sign += classSignature();
 	sign += prev()->numdim().toString();
 	sign += prev()->datatype().toString();
-	sign += file()->getFilePath();
+	sign += getFile()->getFilePath();
 	return sign;
 }
 

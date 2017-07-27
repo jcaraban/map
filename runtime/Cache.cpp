@@ -238,48 +238,13 @@ void Cache::requestBlocks(const KeyList &key_list, BlockList &blk_list) {
 	}
 }
 
-void Cache::retainEntries(BlockList &blk_list) {
+void Cache::requestEntries(BlockList &blk_list) {
 	for (auto &blk : blk_list)
 		if (blk->holdtype() == HOLD_N)
 			retainEntry(blk);
 }
 
-void Cache::preLoadInputBlocks(BlockList &in_blk_list) { // @
-	for (auto &iblk : in_blk_list)
-	{
-		iblk->preLoad();
-	}
-}
-
-void Cache::loadInputBlocks(BlockList &in_blk_list) { // @
-	for (auto &iblk : in_blk_list)
-	{
-		iblk->load();
-	}
-}
-
-void Cache::initOutputBlocks(BlockList &out_blk_list) { // @
-	for (auto &oblk : out_blk_list)
-	{
-		oblk->init();
-	}
-}
-
-void Cache::writeOutputBlocks(BlockList &out_blk_list) { // @
-	for (auto &oblk : out_blk_list)
-	{
-		oblk->store();
-	}
-}
-
-void Cache::reduceOutputBlocks(BlockList &out_blk_list) { // @
-	for (auto &oblk : out_blk_list)
-	{
-		oblk->reduce();
-	}
-}
-
-void Cache::releaseEntries(BlockList &blk_list) {
+void Cache::returnEntries(BlockList &blk_list) {
 	for (auto &blk : blk_list)
 		if (blk->holdtype() == HOLD_N)
 			releaseEntry(blk);
@@ -333,25 +298,27 @@ Block* Cache::retainBlock(const Key &key, int depend) {
 		assert(depend > DEPEND_UNKNOWN);
 
 		blk = new BlockN(key,depend,unit_mem_size);
-		blk->setFile( retainFile(blk->key) );
-
 		blk_hash[key] = std::unique_ptr<Block>(blk);
+
+		blk->setFile( retainFile(blk->key) );
+	}
+
+	{ // Marks block (and entry if exists) as used
+		std::unique_lock<std::mutex> lock(blk->mtx); // thread-safe
+		blk->setUsed();
 	}
 
 	return blk;
 }
 
 std::shared_ptr<IFile> Cache::retainFile(Key key) {
-	// IO-nodes have their own file
-	IONode *ionode = dynamic_cast<IONode*>(key.node);
-	if (ionode != nullptr)
-		return ionode->file();
+	// Some nodes have their own file (e.g. Read, Write, Identity of IO-node)
+	if (key.node->file.get() != nullptr)
+		return key.node->file;
 
 	// All other nodes requires a temporal file
 	key.coord = Coord(); // file is shared by the whole data range
 	std::unique_lock<std::mutex> lock(mtx_file); // thread-safe
-
-	// @@ change 'if' to 'assert', 'retainFile' is only called once now
 
 	auto it = file_hash.find(key);
 	if (it == file_hash.end()) {
@@ -372,19 +339,15 @@ void Cache::retainEntry(Block *blk) {
 
 	if (blk->needEntry()) {
 		assert(not blk->isReady());
-		Entry *entry = getEntry(); // gets one for the block
-		entry->block = blk; // Links entry --> block
-		blk->entry = entry; // Links block --> entry
+		Entry *entry = takeEntry(); // gets one for the block
+		entry->used = blk->used; // Entry::used must equals Block::used
+		blk->setEntry(entry); // Links block --> entry
 	}
-
-	blk->setUsed(); // Marked as used
-	blk->setHostMem(pinned_ptr[Tid.proj()]);
 }
 
 void Cache::releaseEntry(Block *blk) {
 	////////////////////////////
 	std::unique_lock<std::mutex> lock(blk->mtx); // thread-safe
-	auto isTemporal = [](Block *blk){ return !blk->node()->isInput() && !blk->node()->isOutput(); };
 
 	// Notifying that block has been used
 	blk->notify();
@@ -392,35 +355,31 @@ void Cache::releaseEntry(Block *blk) {
 	// Discards blocks that will not be used anymore
 	if (blk->giveEntry())
 	{
-		clock.incr(DISCARDED);
-
-		if (blk->entry != nullptr)
+		// If this block was evicted to disk, discard the file pages
+		if (blk->streamdir() == IO && not blk->isDirty())
 		{
-			// If this block was evited to disk, discard the file pages
-			if (isTemporal(blk) && not blk->isDirty()) 
-			{
-				auto *bin_file = dynamic_cast<File<binary>*>( blk->getFile().get() );
-				bin_file->discard(blk);
-			}
-
-			blk->entry->block = nullptr;
-			if (blk->entry->isDirty())
-				blk->entry->unsetDirty();
-			dropEntry(blk->entry);
+			auto *bin_file = dynamic_cast<File<binary>*>( blk->getFile().get() );
+			bin_file->discard(blk);
 		}
+		// Giving the entry of a dirty block avoids stores
+		if (blk->isDirty()) {
+			blk->unsetDirty();
+			clock.incr(DISCARDED);
+		}
+
+		// Unlinks and gives back the entry
+		blk->getEntry()->block = nullptr;
+		dropEntry(blk->getEntry());
+		blk->unsetEntry();
 	}
 
 	// Removes the 'used' mark
 	blk->unsetUsed();
-	blk->unsetHostMem();
-
-	if (blk->giveEntry())
-		blk->entry = nullptr;
 }
 
 void Cache::releaseBlock(const Key &key, Block *blk) {
 	if (not conf.inmem_cache) {
-		blk->entry->reset();
+		blk->getEntry()->reset();
 		delete blk; // Always delete in no-cache mode
 		return;
 	}
@@ -436,7 +395,7 @@ void Cache::releaseBlock(const Key &key, Block *blk) {
 	}
 
 	if (erase) {
-		assert(blk->entry == nullptr);
+		assert(not blk->getEntry());
 		blk_hash.erase(key); // deletes those blocks that are not needed anymore
 		releaseFile(key);
 	}
@@ -457,19 +416,26 @@ void Cache::releaseFile(Key key) {
 		file_hash.erase(key);
 }
 
+void* Cache::requestHostMem(ThreadId id) {
+	return pinned_ptr[id.proj()];
+}
+
 //
 
-Entry* Cache::getEntry() {
+Entry* Cache::takeEntry() {
 	std::unique_lock<std::mutex> lock(mtx_lru); // thread-safe
 
 	for (auto it=lru_list.begin(); it!=lru_list.end(); it++) {
 		Entry *entry = *it;
 		if (not entry->isUsed()) // If not used, touches and returns
 		{
-			entry->setUsed(); // set 'used' while evicting, for security
+			entry->setUsed(); // first mark
+			assert(entry->used == 1);
+
 			touchEntry(entry);
-			evict(entry->block);
-			entry->unsetUsed(); // unset 'used'
+			if (entry->block) // if the entry was owned by another block,
+				entry->block->mtx.lock(); // keep locked until evicted!
+
 			return entry;
 		}
 	}
@@ -488,31 +454,9 @@ void Cache::dropEntry(Entry* entry) {
 	lru_list.erase(entry->self);
 	lru_list.push_front(entry);
 	entry->self = lru_list.begin();
-}
 
-void Cache::evict(Block *old) {
-	if (old == nullptr)
-		return; // first use of an Entry
-	////////////////////////////
-	std::unique_lock<std::mutex> lock(old->mtx); // thread-safe
-
-	if (old->isDirty()) {
-		clock.incr(EVICTED);
-		clock.decr(NOT_STORED);
-		old->unsetDirty();
-
-		mtx_lru.unlock();
-		{ // @@
-			assert(old->holdtype() == HOLD_N);
-			clock.incr(STORED);
-			old->recv();
-			old->store();
-		}
-		mtx_lru.lock();
-	}
-
-	old->unsetReady();
-	old->entry = nullptr;
+	entry->unsetUsed(); // last unmark
+	assert(entry->used == 0);
 }
 
 } } // namespace map::detail

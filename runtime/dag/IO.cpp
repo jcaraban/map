@@ -16,25 +16,30 @@ IONode::IONode() { }
 
 IONode::IONode(SharedFile file, InputNodeFlag not_used)
 	: Node(file->getMetaData())
-	, io_file(file)
-{ }
+{
+	this->file = file; // @ pass 'file' in the initializer list?
+}
 
 IONode::IONode(SharedFile file, OutputNodeFlag not_used)
 	: Node() // OutputNode shares the unique id
-	, io_file(file)
-{ }
+{
+	this->file = file; // @ pass 'file' in the initializer list?
+}
 
 IONode::IONode(const IONode *other, const std::unordered_map<Node*,Node*> &other_to_this)
 	: Node(other,other_to_this)
-	, io_file(other->io_file)
-{ }
-
-SharedFile IONode::file() {
-	return io_file;
+{
+	this->file = other->file;
 }
 
-const SharedFile IONode::file() const {
-	return io_file;
+IONode::~IONode() { }
+
+//SharedFile IONode::getFile() {
+//	return file;
+//}
+
+const SharedFile IONode::getFile() const {
+	return file;
 }
 
 /******
@@ -79,6 +84,10 @@ OutputNode::OutputNode(Node *prev, SharedFile file)
 
 	this->in_spatial_reach = Mask(numdim().unitVec(),true);
 	this->out_spatial_reach = Mask(numdim().unitVec(),true); // @ shall be empty ?
+}
+
+OutputNode::~OutputNode() {
+	getFile()->setDataStats(stats);
 }
 
 bool OutputNode::isOutput() const {

@@ -1,8 +1,10 @@
 from map import * ## "Parallel Map Algebra" package
 import sys
 
+# TODO: why only the first Head task is forwarded() ?
+
 setupDevices("",DEV_GPU,"")
-#setNumRanks(1)
+setNumRanks(1)
 
 ## Arguments
 

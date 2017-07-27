@@ -92,7 +92,7 @@ void Exporter::helper(T *node) {
 	Group *group = (group_list_of[node].empty()) ? nullptr : group_list_of[node].front();
 
 	// Adds node
-	vecNodes.push_back( RowN{node->id, node->getName(), group->id, 0} );
+	vecNodes.push_back( RowN{node->id, node->shortName(), group->id, 0} );
 
 	// Adds edges
 	for (auto &next : node->nextList()) {

@@ -7,6 +7,7 @@
  * Note: sorting has to go after linking or will break Radial (out cl_mem arguments are moved if sorted)
  *
  * TODO: revise Bottom-Up approach. What about overlapping groups?
+ * TODO: revise the fusion of scalar... avoid creating false dependencies
  * TODO: is the toposort working? does it meet the 'strict weak ordering' requirement of std::sort?
  */
 
@@ -62,6 +63,12 @@ void Fusioner::fuse(NodeList list) {
 	for (auto it=list.rbegin(); it!=list.rend(); it++) {
 		assert(group_list_of[*it].size() == 1);
 		processBU(group_list_of[*it].front()); // Goes up group by group ## 2nd fusion stage ##
+	}
+
+//print(); // @
+
+	for (auto it=list.rbegin(); it!=list.rend(); it++) {		
+		processScalar(group_list_of[*it].front());  // Flat-fuses lonely scalars
 	}
 
 //print(); // @
@@ -407,10 +414,11 @@ void Fusioner::pipeGently(Node *node) {
 		Group *prev_group = new_group->prevList()[i];
 		i++;
 		bool fuse_free = isFreeOrLocal(new_group) && isFreeOrLocal(prev_group);
-		bool fuse_dnd0 = not (new_group->numdim() != D0 && prev_group->numdim() == D0 && prev_group->pattern() != FREE);
+		bool fuse_d0dn = not (prev_group->numdim() == D0 && new_group->numdim() != D0 && prev_group->pattern() != FREE);
+		bool fuse_dnd0 = not (prev_group->numdim() != D0 && new_group->numdim() == D0);
 		bool fuse_next = prev_group->nextList().size() == 1;
 
-		if (fuse_free && fuse_dnd0 && fuse_next && canPipeFuse(prev_group,new_group)) {
+		if (fuse_free && fuse_d0dn && fuse_dnd0 && fuse_next && canPipeFuse(prev_group,new_group)) {
 			new_group = pipeFuseGroup(prev_group,new_group);
 			i = 0; // rather than resetting, could be improved with a queue
 		}
@@ -431,7 +439,11 @@ void Fusioner::flatGently(Node *node) {
 	{
 		Node *left = node->nextList()[i++];
 		Group *left_group = group_list_of[left].front();
-		if (not isFreeOrLocal(left_group) || left_group == node_group)
+
+		bool free_local = isFreeOrLocal(left_group);
+		bool dim_equal = node_group->numdim() == left_group->numdim();
+
+		if (not free_local || not dim_equal || left_group == node_group)
 			continue;
 
 		int j = i; // i was already incremented
@@ -439,7 +451,102 @@ void Fusioner::flatGently(Node *node) {
 		{
 			Node *right = node->nextList()[j++];
 			Group *right_group = group_list_of[right].front();
-			if (not isFreeOrLocal(right_group) || right_group == node_group || right_group == left_group)
+
+			bool free_local = isFreeOrLocal(right_group);
+			bool dim_equal = node_group->numdim() == right_group->numdim();
+
+			if (not free_local || not dim_equal || right_group == node_group || right_group == left_group)
+				continue;
+
+			if (canFlatFuse(left_group,right_group)) {
+				left_group = flatFuseGroup(left_group,right_group);
+			}
+		}
+	}
+}
+
+void Fusioner::processLoop(Node *node) {
+	if (node->pattern().isNot(HEAD) && node->pattern().isNot(TAIL))
+		return; // Only 'heads' and 'tails' now
+
+	Node *mark = nullptr; // marks the group to fuse with
+
+	if (auto cast = dynamic_cast<LoopHead*>(node)) {
+		mark = cast->loop()->headList()[0];
+	} else if (auto cast = dynamic_cast<LoopTail*>(node)) {
+		mark = cast->loop()->tailList()[0];
+	} else {
+		assert(0);
+	}
+
+	assert(group_list_of.find(node)->second.size() == 1);
+	assert(group_list_of.find(mark)->second.size() == 1);
+
+	Group *node_group = group_list_of.find(node)->second.front();
+	Group *mark_group = group_list_of.find(mark)->second.front();
+	mark_group = freeFuseGroup(mark_group,node_group);
+}
+
+void Fusioner::processScalar(Group *group) {
+	if (not Runtime::getConfig().code_fusion)
+		return;
+
+	auto isFreeOrLocal = [](Group *group) { return group->pattern().is(FREE) || group->pattern().is(LOCAL); };
+
+	// Next() direction
+	int i = 0;
+	while (i < group->nextList().size())
+	{
+		Group *left_group = group->nextList()[i++];
+
+		bool free_local = isFreeOrLocal(left_group);
+		bool dim_d0 = left_group->numdim() == D0;
+		bool diff_group = left_group != group;
+
+		if (not free_local || not dim_d0 || not diff_group)
+			continue;
+
+		int j = i; // i was already incremented
+		while (j < group->nextList().size())
+		{
+			Group *right_group = group->nextList()[j++];
+
+			bool free_local = isFreeOrLocal(right_group);
+			bool dim_d0 = right_group->numdim() == D0;
+			bool diff_group = right_group != group && right_group != left_group;
+
+			if (not free_local || not dim_d0 || not diff_group)
+				continue;
+
+			if (canFlatFuse(left_group,right_group)) {
+				left_group = flatFuseGroup(left_group,right_group);
+			}
+		}
+	}
+
+	// Prev() direction
+	i = 0;
+	while (i < group->prevList().size())
+	{
+		Group *left_group = group->prevList()[i++];
+
+		bool free_local = isFreeOrLocal(left_group);
+		bool dim_d0 = left_group->numdim() == D0;
+		bool diff_group = left_group != group;
+
+		if (not free_local || not dim_d0 || not diff_group)
+			continue;
+
+		int j = i; // i was already incremented
+		while (j < group->prevList().size())
+		{
+			Group *right_group = group->prevList()[j++];
+
+			bool free_local = isFreeOrLocal(right_group);
+			bool dim_d0 = right_group->numdim() == D0;
+			bool diff_group = right_group != group && right_group != left_group;
+
+			if (not free_local || not dim_d0 || not diff_group)
 				continue;
 
 			if (canFlatFuse(left_group,right_group)) {
@@ -499,9 +606,12 @@ void Fusioner::processBU(Group *group) { // @
 	{
 		Group *bot = group;
 		Group *top = group->prevList()[i++];
-		bool d0dn = not (top->pattern().isNot(MERGE) && top->pattern() != FREE && top->numdim() == D0 && bot->numdim() != D0);
+		bool d0dn = not (top->numdim() == D0 && bot->numdim() != D0
+					&& top->pattern() != FREE && top->pattern().isNot(MERGE));
+		bool dnd0 = not (top->numdim() != D0 && bot->numdim() == D0
+					&& bot->pattern().isNot(ZONAL) && bot->pattern().isNot(STATS) && bot->pattern().isNot(MERGE));
 
-		if (d0dn && canPipeFuse(top,bot)) {
+		if (d0dn && dnd0 && canPipeFuse(top,bot)) {
 			group = pipeFuseGroup(top,bot);
 			i = 0; // reset
 		}
@@ -517,28 +627,6 @@ void Fusioner::processBU(Group *group) { // @
 			i = 0;
 		}
 	}
-}
-
-void Fusioner::processLoop(Node *node) {
-	if (node->pattern().isNot(HEAD) && node->pattern().isNot(TAIL))
-		return; // Only 'heads' and 'tails' now
-
-	Node *mark = nullptr; // marks the group to fuse with
-
-	if (auto cast = dynamic_cast<LoopHead*>(node)) {
-		mark = cast->loop()->headList()[0];
-	} else if (auto cast = dynamic_cast<LoopTail*>(node)) {
-		mark = cast->loop()->tailList()[0];
-	} else {
-		assert(0);
-	}		
-		
-	assert(group_list_of.find(node)->second.size() == 1);
-	assert(group_list_of.find(mark)->second.size() == 1);
-
-	Group *node_group = group_list_of.find(node)->second.front();
-	Group *mark_group = group_list_of.find(mark)->second.front();
-	mark_group = freeFuseGroup(mark_group,node_group);
 }
 
 void Fusioner::forwarding(std::function<bool(Node*)> for_pred) {
@@ -667,7 +755,10 @@ void Fusioner::sorting() {
 
 	// Topological sort of group_list, in order of dependencies and first-node id
 	auto less = [](const std::unique_ptr<Group> &a, const std::unique_ptr<Group> &b){
-		return a->isNext(b.get()) ? true : a->isPrev(b.get()) ? false : a->nodeList().front()->id < b->nodeList().front()->id;
+		Group *ga = a.get(), *gb = b.get();
+		Node *na = (!a->nodeList().empty()) ? a->nodeList().front() : a->outputList().front();
+		Node *nb = (!b->nodeList().empty()) ? b->nodeList().front() : b->outputList().front();
+		return ga->isNext(gb) ? true : ga->isPrev(gb) ? false : na->id < nb->id;
 	};
 	std::sort(group_list.begin(),group_list.end(),less);
 	
@@ -684,13 +775,13 @@ void Fusioner::print() {
 	for (auto &i : group_list) {
 		std::cout << i->pattern() << "  " << i.get() << std::endl;
 		for (auto j : i->inputList())
-			std::cout << "    " << j->getName() << " : " << j->id << std::endl;
+			std::cout << "    " << j->shortName() << ", " << j->numdim() << " : " << j->id << std::endl;
 		std::cout << "    --" << std::endl;
 		for (auto j : i->nodeList())
-			std::cout << "    " << j->getName() << " : " << j->id << std::endl;
+			std::cout << "    " << j->longName() << ", " << j->numdim() << " : " << j->id << std::endl;
 		std::cout << "    --" << std::endl;
 		for (auto j : i->outputList())
-			std::cout << "    " << j->getName() << " : " << j->id << std::endl;
+			std::cout << "    " << j->shortName() << ", " << j->numdim() << " : " << j->id << std::endl;
 		std::cout << "  prev:" << std::endl;
 		for (auto j=i->prevList().begin(); j!=i->prevList().end(); j++)
 			std::cout << "    " << (*j) << " " << i->prevPattern(j) << std::endl;

@@ -39,6 +39,8 @@ Node* LoopTail::Factory(Node *prev) {
 	GroupSize gs = prev->groupsize();
 	MetaData meta(ds,dt,mo,bs,gs);
 	
+	meta.stream_dir = prev->streamdir(); // @
+
 	return new LoopTail(meta,prev);
 }
 
@@ -55,6 +57,8 @@ LoopTail::LoopTail(const MetaData &meta, Node *prev)
 	this->addPrev(prev);
 	prev->addNext(this); // 'prev' is a 'switch' that points to 'tail'
 
+	this->file = prev->file;
+	
 	owner_loop = nullptr; // 'tail' knows who its 'loop' is
 	twin_head = nullptr; // 'tail' might have a twin 'head'
 
@@ -91,8 +95,13 @@ void LoopTail::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string LoopTail::getName() const {
+std::string LoopTail::shortName() const {
 	return "LoopTail";
+}
+
+std::string LoopTail::longName() const {
+	std::string str = "LoopTail {" + std::to_string(prev()->id) + "}";
+	return str;
 }
 
 std::string LoopTail::signature() const {
@@ -112,6 +121,11 @@ Node* LoopTail::prev() const {
 }
 
 // Compute 
+
+void LoopTail::computeScalar(std::unordered_map<Node*,VariantType> &hash) {
+	assert(numdim() == D0);
+	hash[this] = hash.find(prev())->second;
+}
 
 void LoopTail::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
 	hash[{this,coord}] = hash.find({prev(),coord})->second;

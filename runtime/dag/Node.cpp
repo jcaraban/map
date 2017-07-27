@@ -1,5 +1,5 @@
 /**
- * @file	node.cpp 
+ * @file	Node.cpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  */
 
@@ -19,6 +19,7 @@ Node::Node()
 	, meta()
 	, stats()
 	, value()
+	, file()
 	, spatial_pattern()
 	, in_spatial_reach()
 	, out_spatial_reach()
@@ -34,6 +35,7 @@ Node::Node(const MetaData &meta)
 	, meta(meta)
 	, stats()
 	, value()
+	, file()
 	, spatial_pattern()
 	, in_spatial_reach()
 	, out_spatial_reach()
@@ -49,6 +51,7 @@ Node::Node(const Node *other, const std::unordered_map<Node*,Node*> &other_to_th
 	, meta(other->meta)
 	, stats(other->stats)
 	, value(other->value)
+	, file(other->file)
 	, spatial_pattern(other->spatial_pattern)
 	, in_spatial_reach(other->in_spatial_reach)
 	, out_spatial_reach(other->out_spatial_reach)

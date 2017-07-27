@@ -5,15 +5,14 @@
  * TODO: There should be 1 cache per physical memory (Dev mem, Host mem, SSD mem, HDD mem)
  * TODO: consider refactorizing the 'block management' functionality out of Cache
  * TODO: consider creating a pool of Blocks, and remove unique_ptr<Block> from the hash
- *
- * // @@@ there is a race condition when high cache pressure leads to entry evitions
  */
 
 #ifndef MAP_RUNTIME_CACHE_HPP_
 #define MAP_RUNTIME_CACHE_HPP_
 
+#include "ThreadId.hpp"
 #include "Entry.hpp"
-#include "block/Block.hpp"
+#include "block/BlockList.hpp"
 #include <vector>
 #include <list>
 #include <unordered_map>
@@ -46,16 +45,12 @@ class Cache
 	void freeEntries();
 
 	void requestBlocks(const KeyList &key_list, BlockList &blk_list);
-	void retainEntries(BlockList &blk_list);
+	void requestEntries(BlockList &blk_list);
 
 	void returnBlocks(const KeyList &key_list, BlockList &blk_list);
-	void releaseEntries(BlockList &blk_list);
+	void returnEntries(BlockList &blk_list);
 
-	void preLoadInputBlocks(BlockList &in_blk_list); // @
-	void loadInputBlocks(BlockList &in_blk_list); // @
-	void initOutputBlocks(BlockList &out_blk_list); // @
-	void writeOutputBlocks(BlockList &out_blk_list); // @
-	void reduceOutputBlocks(BlockList &out_blk_list); // @
+	void* requestHostMem(ThreadId id); // @
 
   private:
   	Block* retainBlock(const Key &k, int depend);
@@ -66,10 +61,9 @@ class Cache
 	void releaseBlock(const Key &key, Block *blk);
 	void releaseFile(Key key);
 
-	Entry* getEntry();
+	Entry* takeEntry();
 	void touchEntry(Entry *entry);
 	void dropEntry(Entry *entry);
-	void evict(Block *block);
 
   private:
 	Clock &clock; // Aggregate

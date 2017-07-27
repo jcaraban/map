@@ -81,8 +81,15 @@ void LhsAccess::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string LhsAccess::getName() const {
+std::string LhsAccess::shortName() const {
 	return "LhsAccess";
+}
+
+std::string LhsAccess::longName() const {
+	auto lid = std::to_string(left()->id);
+	auto rid = std::to_string(right()->id);
+	std::string str = "LhsAccess {" + lid + "," + rid + "}";
+	return str;
 }
 
 std::string LhsAccess::signature() const {

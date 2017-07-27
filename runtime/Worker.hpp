@@ -9,7 +9,7 @@
 #define MAP_RUNTIME_WORKER_HPP_
 
 #include "Job.hpp"
-#include "block/Block.hpp"
+#include "block/BlockList.hpp"
 #include "ThreadId.hpp"
 #include "Config.hpp"
 #include <vector>
@@ -39,6 +39,8 @@ class Worker
 	void before_work();
 	void request_blocks(Job job);
 	void pre_load(Job job);
+	void request_entries(Job job);
+	void evict(Job job);
 	void load(Job job);
 	void pre_compute(Job job);
 	void compute(Job job);
@@ -46,6 +48,7 @@ class Worker
 	void store(Job job);
 	void post_store(Job job);
 	void post_work(Job job);
+	void return_entries(Job job);
 	void return_blocks(Job job);
 	void after_work();
 

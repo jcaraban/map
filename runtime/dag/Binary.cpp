@@ -101,8 +101,16 @@ void Binary::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string Binary::getName() const {
+std::string Binary::shortName() const {
 	return "Binary";
+}
+
+std::string Binary::longName() const {
+	auto tstr = type.toString();
+	auto lid = std::to_string(left()->id);
+	auto rid = std::to_string(right()->id);
+	std::string str = "Binary {" + tstr + "," + lid + "," + rid + "}";
+	return str;
 }
 
 std::string Binary::signature() const {
@@ -223,11 +231,11 @@ void Binary::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &
 				vf.min = ninf.value;
 				vf.max = pinf.value;
 				vf.mean = zero.value;
-				vf.mean = pinf.value;
+				vf.std = pinf.value;
 				vf.active = true;
 				assert(not vf.fixed);
 			} else if (true) {
-				assert(0); // @ other cases related to nan?
+				;// @ other cases related to nan?
 			}
 			break;
 		}
@@ -249,11 +257,11 @@ void Binary::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &
 				vf.min = ninf.value;
 				vf.max = pinf.value;
 				vf.mean = zero.value;
-				vf.mean = pinf.value;
+				vf.std = pinf.value;
 				vf.active = true;
 				assert(not vf.fixed);
 			} else if (true) {
-				assert(0); // @ other cases related to nan?
+				; // @ other cases related to nan?
 			}
 			break;
 		}
@@ -353,9 +361,8 @@ void Binary::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &
 		case FMOD: break;
 	}
 
-	assert(vf.active);
-	assert(vf.max >= vf.min);
-
+	//assert(vf.active);
+	
 	hash[{node,coord}] = vf;
 }
 

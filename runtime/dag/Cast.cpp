@@ -72,8 +72,13 @@ void Cast::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string Cast::getName() const {
+std::string Cast::shortName() const {
 	return "Cast";
+}
+
+std::string Cast::longName() const {
+	std::string str = "Cast {" + std::to_string(prev()->id) + "}";
+	return str;
 }
 
 std::string Cast::signature() const {

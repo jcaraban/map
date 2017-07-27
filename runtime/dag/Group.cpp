@@ -313,8 +313,15 @@ const Pattern& Group::pattern() const {
 	return gen_pattern;
 }
 
-std::string Group::getName() const {
-	return std::string("Group");
+std::string Group::shortName() const {
+	return "Group";
+}
+
+std::string Group::longName() const {
+	std::string str = "Group {";
+	for (auto node : nodeList())
+		str += std::to_string(node->id);
+	return str + "}";
 }
 
 std::string Group::signature() const {

@@ -50,14 +50,14 @@ Node* Summary::Factory(Node *prev, Node *min, Node *max, Node *mean, Node *std) 
 		assert(max->numdim() == prev->numdim());
 	}
 	if (mean != nullptr) {
-		// @
+		// @@
 		assert(all(mean->datasize() == prev->datasize()));
 		assert(all(mean->blocksize() == prev->blocksize()));
 		assert(mean->datatype() == prev->datatype());
 		assert(mean->numdim() == prev->numdim());
 	}
 	if (std != nullptr) {
-		// @
+		// @@
 		assert(all(std->datasize() == prev->datasize()));
 		assert(all(std->blocksize() == prev->blocksize()));
 		assert(std->datatype() == prev->datatype());
@@ -70,6 +70,8 @@ Node* Summary::Factory(Node *prev, Node *min, Node *max, Node *mean, Node *std) 
 	BlockSize bs = prev->blocksize();
 	GroupSize gs = prev->groupsize();
 	MetaData meta(ds,dt,mo,bs,gs);
+
+	meta.stream_dir = prev->streamdir(); // @
 
 	return new Summary(meta,prev,min,max,mean,std);
 }
@@ -102,6 +104,8 @@ Summary::Summary(const MetaData &meta, Node *prev, Node *min, Node *max, Node *m
 		std->addNext(this);
 	}
 
+	this->file = prev->file;
+	
 	// Prepares statistics structure
 	const int num = prod(numblock());
 	this->stats.data_type = datatype();
@@ -126,8 +130,13 @@ void Summary::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string Summary::getName() const {
+std::string Summary::shortName() const {
 	return "Summary";
+}
+
+std::string Summary::longName() const {
+	std::string str = "Summary {" + std::to_string(prev()->id) + "}";
+	return str;
 }
 
 std::string Summary::signature() const {

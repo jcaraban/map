@@ -44,7 +44,7 @@ int main(int argc, char **argv)
 	auto e  = read(iwd+"excl"+ext);    // exclusion layer (user defined)
 	auto s  = read(iwd+"urban"+ext);   // initial urban state
 	
-	int N = (argc > 3) ? atoi(argv[3]) : 1 ;
+	int N = (argc > 3) ? atoi(argv[3]) : 50 ;
 
 	//// Computation
 

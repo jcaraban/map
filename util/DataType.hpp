@@ -61,6 +61,8 @@ class DataType {
 
 static_assert( std::is_standard_layout< DataType >::value , "DataType must be C compatible");
 
+std::ostream& operator<< (std::ostream& os, const DataType& type);
+
 } } // namespace map::detail
 
 #endif

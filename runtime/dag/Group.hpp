@@ -84,7 +84,8 @@ struct Group {
 	Pattern& pattern();
 	const Pattern& pattern() const;
 
-	std::string getName() const;
+	std::string shortName() const;
+	std::string longName() const;
 	std::string signature() const;
 	char classSignature() const;
 

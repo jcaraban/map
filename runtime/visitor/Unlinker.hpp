@@ -2,7 +2,7 @@
  * @file	Unlinker.hpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * Visitor of the graph in backward order that unlinks non-referenced nodes and returns the list
+ * Backward visitor that unlinks non-referenced nodes and returns the list
  */
 
 #ifndef MAP_RUNTIME_VISITOR_UNLINKER_HPP_

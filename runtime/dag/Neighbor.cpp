@@ -79,8 +79,13 @@ void Neighbor::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string Neighbor::getName() const {
+std::string Neighbor::shortName() const {
 	return "Neighbor";
+}
+
+std::string Neighbor::longName() const {
+	std::string str = "Neighbor {" + std::to_string(prev()->id) + "}";
+	return str;
 }
 
 std::string Neighbor::signature() const {

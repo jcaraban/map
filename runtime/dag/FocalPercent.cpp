@@ -74,8 +74,13 @@ void FocalPercent::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string FocalPercent::getName() const {
+std::string FocalPercent::shortName() const {
 	return "FocalPercent";
+}
+
+std::string FocalPercent::longName() const {
+	std::string str = "FocalPercent {" + std::to_string(prev()->id) + "}";
+	return str;
 }
 
 std::string FocalPercent::signature() const {

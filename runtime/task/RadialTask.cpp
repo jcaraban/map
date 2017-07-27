@@ -240,6 +240,7 @@ void RadialTask::compute(Job job, const BlockList &in_blk, const BlockList &out_
 		//// Launches kernel
 		
 		err = clEnqueueNDRangeKernel(*que, *krn, dim, NULL, gws, lws, 0, nullptr, nullptr);
+		cle::clCheckError(err);
 	};
 
 	Runtime::getClock().start(KERNEL);

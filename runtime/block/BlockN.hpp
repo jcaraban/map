@@ -28,17 +28,22 @@ struct BlockN : public Block
 	HoldType holdtype() const override;
 
   // Methods
-	Berr preLoad() override;
+	Berr preload() override;
+	Berr evict() override;
 	Berr load() override;
 	Berr store() override;
 
 	Berr send();
-	Berr recv() override;
+	Berr recv();
 	Berr read();
 	Berr write();
 
 	bool needEntry() const override;
 	bool giveEntry() const override;
+
+	Entry* getEntry() const override;
+	void setEntry(Entry *entry) override;
+	void unsetEntry() override;
 
 	std::shared_ptr<IFile> getFile() const override;
 	void setFile(std::shared_ptr<IFile> file) override;
@@ -58,18 +63,19 @@ struct BlockN : public Block
 	bool isFixed() const override;
 	void fixValue(VariantType val) override;
 
-	bool forward() const override;
-	void forward(bool forward) override;
+	void setForward() override;
+	void unsetForward() override;
+	bool isForward() const override;
 	void forwardEntry(Block *out) override;
 
   // Variables
-	//Entry *entry;
+	Entry *entry;
 	void *host_mem;
 	std::shared_ptr<IFile> file; // @
 
 	VariantType value;
 	bool fixed; // Value of the block is fixed to a scalar (stored in 'value')
-	bool forward_; // The memory entry will be forwarded from its input node
+	bool forward; // The memory entry will be forwarded from its input node
 	BlockStats stats;
 
 	int total_size; //!< The total size of a single block cannot overflow an int

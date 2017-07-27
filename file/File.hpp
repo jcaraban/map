@@ -506,10 +506,12 @@ Ferr FILE_DEC::writeBlock(const Block *block) {
 	if (Format::Support::Parallel::PARAWRITE == 0)
 		access_mtx.unlock();
 
-	if (stats.active) {
-		assert(block->getStats().active);
-		stats.set(block->coord(),block->getStats());
-	}
+	// @ Might not work when Summary and Write fuse, because the stats are computed in postStore()
+	// @ The partial stats are accumulated in the Node. Dump the node stats when closing the file?
+	//if (stats.active) {
+	//	assert(block->getStats().active);
+	//	stats.set(block->coord(),block->getStats());
+	//}
 
 	return ferr;
 }

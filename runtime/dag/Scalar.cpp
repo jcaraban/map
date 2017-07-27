@@ -66,8 +66,13 @@ void Scalar::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string Scalar::getName() const {
+std::string Scalar::shortName() const {
 	return "Scalar";
+}
+
+std::string Scalar::longName() const {
+	std::string str = "Scalar {" + std::to_string(prev()->id) + "}";
+	return str;
 }
 
 std::string Scalar::signature() const {
@@ -75,12 +80,12 @@ std::string Scalar::signature() const {
 	sign += classSignature();
 	sign += prev()->numdim().toString();
 	sign += prev()->datatype().toString();
-	sign += file()->getFilePath();
+	sign += getFile()->getFilePath();
 	return sign;
 }
 
 VariantType Scalar::value() {
-	auto *sca_file = dynamic_cast<File<scalar>*>(file().get());
+	auto *sca_file = dynamic_cast<File<scalar>*>(getFile().get());
 	assert(sca_file != nullptr);
 	return sca_file->value();
 }

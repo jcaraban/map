@@ -81,8 +81,13 @@ void BoundedNeighbor::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string BoundedNeighbor::getName() const {
+std::string BoundedNeighbor::shortName() const {
 	return "BoundedNeighbor";
+}
+
+std::string BoundedNeighbor::longName() const {
+	std::string str = "BoundedNeighbor {" + std::to_string(prev()->id) + "}";
+	return str;
 }
 
 std::string BoundedNeighbor::signature() const {

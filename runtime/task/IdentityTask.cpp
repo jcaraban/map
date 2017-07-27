@@ -22,7 +22,7 @@ void IdentityTask::createVersions() {
 void IdentityTask::compute(Job job, const BlockList &in_blk, const BlockList &out_blk) {
 	assert(in_blk.size() == out_blk.size());
 
-	auto all_pred = [&](Block *b){ return b->isFixed() || b->forward(); };
+	auto all_pred = [&](Block *b){ return b->isFixed() || b->isForward(); };
 	assert(std::all_of(out_blk.begin(),out_blk.end(),all_pred));
 
 	// All blocks in an IdentityTask must forward, 

@@ -83,4 +83,8 @@ NumDim DataSize2NumDim(const DataSize &ds) {
 	}
 }
 
+std::ostream& operator<< (std::ostream& os, const NumDim& dim) {
+	return os << dim.toString();
+}
+
 } } // namespace map::detail

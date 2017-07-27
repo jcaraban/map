@@ -46,4 +46,8 @@ std::string MemOrder::toString() const {
 	}
 }
 
+std::ostream& operator<< (std::ostream& os, const MemOrder& order) {
+	return os << order.toString();
+}
+
 } } // namespace map::detail

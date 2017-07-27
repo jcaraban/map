@@ -2,7 +2,7 @@
  * @file	Sorter.hpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * Visitor of the graph in forward direction that reorders the list by {dependencies,id}
+ * Forward visitor that reorders the list by {dependencies,id}
  */
 
 #ifndef MAP_RUNTIME_VISITOR_SORTER_HPP_

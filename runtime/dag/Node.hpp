@@ -4,10 +4,9 @@
  *
  * TODO: signature() is not really working smooth. A binary+ task could have 4 signatures
  *       depending on the order of nodes. However the kernel does the same in all 4 cases
- * TODO: is 'back'/'forw'List necessary, can we use 'next'/'prev'List only with 'ssa_id' ?
  * TODO: updatePrev() sounds like a hack, get rid of it, nodes should be inmutable entities
- * TODO: move 'static id_count' somewhere outside node, to runtime? to 'session'?
  *
+ * TODO: is 'back'/'forw'List necessary, can we use 'next'/'prev'List only with 'ssa_id' ?
  * TODO: a specialized 'Back' or 'Next' node might save the need of forw / back edges everywhere
  */
 
@@ -18,6 +17,7 @@
 #include "../Pattern.hpp"
 #include "../../file/MetaData.hpp"
 #include "../../file/DataStats.hpp"
+#include "../../file/File.hpp"
 #include "../../util/ValFix.hpp"
 #include "../../util/ReductionType.hpp"
 #include <vector>
@@ -36,6 +36,8 @@ typedef std::vector<std::unique_ptr<Node>> OwnerNodeList;
 typedef std::vector<Node*> NodeList;
 typedef std::vector<Group*> GroupList;
 
+typedef std::shared_ptr<IFile> SharedFile;
+
 /*
  * Abstract Class Node
  */
@@ -52,7 +54,8 @@ struct Node {
 	virtual void acceptPrev(Visitor *visitor);
 	virtual void acceptNext(Visitor *visitor);
   // Readable, Unique
-	virtual std::string getName() const = 0;
+	virtual std::string shortName() const = 0;
+	virtual std::string longName() const = 0;
 	virtual std::string signature() const = 0;
   // Referenced by
 	void increaseRef();
@@ -115,6 +118,7 @@ struct Node {
 	MetaData meta; //!< MetaData
 	DataStats stats; //!< DataStats
 	VariantType value; //!< Value of D0 nodes
+	SharedFile file; //!< File serving as input, output or temporal storage
 
 	Pattern spatial_pattern;
 	Mask in_spatial_reach, out_spatial_reach;

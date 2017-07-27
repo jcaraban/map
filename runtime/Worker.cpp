@@ -50,6 +50,10 @@ void Worker::work(ThreadId thread_id) {
 
 		pre_load(job);
 
+		request_entries(job);
+
+		evict(job);
+
 		load(job);
 
 		pre_compute(job);
@@ -63,6 +67,8 @@ void Worker::work(ThreadId thread_id) {
 		post_store(job);
 
 		post_work(job);
+
+		return_entries(job);
 
 		return_blocks(job);
 
@@ -90,19 +96,30 @@ void Worker::request_blocks(Job job) {
 void Worker::pre_load(Job job) {
 	TimedRegion region(clock,PRE_LOAD); // Timed function
 
-	cache.preLoadInputBlocks(in_blk);
+	in_blk.preloadInputs();
 
 	job.task->preLoad(job,in_blk,out_blk);
+}
+
+void Worker::request_entries(Job job) {
+	TimedRegion region(clock,GET_ENTRY); // Timed function
+
+	cache.requestEntries(in_blk);
+	cache.requestEntries(out_blk);
+}
+
+void Worker::evict(Job job) {
+	TimedRegion region(clock,EVICT); // Timed function
+
+	in_blk.evictEntries();
+	out_blk.evictEntries();
 }
 
 void Worker::load(Job job) {
 	TimedRegion region(clock,LOAD); // Timed function
 
-	cache.retainEntries(in_blk);
-	cache.retainEntries(out_blk);
-
-	cache.loadInputBlocks(in_blk);
-	cache.initOutputBlocks(out_blk);
+	in_blk.loadInputs();
+	out_blk.initOutputs();
 }
 
 void Worker::pre_compute(Job job) {
@@ -126,8 +143,8 @@ void Worker::post_compute(Job job) {
 void Worker::store(Job job) {
 	TimedRegion region(clock,STORE); // Timed function
 
-	cache.writeOutputBlocks(out_blk);
-	cache.reduceOutputBlocks(out_blk);
+	out_blk.storeOutputs();
+	out_blk.reduceOutputs();
 }
 
 void Worker::post_store(Job job) {
@@ -140,11 +157,15 @@ void Worker::post_work(Job job) {
 	job.task->postWork(job,in_blk,out_blk);
 }
 
+void Worker::return_entries(Job job) {
+	TimedRegion region(clock,RET_ENTRY); // Timed function
+
+	cache.returnEntries(in_blk);
+	cache.returnEntries(out_blk);
+}
+
 void Worker::return_blocks(Job job) {
 	TimedRegion region(clock,RET_BLOCK); // Timed function
-
-	cache.releaseEntries(in_blk);
-	cache.releaseEntries(out_blk);
 
 	cache.returnBlocks(in_key,in_blk);
 	cache.returnBlocks(out_key,out_blk);

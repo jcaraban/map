@@ -36,6 +36,8 @@ class StreamDir {
 
 static_assert( std::is_standard_layout< StreamDir >::value , "DataType must be C compatible");
 
+std::ostream& operator<< (std::ostream& os, const StreamDir& dir);
+
 } } // namespace map::detail
 
 #endif

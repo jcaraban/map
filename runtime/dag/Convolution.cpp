@@ -81,8 +81,13 @@ void Convolution::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string Convolution::getName() const {
+std::string Convolution::shortName() const {
 	return "Convolution";
+}
+
+std::string Convolution::longName() const {
+	std::string str = "Convolution {" + std::to_string(prev()->id) + "}";
+	return str;
 }
 
 std::string Convolution::signature() const {

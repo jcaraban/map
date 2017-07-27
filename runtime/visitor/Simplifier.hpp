@@ -2,10 +2,10 @@
  * @file	Simplifier.hpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * Visitor of the graph that erases redundant nodes from the main list of nodes
+ * Forward-Online visitor that erases redundant nodes from the main list of nodes
  *
  * Note: meant to be used 'online', this is, on the fly while adding nodes. This imposes restrictions:
- *   - The callee node has the latest/greatest id number
+ *   - The callee node has the latest/greatest ssa id number
  *   - The callee has no next nodes hanging from it
  *
  * Based on "Global value numbering", Cliff Click, PLDI '95

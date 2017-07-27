@@ -12,24 +12,24 @@ namespace map { namespace detail {
 
 BlockN::BlockN()
 	: Block()
-	//, entry(nullptr)
+	, entry(nullptr)
 	, host_mem(nullptr)
 	, file(nullptr)
 	, value()
 	, fixed(false)
-	, forward_(false)
+	, forward(false)
 	, stats()
 	, total_size(-1)
 { }
 
 BlockN::BlockN(Key key, int dep, int max_size)
 	: Block(key,dep)
-	//, entry(nullptr)
+	, entry(nullptr)
 	, host_mem(nullptr)
 	, file(nullptr)
 	, value()
 	, fixed(false)
-	, forward_(false)
+	, forward(false)
 	, stats()
 	, total_size(-1)
 {
@@ -48,9 +48,104 @@ HoldType BlockN::holdtype() const {
 	return HOLD_N;
 }
 
+Berr BlockN::preload() {
+	std::unique_lock<std::mutex> lock(mtx); // thread-safe
+	if (isReady()) 
+		return 0;
+	// If statistics exist, preload is possible
+	if (node()->datastats().active)
+		setStats( node()->datastats().get(coord()) );
+	return 0;
+}
+
+Berr BlockN::evict() {
+	std::unique_lock<std::mutex> lock(mtx); // thread-safe
+
+	if (entry == nullptr) { // no entry to evict
+		assert(isFixed() || isForward());
+		return 0;
+	}
+
+	Block *old = entry->block;
+	if (old == this) // already owner, nothing to do
+		return 0; 
+
+	if (old != nullptr) {
+		Runtime::getClock().incr(EVICTED);
+
+		if (old->isDirty()) {
+			Runtime::getClock().decr(NOT_STORED);
+			Runtime::getClock().incr(STORED);
+
+			BlockN *oldN = dynamic_cast<BlockN*>(old);
+			oldN->setHostMem( Runtime::getCache().requestHostMem(Tid) );
+			oldN->recv();
+			oldN->write();
+			oldN->unsetDirty();
+			old->unsetHostMem();
+		}
+
+		old->unsetReady();
+		old->unsetEntry();
+
+		old->unsetHostMem();
+		old->mtx.unlock(); // finally unlocked!
+	}
+
+	entry->block = this; // Links entry --> block
+	return 0;
+}
+
+Berr BlockN::load() {
+	std::unique_lock<std::mutex> lock(mtx); // thread-safe
+
+	if (isReady()) { // No need to read when the value is 'ready'
+		Runtime::getClock().incr(NOT_LOADED);
+		return 0;
+	}
+	// Otherwise reads the block from its file
+	setHostMem( Runtime::getCache().requestHostMem(Tid) );
+	read();
+	send();
+	setReady();
+	unsetHostMem();
+
+	Runtime::getClock().incr(LOADED);
+	return 0;
+}
+
+Berr BlockN::store() {
+	std::unique_lock<std::mutex> lock(mtx); // thread-safe
+
+	if (not isReady())
+		setReady();
+
+	if (streamdir() == IN) { // Nothing to store for IN streams
+		return 0; // e.g. Identity of a Read node
+	}
+
+	setDirty();
+
+	// No need to store when inmem_cache=1 and not an Output node
+	if (not node()->isOutput() && Runtime::getConfig().inmem_cache) {
+		Runtime::getClock().incr(NOT_STORED);
+		return 0;
+	}
+	// Otherwise write to file and clean the state
+	setHostMem( Runtime::getCache().requestHostMem(Tid) );
+	recv();
+	write();
+	unsetDirty();
+	unsetHostMem();
+
+	Runtime::getClock().incr(STORED);
+	return 0;
+}
+
 Berr BlockN::send() {
 	TimedRegion region(Runtime::getClock(),SEND);
 
+	assert(not fixed);
 	if (not fixed) {
 		cle::Queue que = Runtime::getOclEnv().D(Tid.dev()).Q(Tid.rnk());
 		cl_int clerr = clEnqueueWriteBuffer(*que, entry->dev_mem, CL_TRUE, 0, size(), host_mem, 0, nullptr, nullptr);
@@ -69,56 +164,9 @@ Berr BlockN::recv() {
 		cle::clCheckError(clerr);
 	} else {
 		const size_t num = prod(key.node->blocksize());
-		value.fill(host_mem,num); // @ inneficient?
+		value.fill(host_mem,num); // @ move to File::write
 	}
 
-	return 0;
-}
-
-Berr BlockN::load() {
-	std::unique_lock<std::mutex> lock(mtx); // thread-safe
-
-	if (isReady()) { // No need to read when the value is 'ready'
-		Runtime::getClock().incr(NOT_LOADED);
-		return 0;
-	}
-	// Otherwise reads the block from its file
-	read();
-	send();
-	setReady();
-
-	Runtime::getClock().incr(LOADED);
-	return 0;
-}
-
-Berr BlockN::store() {
-	std::unique_lock<std::mutex> lock(mtx); // thread-safe
-
-	if (not isReady()) {
-		setReady();
-		setDirty();
-	}
-	// No need to store when inmem_cache=1 and not an Output node
-	if (not node()->isOutput() && Runtime::getConfig().inmem_cache) {
-		Runtime::getClock().incr(NOT_STORED);
-		return 0;
-	}
-	// Otherwise write to file and clean the state
-	recv();
-	write();
-	if (isDirty())
-		unsetDirty();
-
-	Runtime::getClock().incr(STORED);
-	return 0;
-}
-
-Berr BlockN::preLoad() {
-	if (isReady()) // Already computed by a prev task
-		return 0;
-	// Statistics exist, preload is possible
-	if (node()->datastats().active)
-		setStats( node()->datastats().get(coord()) );
 	return 0;
 }
 
@@ -138,12 +186,24 @@ Berr BlockN::write() {
 
 bool BlockN::needEntry() const {
 	// Conditions for a block to require a cache entry
-	return !entry && !isFixed() && !forward();
+	return !entry && !isFixed() && !isForward();
 }
 
 bool BlockN::giveEntry() const {
 	// Conditions for a block to give its cache entry away
-	return discardable() || fixed;
+	return entry && (discardable() || isFixed());
+}
+
+Entry* BlockN::getEntry() const {
+	return entry;
+}
+
+void BlockN::setEntry(Entry *entry) {
+	this->entry = entry;
+}
+
+void BlockN::unsetEntry() {
+	this->entry = nullptr;
 }
 
 std::shared_ptr<IFile> BlockN::getFile() const {
@@ -196,6 +256,7 @@ VariantType BlockN::getValue() const {
 	return value;
 }
 void BlockN::setValue(VariantType val) {
+	assert(val.datatype() == datatype());
 	this->value = val;
 }
 
@@ -205,17 +266,25 @@ bool BlockN::isFixed() const {
 
 void BlockN::fixValue(VariantType val) {
 	assert(not val.isNone());
+	assert(val.datatype() == datatype());
 	fixed = true;
-	ready = true;
-	value = val;
+	if (not isReady())
+		setReady();
+	setValue(val);
 }
 
-bool BlockN::forward() const {
-	return forward_;
+void BlockN::setForward() {
+	assert(not forward);
+	forward = true;
 }
 
-void BlockN::forward(bool forward) {
-	this->forward_ = forward;
+void BlockN::unsetForward() {
+	assert(forward);
+	forward = false;
+}
+
+bool BlockN::isForward() const {
+	return forward;
 }
 
 void BlockN::forwardEntry(Block *out) {
@@ -224,11 +293,14 @@ void BlockN::forwardEntry(Block *out) {
 	// forward only to the last dependency
 	assert(this->dependencies == 1);
 	// out_blk entry must be null
-	assert(out->entry == nullptr);
+	assert(not out->getEntry());
 
-	std::swap(this->entry,out->entry);
-	out->entry->block = out;
-	out->entry->dirty = false;
+	// Swaps entries
+	out->setEntry(getEntry());
+	unsetEntry();
+
+	out->getEntry()->block = out;
+	out->getEntry()->dirty = false; // @ mmm
 }
 
 } } // namespace map::detail

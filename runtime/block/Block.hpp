@@ -22,9 +22,6 @@ typedef int Berr; // Should be enum
 class Node; // forward declaration
 class IFile; // forward declaration
 
-struct Block;
-typedef std::vector<Block*> BlockList;
-
 
 /*
  * @class Block
@@ -49,10 +46,8 @@ struct Block
 	virtual HoldType holdtype() const = 0;
 
   // Methods
-	//virtual Berr send();
-	virtual Berr recv();
-
-	virtual Berr preLoad();
+	virtual Berr preload();
+	virtual Berr evict();
 	virtual Berr load();
 	virtual Berr store();
 	virtual Berr init();
@@ -60,6 +55,10 @@ struct Block
 
 	virtual bool needEntry() const;
 	virtual bool giveEntry() const;
+
+	virtual Entry* getEntry() const;
+	virtual void setEntry(Entry *entry);
+	virtual void unsetEntry();
 
 	virtual std::shared_ptr<IFile> getFile() const;
 	virtual void setFile(std::shared_ptr<IFile> file);
@@ -79,10 +78,12 @@ struct Block
 	virtual bool isFixed() const;
 	virtual void fixValue(VariantType val);
 
-	virtual bool forward() const;
-	virtual void forward(bool forward);
+	virtual void setForward();
+	virtual void unsetForward();
+	virtual bool isForward() const;
 	virtual void forwardEntry(Block *out);
 
+  //
 	void notify();
 	bool discardable() const;
 
@@ -100,11 +101,7 @@ struct Block
 
   // Variables
 	Key key;
-	Entry *entry; // @
-
 	int dependencies;
-	//HoldType hold_type;
-
 	bool ready; // The data is ready to be used (i.e. loaded in entry)
 	bool dirty;
 	short used;

@@ -13,9 +13,7 @@ namespace map { namespace detail {
 
 Block::Block()
 	: key()
-	, entry(nullptr)
 	, dependencies(DEPEND_UNKNOWN)
-	//, hold_type()
 	, ready(false)
 	, dirty(false)
 	, used(0)
@@ -25,9 +23,7 @@ Block::Block()
 
 Block::Block(Key key, int dep)
 	: key(key)
-	, entry(nullptr)
 	, dependencies(dep)
-	//, hold_type()
 	, ready(false)
 	, dirty(false)
 	, used(0)
@@ -65,15 +61,13 @@ int Block::size() const {
 	return -1; // invalid value
 }
 
-//Berr Block::send() { // @
-//	// nothing to do in the general case
-//}
+//
 
-Berr Block::recv() { // @
+Berr Block::preload() {
 	// nothing to do in the general case
 }
 
-Berr Block::preLoad() {
+Berr Block::evict() {
 	// nothing to do in the general case
 }
 
@@ -99,6 +93,18 @@ bool Block::needEntry() const {
 
 bool Block::giveEntry() const {
 	return false;
+}
+
+Entry* Block::getEntry() const {
+	return nullptr;
+}
+
+void Block::setEntry(Entry *entry) {
+	assert(0);
+}
+
+void Block::unsetEntry() {
+	assert(0);
 }
 
 std::shared_ptr<IFile> Block::getFile() const {
@@ -149,12 +155,16 @@ void Block::fixValue(VariantType val) {
 	assert(0);
 }
 
-bool Block::forward() const {
-	return false; // @
+void Block::setForward() {
+	assert(0);
 }
 
-void Block::forward(bool forward) {
+void Block::unsetForward() {
 	assert(0);
+}
+
+bool Block::isForward() const {
+	return false; // @
 }
 
 void Block::forwardEntry(Block *out) {
@@ -187,39 +197,39 @@ bool Block::isReady() const {
 void Block::setDirty() {
 	assert(not dirty);
 	dirty = true;
-	if (entry != nullptr)
-		entry->setDirty();
+	if (getEntry() != nullptr)
+		getEntry()->setDirty();
 }
 
 void Block::unsetDirty() {
 	assert(dirty);
 	dirty = false;
-	if (entry != nullptr)
-		entry->unsetDirty();	
+	if (getEntry() != nullptr)
+		getEntry()->unsetDirty();	
 }
 
 bool Block::isDirty() const {
-	if (entry != nullptr)
-		assert(dirty == entry->dirty);
+	if (getEntry() != nullptr)
+		assert(dirty == getEntry()->dirty);
 	return dirty;
 }
 
 void Block::setUsed() {
 	used++;
-	if (entry != nullptr)
-		entry->setUsed();
+	if (getEntry() != nullptr)
+		getEntry()->setUsed();
 }
 
 void Block::unsetUsed() {
 	assert(used > 0);
 	used--;
-	if (entry != nullptr)
-		entry->unsetUsed();
+	if (getEntry() != nullptr)
+		getEntry()->unsetUsed();
 }
 
 bool Block::isUsed() const {
-	if (entry != nullptr)
-		assert(used == entry->used);
+	if (getEntry() != nullptr)
+		assert(used == getEntry()->used);
 	return used > 0;
 }
 

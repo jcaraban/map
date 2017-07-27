@@ -13,7 +13,7 @@ namespace map { namespace detail {
 // Internal declarations
 
 Read::Content::Content(Read *node) {
-	path = node->file()->getFilePath();
+	path = node->getFile()->getFilePath();
 }
 
 bool Read::Content::operator==(const Content& k) const {
@@ -66,16 +66,21 @@ void Read::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string Read::getName() const {
+std::string Read::shortName() const {
 	return "Read";
+}
+
+std::string Read::longName() const {
+	std::string str = "Read {" + getFile()->getFilePath() + "}";
+	return str;
 }
 
 std::string Read::signature() const {
 	std::string sign = "";
 	sign += classSignature();
-	sign += file()->getNumDim().toString();
-	sign += file()->getDataType().toString();
-	sign += file()->getFilePath();
+	sign += getFile()->getNumDim().toString();
+	sign += getFile()->getDataType().toString();
+	sign += getFile()->getFilePath();
 	return sign;
 }
 

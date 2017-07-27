@@ -12,6 +12,10 @@
  *       	( also 'node.ref > node.next_list.size' must be alive ? )
  *       and we can use this information to avoid their Empty+Head+Merge+Switch+Tail nodes
  * TODO: is_included is "expensive", it can be avoided by tagging the nodes during insertion
+ *
+ * TODO: identities keep storing/loading even when they represent constant nodes like Read
+ *       - Add 'file' to all Nodes and make use of StreamDir to tag them as Read-Only
+ * TODO: @@ seems to me, online-simplifying while assembling hide critical dependencies
  */
 
 #include "LoopAssembler.hpp"
@@ -86,10 +90,14 @@ void LoopAssembler::addNode(Node *node, Node *orig) {
 	LoopStruct &stru = loop_struct[loop_level];
 
 	// Dont add node to loop if it was repeated (i.e. orig != node)
-	// Unless we are AGAIN and the original node was included in 'body'
+	// Unless we are AGAIN and the original node was in 'body' but not in 'again'
 	//  - This is necessary to identify the out-loop-invariant nodes
-	bool add_node = (orig == node) || (mode() == LOOP_AGAIN && is_included(orig,stru.body));
-	
+	//
+	// TODO: urban_dyn.py loop not working as intended when certain nodes (e.g. zero) are repeated
+
+	bool add_node = (orig == node) || (mode() == LOOP_AGAIN && 
+					is_included(orig,stru.body) && !is_included(orig,stru.again));
+
 	if (add_node) // Stores nodes first, assembles them later
 	{
 		if (mode() == LOOP_START)
@@ -165,9 +173,9 @@ void LoopAssembler::extract() {
 	}
 
 	// @@ This might be unnecessary, or even break some loops
-	if (is_included(stru.cond.back(),stru.again))
-		remove_value(stru.cond.back(),stru.again);
-	assert(inner_join(stru.body,stru.again).empty());
+	//if (is_included(stru.cond.back(),stru.again))
+	//	remove_value(stru.cond.back(),stru.again);
+	//assert(inner_join(stru.body,stru.again).empty());
 
 	// Some 'const' / 'prev' of invariants might not be 'prev' anymore
 	i = 0;
@@ -220,8 +228,9 @@ void LoopAssembler::extract() {
 		Node *node = queue.front();
 		queue.pop();
 		for (auto prev : node->prevList())
-			if (is_included(prev,stru.body))
-				queue.push(prev);
+			if (reachable.find(prev) == reachable.end())
+				if (is_included(prev,stru.body))
+					queue.push(prev);
 		reachable.insert(node);
 	}
 
@@ -229,7 +238,6 @@ void LoopAssembler::extract() {
 	stru.invar_out = left_join(stru.body, NodeList(reachable.begin(),reachable.end()) );
 	
 	// Removes the out-loop-invariants from 'body' and 'again' (NB: they share the same index)
-	assert(stru.body.size() == stru.again.size());
 	i = 0;
 	while (i < stru.body.size()) {
 		if (is_included(stru.body[i],stru.invar_out)) {
@@ -243,6 +251,10 @@ void LoopAssembler::extract() {
 			i++;
 		}
 	}
+
+	// Note: 'circ_in' and 'circ_out' must maintain same size and --> order <--
+	assert(stru.body.size() == stru.again.size());
+	assert(not stru.body.empty());
 }
 
 void LoopAssembler::compose() {
@@ -281,7 +293,7 @@ void LoopAssembler::compose() {
 		Node *back = nullptr;
 
 		if (is_included(prev,stru.circ_in))
-		{	// This is a feed-in 'prev', so a 'body' node exists in 'feed-out'
+		{	// This is a circ-in 'prev', so a 'body' node exists in 'circ-out'
 			int j = value_position(prev,stru.circ_in);
 			back = stru.circ_out[j];
 		}
@@ -380,9 +392,18 @@ void LoopAssembler::updateVars(Node *node, Node ***oldpy, Node ***newpy, int *nu
 	LoopStruct &stru = loop_struct[loop_level];
 	assert(stru.loop == node);
 
-	// These structures store what nodes the python variables should point to
+	// 'oldpy' --> 'newpy' maps what nodes the python variables should now point to
 	stru.oldpy.insert(stru.oldpy.end(),stru.again.begin(),stru.again.end());
-	stru.newpy.insert(stru.newpy.end(),stru.tail.begin(),stru.tail.end());
+	// Follows the 'body' nodes until their tail through
+	for (auto node : stru.body) {
+		Node *merge = node->backList().front();
+		assert(dynamic_cast<Merge*>(merge));
+		Node *swit = merge->nextList().back();
+		assert(dynamic_cast<Switch*>(swit));
+		Node *tail = swit->nextList().back();
+		assert(dynamic_cast<LoopTail*>(tail));
+		stru.newpy.push_back(tail);
+	}
 
 	// Returns the 'oldpy' / 'newpy' nodes and their 'num'ber of nodes
 	*oldpy = stru.oldpy.data();

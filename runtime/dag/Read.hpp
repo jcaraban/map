@@ -14,8 +14,6 @@
 
 namespace map { namespace detail {
 
-//typedef std::unique_ptr<IFile> AnyFile;
-
 struct Read : public InputNode
 {
 	// Internal declarations
@@ -38,12 +36,12 @@ struct Read : public InputNode
 
 	// Methods
 	void accept(Visitor *visitor);
-	std::string getName() const;
+	std::string shortName() const;
+	std::string longName() const;
 	std::string signature() const;
 	char classSignature() const;
 
 	// Variables
-	//AnyFile in_file;
 };
 
 } } // namespace map::detail

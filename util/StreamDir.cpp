@@ -49,4 +49,8 @@ std::string StreamDir::toString() const {
 	return 0;
 }
 
+std::ostream& operator<< (std::ostream& os, const StreamDir& dir) {
+	return os << dir.toString();
+}
+
 } } // namespace map::detail

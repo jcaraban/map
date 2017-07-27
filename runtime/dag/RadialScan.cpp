@@ -82,8 +82,13 @@ void RadialScan::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string RadialScan::getName() const {
+std::string RadialScan::shortName() const {
 	return "RadialScan";
+}
+
+std::string RadialScan::longName() const {
+	std::string str = "RadialScan {" + std::to_string(prev()->id) + "}";
+	return str;
 }
 
 std::string RadialScan::signature() const {

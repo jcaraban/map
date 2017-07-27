@@ -62,7 +62,7 @@ CellStats DataStats::get(Coord coord) const {
 }
 
 void DataStats::set(Coord coord, CellStats stats) {
-	assert(stats.active);
+	assert(active && stats.active);
 	assert(data_type == stats.data_type);
 	int idx = proj(coord,num_block);
 

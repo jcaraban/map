@@ -130,8 +130,16 @@ void Conditional::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string Conditional::getName() const {
+std::string Conditional::shortName() const {
 	return "Conditional";
+}
+
+std::string Conditional::longName() const {
+	auto cid = std::to_string(cond()->id);
+	auto lid = std::to_string(left()->id);
+	auto rid = std::to_string(right()->id);
+	std::string str = "Conditional {" + cid + "," + lid + "," + rid + "}";
+	return str;
 }
 
 std::string Conditional::signature() const {

@@ -2,6 +2,7 @@ from map import * ## "Parallel Map Algebra" package
 import sys
 
 setupDevices("",DEV_GPU,"")
+#setNumRanks(1)
 
 ## Arguments
 

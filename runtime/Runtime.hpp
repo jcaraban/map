@@ -62,10 +62,11 @@ class Runtime
 
   public:
 	static Runtime& getInstance();
+	static cle::OclEnv& getOclEnv();
 	static Config& getConfig();
 	static Clock& getClock();
+	static Cache& getCache();
 	static LoopAssembler& getLoopAssembler();
-	static cle::OclEnv& getOclEnv();
 
 	void setupDevices(std::string plat_name, DeviceType dev, std::string dev_name);
 	Node* loopAssemble();
@@ -77,6 +78,8 @@ class Runtime
 
 	void print_nodes(const OwnerNodeList &list); // @
 	void print_nodes(const NodeList &list); // @
+	void long_print_nodes(const OwnerNodeList &list); // @
+	void long_print_nodes(const NodeList &list); // @
 
 	void evaluate(NodeList list); // Evaluate a list of {0,1,N} nodes 
 

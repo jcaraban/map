@@ -71,8 +71,13 @@ void BlockSummary::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string BlockSummary::getName() const {
+std::string BlockSummary::shortName() const {
 	return "BlockSummary";
+}
+
+std::string BlockSummary::longName() const {
+	std::string str = "BlockSummary {" + std::to_string(prev()->id) + "}";
+	return str;
 }
 
 std::string BlockSummary::signature() const {

@@ -90,8 +90,15 @@ void Diversity::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string Diversity::getName() const {
+std::string Diversity::shortName() const {
 	return "Diversity";
+}
+
+std::string Diversity::longName() const {
+	std::string str = "Diversity {";
+	for (auto prev : prevList())
+		str += std::to_string(prev->id);
+	return str + "}";
 }
 
 std::string Diversity::signature() const {

@@ -2,7 +2,7 @@
  * @file	Merge.cpp
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * TODO: not restricting the patterns could work, but would inhibit fusion in those cases
+ * TODO: rethinking the merging of nodes with different dimension and precision
  */
 
 #include "Merge.hpp"
@@ -37,17 +37,25 @@ Node* Merge::Factory(Node *lhs, Node *rhs, MergeLoopFlag flag) {
 
 	MetaData meta;
 	MetaData lmt = lhs->metadata();
-	MetaData rmt = lhs->metadata();
+	MetaData rmt = rhs->metadata();
 
-	if (lmt.getNumDim() == D0) {
-		meta = rmt;
-	} else if (rmt.getNumDim() == D0) {
+	//if (lmt.getNumDim() == D0) {
+	//	meta = rmt;
+	//} else if (rmt.getNumDim() == D0) {
+	//	meta = lmt;
+	//} else {
+		//assert(lmt.stream_dir == rmt.stream_dir);
+		assert(lmt.getDataType() == rmt.getDataType());
+		assert(lmt.getNumDim() == rmt.getNumDim());
+		assert(lmt.getMemOrder() == rmt.getMemOrder());
+		assert(lmt.getDataShape() == rmt.getDataShape());
 		meta = lmt;
-	} else {
-		assert(lmt == rmt);
-		meta = lmt;
-	}
-	meta.data_type = promote(lmt.getDataType(),rmt.getDataType());
+		if (lmt.getStreamDir() == IN && rmt.getStreamDir() == IN)
+			meta.stream_dir = IN;
+		else
+			meta.stream_dir = IO;
+	//}
+	//meta.data_type = promote(lmt.getDataType(),rmt.getDataType());
 
 	return new Merge(meta,lhs,rhs,flag);
 }
@@ -66,6 +74,9 @@ Merge::Merge(const MetaData &meta, Node *lprev, Node *rprev, MergeLoopFlag not_u
 	this->addPrev(lprev);
 	forw_list.reserve(1);
 	this->addForw(rprev);
+
+	if (lprev->file == rprev->file && lprev->file)
+		this->file = rprev->file;
 
 	lprev->addNext(this);
 	rprev->addBack(this);
@@ -103,8 +114,15 @@ void Merge::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string Merge::getName() const {
+std::string Merge::shortName() const {
 	return "Merge";
+}
+
+std::string Merge::longName() const {
+	auto lid = std::to_string(left()->id);
+	auto rid = std::to_string(right()->id);
+	std::string str = "Merge {" + lid + "," + rid + "}";
+	return str;
 }
 
 std::string Merge::signature() const {

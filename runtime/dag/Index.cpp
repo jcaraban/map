@@ -61,8 +61,13 @@ void Index::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string Index::getName() const {
+std::string Index::shortName() const {
 	return "Index";
+}
+
+std::string Index::longName() const {
+	std::string str = "Index {" + dim.toString() + "}";
+	return str;
 }
 
 std::string Index::signature() const {

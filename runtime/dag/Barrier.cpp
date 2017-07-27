@@ -36,6 +36,8 @@ Node* Barrier::Factory(Node *prev) {
 	GroupSize gs = prev->groupsize();
 	MetaData meta(ds,dt,mo,bs,gs);
 
+	meta.stream_dir = prev->streamdir(); // @
+
 	return new Barrier(meta,prev);
 }
 
@@ -50,6 +52,8 @@ Barrier::Barrier(const MetaData &meta, Node *prev) : Node(meta) {
 	this->addPrev(prev);
 	prev->addNext(this);
 
+	this->file = prev->file;
+	
 	this->in_spatial_reach = Mask(numdim().unitVec(),true);
 	this->out_spatial_reach = Mask(numdim().unitVec(),true);
 }
@@ -64,8 +68,13 @@ void Barrier::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string Barrier::getName() const {
+std::string Barrier::shortName() const {
 	return "Barrier";
+}
+
+std::string Barrier::longName() const {
+	std::string str = "Barrier {" + std::to_string(prev()->id) + "}";
+	return str;
 }
 
 std::string Barrier::signature() const {

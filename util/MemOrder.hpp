@@ -41,6 +41,8 @@ class MemOrder {
 
 static_assert( std::is_standard_layout< MemOrder >::value , "MemOrder must be C compatible");
 
+std::ostream& operator<< (std::ostream& os, const MemOrder& order);
+
 } } // namespace map::detail
 
 #endif

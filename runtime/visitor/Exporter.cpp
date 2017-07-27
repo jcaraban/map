@@ -66,7 +66,7 @@ void Exporter::static_visit(Node *node) {
 	int group_id = (group == nullptr) ? -1 : group->id;
 
 	// Adds node
-	vecNodes.push_back( RowN{node->id, node->getName(), group_id, 0} );
+	vecNodes.push_back( RowN{node->id, node->shortName(), group_id, 0} );
 
 	// Adds edges
 	for (auto &next : node->nextList()) {

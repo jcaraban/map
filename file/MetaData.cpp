@@ -23,7 +23,7 @@ DataShape::DataShape(DataSize data_size, BlockSize block_size, GroupSize group_s
 	num_group = idiv(block_size,group_size);
 }
 
-bool DataShape::operator==(const DataShape &other) {
+bool DataShape::operator==(const DataShape &other) const {
 	bool b = true;
 	b = b && all( this->data_size == other.data_size );
 	b = b && all( this->block_size == other.block_size );
@@ -56,37 +56,20 @@ bool DataShape::encompass(const DataShape &other) {
 MetaData::MetaData() { }
 
 MetaData::MetaData(DataSize data_size, DataType data_type, MemOrder mem_order, BlockSize block_size, GroupSize group_size)
-	: stream_dir( IO ) // @ IO by default
+	: stream_dir( IO ) // @@ IO by default
 	, data_type( data_type )
 	, num_dim( DataSize2NumDim(data_size) ) // @
 	, mem_order( mem_order )
-	/*
-	, data_size( data_size )
-	, block_size( block_size )
-	, num_block( idiv(data_size,block_size) )
-	, group_size( group_size )
-	, num_group( idiv(block_size,group_size) )
-	*/
 	, data_shape(data_size,block_size,group_size)
-{
-	//total_data_size = prod(static_cast<Array<size_t>>(data_size)) * sizeofDataType(data_type);
-	//total_block_size = prod(static_cast<Array<size_t>>(block_size)) * sizeofDataType(data_type);
-}
+{ }
 
-bool MetaData::operator==(const MetaData &other) {
+bool MetaData::operator==(const MetaData &other) const {
 	bool b = true;
 	b = b && this->stream_dir == other.stream_dir;
 	b = b && this->data_type == other.data_type;
 	b = b && this->num_dim == other.num_dim;
 	b = b && this->mem_order == other.mem_order;
-	/*
-	b = b && all( this->data_size == other.data_size );
-	b = b && all( this->block_size == other.block_size );
-	b = b && all( this->num_block == other.num_block );
-	b = b && all( this->group_size == other.group_size );
-	b = b && all( this->num_group == other.num_group );
-	*/
-	b = b && data_shape == other.data_shape;
+	b = b && this->data_shape == other.data_shape;
 	return b;
 }
 

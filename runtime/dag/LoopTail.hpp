@@ -1,5 +1,5 @@
 /**
- * @file	LoopTail.hpp 
+ * @file	LoopTail.hpp
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
  */
@@ -39,7 +39,8 @@ struct LoopTail : public Node
 
 	// Methods
 	void accept(Visitor *visitor);
-	std::string getName() const;
+	std::string shortName() const;
+	std::string longName() const;
 	std::string signature() const;
 	char classSignature() const;
 	LoopCond* loop() const;
@@ -54,6 +55,7 @@ struct LoopTail : public Node
 	// const Mask& outputReach(Coord coord) const;
 
 	// Compute
+	void computeScalar(std::unordered_map<Node*,VariantType> &hash);
 	void computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash);
 
 	// Variables

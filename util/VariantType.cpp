@@ -56,7 +56,7 @@ bool VariantType::isEqual(VariantType other) const {
 			if (std::isinf(a) xor std::isinf(b))
 				return false;
 			if (std::isinf(a) and std::isinf(b))
-				return true;
+				return std::signbit(a) == std::signbit(b);
 			return (std::abs(a - b) <= eps * std::max(std::abs(a),std::abs(b)));
 		}
 		case F64 :
@@ -67,7 +67,7 @@ bool VariantType::isEqual(VariantType other) const {
 			if (std::isinf(a) xor std::isinf(b))
 				return false;
 			if (std::isinf(a) and std::isinf(b))
-				return true;
+				return std::signbit(a) == std::signbit(b);
 			return (std::abs(a - b) <= eps * std::max(std::abs(a),std::abs(b)));
 		}
 		case B8  : return get<B8 >() == other.get<B8 >();

@@ -465,7 +465,7 @@ void Task::preLoad(Job job, const BlockList &in_blk, const BlockList &out_blk) {
 	if (not Runtime::getConfig().prediction)
 		return;
 	if (numdim() == D0)
-		return; // for D0, just computing is cheaper
+		return; // ScalarTask::compute is enough
 
 	fixingValues(job,in_blk,out_blk);
 	preForward(job,in_blk,out_blk);
@@ -478,6 +478,11 @@ void Task::preCompute(Job job, const BlockList &in_blk, const BlockList &out_blk
 }
 
 void Task::postCompute(Job job, const BlockList &in_blk, const BlockList &out_blk) {
+
+	// Post-fixingValues()
+	for (auto blk : out_blk) 
+		if (blk->numdim() == D0 && blk->isFixed())
+			blk->node()->value = blk->getValue();
 
 	postForward(job,in_blk,out_blk);
 
@@ -493,36 +498,34 @@ void Task::postStore(Job job, const BlockList &in_blk, const BlockList &out_blk)
 			continue;
 		auto *summary = dynamic_cast<Summary*>(blk->node());
 		if (summary != nullptr) {
-			VariantType min, max, mean, std;
+			Ctype<F64> _min, _max, _mean, _std;
 
 			// Finds the blocks storing the individual statistics
 			for (auto b : out_blk) {
 				if (b->node() == summary->min())
-					min = b->getValue();
+					_min = b->getValue().convert(F64).get<F64>();
 				if (b->node() == summary->max())
-					max = b->getValue();
+					_max = b->getValue().convert(F64).get<F64>();
 				if (b->node() == summary->mean())
-					assert(0); //mean = b->getValue();
+					assert(0); //_mean = b->getValue().convert(F64).get<F64>();
 				if (b->node() == summary->std())
-					assert(0); //std = b->getValue();
+					assert(0); //_std = b->getValue().convert(F64).get<F64>();
 			}
 			// @@
-			mean = BinaryType(DIV).apply(BinaryType(ADD).apply(min, max), 2);
-			std = BinaryType(DIV).apply(BinaryType(SUB).apply(max, min), 4);
+			_mean = (_min + _max) / 2.0; // mid point of range
+			_std = (_max - _min) / 4.0; // range rule of thumb
 
 			CellStats sta;
 			sta.active = true;
 			sta.data_type = blk->datatype();
-			sta.min = min;
-			sta.max = max;
-			sta.mean = mean;
-			sta.std = std;
+			sta.min = VariantType(_min,sta.data_type);
+			sta.max = VariantType(_max,sta.data_type);
+			sta.mean = VariantType(_mean,sta.data_type);
+			sta.std = VariantType(_std,sta.data_type);
 
 			// Fills the 'block' with the statistics
 			blk->setStats(sta);
-
-			// Fills the 'node' with the statistics
-			blk->node()->stats.set(coord,sta);
+			// NB: if the stats are fixed, the entry will be released
 		}
 	}
 }
@@ -536,6 +539,15 @@ void Task::postWork(Job job, const BlockList &in_blk, const BlockList &out_blk) 
 	if (self_jobs_count[iter] == 0) {
 		last = Tid;
 		self_jobs_count.erase(iter);
+	}
+
+	// Integrates block stats into node
+	for (auto blk : out_blk) {
+		if (blk->node()->isOutput()) {
+			if (blk->node()->stats.active) {
+				blk->node()->stats.set(job.coord,blk->getStats());
+			}
+		}
 	}
 
 	// The last job of the task has been completed
@@ -556,11 +568,10 @@ void Task::compute(Job job, const BlockList &in_blk, const BlockList &out_blk) {
 	const Version *ver = getVersion(DEV_ALL,{},""); // Any device, No detail
 	assert(ver != nullptr);
 
-	auto all_pred = [&](Block *b){ return b->isFixed() || b->forward(); };
+	auto all_pred = [&](Block *b){ return b->isFixed() || b->isForward(); };
 
 	if (std::all_of(out_blk.begin(),out_blk.end(),all_pred)) {
 		clock.incr(NOT_COMPUTED);
-//std::cout << "No Comp: " << job.task->id() << " " << job.coord << std::endl;
 		return; // All output blocks are fixed or forwarded, no need to compute
 	}
 
@@ -654,6 +665,7 @@ void Task::computeVersion(Job job, const BlockList &in_blk, const BlockList &out
 	clock.start(KERNEL);
 
 	err = clEnqueueNDRangeKernel(*que, *krn, dim, NULL, gws, lws, 0, nullptr, nullptr);
+	cle::clCheckError(err);
 	err = clFinish(*que);
 	cle::clCheckError(err);
 
@@ -693,7 +705,8 @@ void Task::fixingValues(Job job, const BlockList &in_blk, const BlockList &out_b
 		auto space = reach.blockSpace(blocksize());
 		for (auto offset : space) {
 			node->computeFixed(coord+offset,val_hash);
-			// @@
+
+			// @@ still agree with defaultStats() ?
 			auto vf = val_hash[Key(node,coord)];
 			if (not vf.active) {
 				auto def = defaultStats(node->datatype());
@@ -709,9 +722,10 @@ void Task::fixingValues(Job job, const BlockList &in_blk, const BlockList &out_b
 		assert(val_hash.find(out_key) != val_hash.end());
 		auto vf = val_hash[out_key];
 
-		if (vf.fixed) {
-			out->fixValue(vf.value);
-		} else if (vf.active) {
+		assert(!vf.fixed || vf.active);
+		assert(!vf.fixed || vf.max == vf.min);
+		
+		if (vf.active) {
 			out->setStats(vf.stats());
 		}
 	}
@@ -750,7 +764,7 @@ void Task::preForward(Job job, const BlockList &in_blk, const BlockList &out_blk
 		// Only one output node can receive the forwarded input,
 		// other nodes will perform a copy of the memory block
 		if (forw and free) {
-			oblk->forward(true);
+			oblk->setForward();
 			taken.insert(oblk->node());
 		}
 	}
@@ -763,12 +777,13 @@ void Task::postForward(Job job, const BlockList &in_blk, const BlockList &out_bl
 	for (auto oblk : out_blk) {
 		if (forward.find(oblk->node()) != forward.end()) {
 			Block *iblk = forward[oblk->node()];
-			assert(is_included(iblk,in_blk));
-			assert(oblk->getStats() == iblk->getStats());
-			assert(oblk->forward() && not oblk->isFixed());
+			assert(in_blk.include(iblk));
+			assert(oblk->getStats() == iblk->getStats()
+					|| oblk->node()->pattern().is(STATS));
+			assert(oblk->isForward() && not oblk->isFixed());
 			
 			iblk->forwardEntry(oblk);
-			oblk->forward(false); // The 'forwarding' state ends
+			oblk->unsetForward(); // The 'forwarding' state ends
 		}
 	}
 

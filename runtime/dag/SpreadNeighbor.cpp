@@ -79,8 +79,13 @@ void SpreadNeighbor::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string SpreadNeighbor::getName() const {
+std::string SpreadNeighbor::shortName() const {
 	return "SpreadNeighbor";
+}
+
+std::string SpreadNeighbor::longName() const {
+	std::string str = "SpreadNeighbor {" + std::to_string(prev()->id) + "}";
+	return str;
 }
 
 std::string SpreadNeighbor::signature() const {

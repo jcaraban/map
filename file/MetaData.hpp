@@ -13,7 +13,7 @@
 namespace map { namespace detail {
 
 /*
- * @class Shape
+ * @class DataShape
  */
 struct DataShape {
 	NumDim num_dim; //!< dimension number
@@ -25,7 +25,7 @@ struct DataShape {
 
 	DataShape();
 	DataShape(DataSize ds, BlockSize bs, GroupSize gs);
-	bool operator==(const DataShape &other);
+	bool operator==(const DataShape &other) const;
 	bool encompass(const DataShape &other);
 };
 
@@ -39,20 +39,13 @@ struct MetaData {
 	NumDim num_dim; //!< dimension number
 	MemOrder mem_order; //!< memory order
 	//!< codification ? (e.g. compression like bitpack for bool)
-	/*
-	DataSize data_size; //!< Full size or resolution of the raster data
-	BlockSize block_size; //!< Size of the blocks partitioning the data
-	NumBlock num_block; //!< Number of blocks = 'data_size' / 'block_size'
-	GroupSize group_size; //!< Size of the groups partitioning the block
-	NumGroup num_group; //!< Number of groups = 'block_size' / 'group_size'
-	*/
-	DataShape data_shape; // @
+	DataShape data_shape; //!< Multi-dimensional shape of the data
 	// what about cached variables like 'size_t total_data_size' ?
 
 	MetaData();
 	MetaData(DataSize ds, DataType dt, MemOrder mo, BlockSize bs, GroupSize gs);
 
-	bool operator==(const MetaData &other);
+	bool operator==(const MetaData &other) const;
 
 	StreamDir getStreamDir() const;
 	DataType getDataType() const;

@@ -62,7 +62,7 @@ VariantType ma_value(Node *node) {
 /**/
 
 //char* ma_nodename(Node *node) {
-//	return node->getName();
+//	return node->shortName();
 //	// need Node names in a static var, like id.
 //}
 
@@ -238,6 +238,11 @@ Node* ma_spreadScan(Node *prev, Node *dir, ReductionEnum type) {
 
 Node* ma_barrier(Node *prev) {
 	Node *node = Barrier::Factory(prev);
+	return Runtime::getInstance().addNode(node);
+}
+
+Node* ma_identity(Node *prev) {
+	Node *node = Identity::Factory(prev);
 	return Runtime::getInstance().addNode(node);
 }
 

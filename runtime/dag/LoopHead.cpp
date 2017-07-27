@@ -39,6 +39,8 @@ Node* LoopHead::Factory(Node *prev) {
 	GroupSize gs = prev->groupsize();
 	MetaData meta(ds,dt,mo,bs,gs);
 
+	meta.stream_dir = prev->streamdir(); // @
+
 	return new LoopHead(meta,prev);
 }
 
@@ -55,6 +57,8 @@ LoopHead::LoopHead(const MetaData &meta, Node *prev)
 	this->addPrev(prev);
 	prev->addNext(this);
 
+	this->file = prev->file;
+	
 	owner_loop = nullptr; // 'head' knows who its 'loop' is
 	twin_tail = nullptr; // 'head' might have a twin 'tail'
 	
@@ -81,8 +85,13 @@ void LoopHead::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string LoopHead::getName() const {
+std::string LoopHead::shortName() const {
 	return "LoopHead";
+}
+
+std::string LoopHead::longName() const {
+	std::string str = "LoopHead {" + std::to_string(prev()->id) + "}";
+	return str;
 }
 
 std::string LoopHead::signature() const {
@@ -102,6 +111,11 @@ Node* LoopHead::prev() const {
 }
 
 // Compute
+
+void LoopHead::computeScalar(std::unordered_map<Node*,VariantType> &hash) {
+	assert(numdim() == D0);
+	hash[this] = hash.find(prev())->second;
+}
 
 void LoopHead::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
 	hash[{this,coord}] = hash.find({prev(),coord})->second;

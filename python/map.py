@@ -32,7 +32,11 @@ import ctypes as ct
 #_lib = ct.CDLL("../libmap.so")
 _lib = ct.CDLL("/home/jcaraban/jesus/code/map/libmap.so")
 
-## Enumerates / Constants
+## Constants
+
+inf = float('inf')
+
+## Enumerates
 
 DataTypeId = [ 'NONE_DATATYPE','F32','F64','B8','U8','U16','U32','U64','S8','S16','S32','S64','N_DATATYPE' ]
 DataTypeVal = range(len(DataTypeId))
@@ -122,8 +126,28 @@ class Variant(ct.Structure):
 		elif isinstance(val,int):
 			union.s32 = ct.c_int32(val)
 			dtype = S32
+		elif isinstance(val,ct.c_float):
+			union.f32,dtype = val,F32
+		elif isinstance(val,ct.c_double):
+			union.f64,dtype = val,F64
+		elif isinstance(val,ct.c_bool):
+			union.b8,dtype = val,B8
 		elif isinstance(val,ct.c_uint8):
 			union.u8,dtype = val,U8
+		elif isinstance(val,ct.c_uint16):
+			union.u16,dtype = val,U16
+		elif isinstance(val,ct.c_uint32):
+			union.u32,dtype = val,U32
+		elif isinstance(val,ct.c_uint64):
+			union.u64,dtype = val,U64
+		elif isinstance(val,ct.c_int8):
+			union.s8,dtype = val,S8
+		elif isinstance(val,ct.c_int16):
+			union.s16,dtype = val,S16
+		elif isinstance(val,ct.c_int32):
+			union.s32,dtype = val,S32
+		elif isinstance(val,ct.c_int64):
+			union.s64,dtype = val,S64
 		else:
 		    assert(0)
 		super(Variant,self).__init__(union,dtype)
@@ -134,24 +158,52 @@ class Variant(ct.Structure):
 	def value(self):
 		if self.dtype is F32:
 			return self.union.f32
+		if self.dtype is F64:
+			return self.union.f64
 		elif self.dtype is B8:
 			return self.union.b8
 		elif self.dtype is U8:
 			return self.union.u8
+		elif self.dtype is U16:
+			return self.union.u16
+		elif self.dtype is U32:
+			return self.union.u32
+		elif self.dtype is U64:
+			return self.union.u64
+		elif self.dtype is S8:
+			return self.union.s8
+		elif self.dtype is S16:
+			return self.union.s16
 		elif self.dtype is S32:
 			return self.union.s32
+		elif self.dtype is S64:
+			return self.union.s64
 		else:
 			assert(0)
 
 	def convert(self,new_dt):
 		if new_dt is F32:
-			return Variant( float(self.value()) )
+			return Variant( ct.c_float(self.value()) )
+		if new_dt is F64:
+			return Variant( ct.c_double(self.value()) )
 		elif new_dt is B8:
-			return Variant( bool(self.value()) )
+			return Variant( ct.c_bool(self.value()) )
 		elif new_dt is U8:
 			return Variant( ct.c_uint8(self.value()) )
+		elif new_dt is U16:
+			return Variant( ct.c_uint16(self.value()) )
+		elif new_dt is U32:
+			return Variant( ct.c_uint32(self.value()) )
+		elif new_dt is U64:
+			return Variant( ct.c_uint64(self.value()) )
+		elif new_dt is S8:
+			return Variant( ct.c_int8(self.value()) )
+		elif new_dt is S16:
+			return Variant( ct.c_int16(self.value()) )
 		elif new_dt is S32:
-			return Variant( int(self.value()) )
+			return Variant( ct.c_int32(self.value()) )
+		elif new_dt is S64:
+			return Variant( ct.c_int64(self.value()) )
 		else:
 			assert(0)
 # class Variant
@@ -252,7 +304,7 @@ class Raster:
 		half = whole.split('\n')[first:]
 		indent = self._indent_len(half[0])
 		last = 1
-		while self._indent_len(half[last]) > indent:
+		while self._within_loop(half,last,indent):
 			last += 1
 		exact = half[:last] # exact source with the loop
 		source = "\n".join(exact)
@@ -298,6 +350,10 @@ class Raster:
 	def _indent_len(self,line):
 		return len(line) - len(line.lstrip())
 
+	def _within_loop(self,half,last,indent):
+		return (self._indent_len(half[last]) > indent or
+				not half[last]) # i.e. line is empty
+
 	def _fill_missing_lineno(self,tree,lineno):
 		for node in ast.walk(tree):
 			if hasattr(node,'lineno'):
@@ -332,6 +388,9 @@ class Raster:
 
 	def nodeid(self):
 		return _lib.ma_nodeid(self)
+
+	def nodename(self):
+		return _lib.ma_longname(self)
 
 	def streamdir(self):
 		return _lib.ma_streamdir(self)
@@ -379,6 +438,9 @@ class Raster:
 
 	def astype(self,dt):
 		return astype(self,dt)
+
+	def zsum(self,cond=None):
+		return zsum(self,cond)
 # class Raster
 
 ## Helper functions
@@ -481,6 +543,12 @@ def stats(raster,min=None,max=None,mean=None,std=None):
 		mean = Raster() # @
 		std = Raster() # @
 	return Raster( _lib.ma_stats(raster,min,max,mean,std) );
+
+def barrier(arg):
+	return Raster( _lib.ma_barrier(arg) )
+
+def identity(arg):
+	return Raster( _lib.ma_identity(arg) )
 
 def value(arg):
 	var = _lib.ma_value(arg)
@@ -587,22 +655,34 @@ def fmin(raster,lst):
 	varptr = ct.cast(vararr, ct.POINTER(Variant))
 	return Raster( _lib.ma_focalFunc(raster,varptr,size,ds,MIN) )
 
-def zsum(raster):
+def zsum(raster,cond=None):
+	if cond is not None:
+		raster = con(cond,raster,zeros_like(raster))
 	return Raster( _lib.ma_zonalReduc(raster,SUM) )
 
-def zprod(raster):
+def zprod(raster,cond=None):
+	if cond is not None:
+		raster = con(cond,raster,ones_like(raster))
 	return Raster( _lib.ma_zonalReduc(raster,PROD) )
 
-def zor(raster):
+def zor(raster,cond=None):
+	if cond is not None:
+		raster = con(cond,raster,zeros_like(raster))
 	return Raster( _lib.ma_zonalReduc(raster,rOR) )
 
-def zand(raster):
+def zand(raster,cond=None):
+	if cond is not None:
+		raster = con(cond,raster,ones_like(raster))
 	return Raster( _lib.ma_zonalReduc(raster,rAND) )
 
 def zmax(raster):
+	#if cond is not None:
+	#	raster = con(cond,raster,full_like(-inf,raster))
 	return Raster( _lib.ma_zonalReduc(raster,MAX) )
 
 def zmin(raster):
+	#if cond is not None:
+	#	raster = con(cond,raster,full_like(-inf,raster))
 	return Raster( _lib.ma_zonalReduc(raster,MIN) )
 
 def rsum(raster,coord):
@@ -855,6 +935,12 @@ _lib.ma_stats.restype = Node
 
 _lib.ma_blockStats.argtypes = [Raster, ct.c_int]
 _lib.ma_blockStats.restype = Node
+
+_lib.ma_barrier.argtypes = [Raster]
+_lib.ma_barrier.restype = Node
+
+_lib.ma_identity.argtypes = [Raster]
+_lib.ma_identity.restype = Node
 
 _lib.ma_loopStart.argtypes = []
 _lib.ma_loopStart.restype = None

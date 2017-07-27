@@ -101,6 +101,8 @@ Berr Block1::reduce() {
 		cl_int clerr = clEnqueueReadBuffer(*que,scalar_page,CL_TRUE,offset,size,&val.ref(),0,nullptr,nullptr);
 		cle::clCheckError(clerr);
 
+//std::cout << "\treduc " << coord() << " " << node()->id << " " << val << std::endl;
+
 		setValue(val);
 	}
 
@@ -108,7 +110,7 @@ Berr Block1::reduce() {
 	return 0;
 }
 
-Berr Block1::preLoad() {
+Berr Block1::preload() {
 	assert(getValue().isNone());
 
 	if (node()->isConstant())
@@ -129,12 +131,7 @@ Berr Block1::send() {
 }
 
 Berr Block1::recv() {
-	TimedRegion region(Runtime::getClock(),RECV);
-	cle::Queue que = Runtime::getOclEnv().D(Tid.dev()).Q(Tid.rnk());
-
-	cl_int clerr = clEnqueueReadBuffer(*que, entry->dev_mem, CL_TRUE, 0, size(), host_mem, 0, nullptr, nullptr);
-	cle::clCheckError(clerr);
-	return 0;
+	// Move part of Block1::reduce() here?
 }
 
 Berr Block1::read() {
@@ -176,7 +173,10 @@ void* Block1::getDevMem() {
 //}
 
 void Block1::setStats(CellStats sta) {
-	// nothing to do
+	// If the value range is fixed, fix the block
+	if (sta.max == sta.min) {
+		fixValue(sta.max);
+	}
 }
 
 VariantType Block1::getValue() const {
@@ -184,6 +184,7 @@ VariantType Block1::getValue() const {
 }
 
 void Block1::setValue(VariantType val) {
+	assert(val.datatype() == datatype());
 	this->value = val;
 }
 
@@ -193,6 +194,7 @@ bool Block1::isFixed() const {
 
 void Block1::fixValue(VariantType val) {
 	assert(not val.isNone());
+	assert(val.datatype() == datatype());
 	fixed = true;
 	ready = true;
 	value = val;

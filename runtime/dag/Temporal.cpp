@@ -31,7 +31,11 @@ void Temporal::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string Temporal::getName() const {
+std::string Temporal::shortName() const {
+	return "Temporal";
+}
+
+std::string Temporal::longName() const {
 	return "Temporal";
 }
 

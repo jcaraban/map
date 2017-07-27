@@ -44,6 +44,7 @@ int main(int argc, char **argv) {
 
 	//// Pre-Computation
 
+	detail::Runtime::getConfig().setNumRanks(1);
 	setupDevices("",DEV_GPU,"");
 	//setupDevices("Intel",DEV_CPU,"");
 

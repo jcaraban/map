@@ -73,8 +73,13 @@ void Access::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string Access::getName() const {
+std::string Access::shortName() const {
 	return "Access";
+}
+
+std::string Access::longName() const {
+	std::string str = "Access {" + std::to_string(prev()->id) + "}";
+	return str;
 }
 
 std::string Access::signature() const {

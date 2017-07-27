@@ -61,8 +61,13 @@ void Constant::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string Constant::getName() const {
+std::string Constant::shortName() const {
 	return "Constant";
+}
+
+std::string Constant::longName() const {
+	std::string str = "Constant {" + value.toString() + "}";
+	return str;
 }
 
 std::string Constant::signature() const {

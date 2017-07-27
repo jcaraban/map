@@ -90,8 +90,13 @@ void SpreadScan::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string SpreadScan::getName() const {
+std::string SpreadScan::shortName() const {
 	return "SpreadScan";
+}
+
+std::string SpreadScan::longName() const {
+	std::string str = "SpreadScan {" + std::to_string(prev()->id) + "}";
+	return str;
 }
 
 std::string SpreadScan::signature() const {

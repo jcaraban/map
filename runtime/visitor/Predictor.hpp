@@ -8,6 +8,7 @@
 #define MAP_RUNTIME_VISITOR_PREDICTOR_HPP_
 
 #include "Visitor.hpp"
+#include "../block/BlockList.hpp"
 #include <unordered_map>
 
 

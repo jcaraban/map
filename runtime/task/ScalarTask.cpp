@@ -48,14 +48,14 @@ void ScalarTask::compute(Job job, const BlockList &in_blk, const BlockList &out_
 		assert(node->value == blk->getValue());
 
 		hash[node] = blk->getValue();
-std::cout << "iblk " << node->id << ":\t" << blk->getValue() << std::endl;
+//std::cout << "iblk " << node->id << ":\t" << blk->getValue() << std::endl;
 	}
 	
 	// Actual scalar computation, in forward order
 	for (auto node : nodeList()) {
 		node->computeScalar(hash);
 		node->value = hash.find(node)->second;
-std::cout << "node " << node->id << ":\t" << node->value << std::endl;
+//std::cout << "  scalar " << node->id << ":\t" << node->value << std::endl;
 	}
 
 	// Storing scalar outputs

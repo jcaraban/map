@@ -103,8 +103,13 @@ void LoopCond::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string LoopCond::getName() const {
+std::string LoopCond::shortName() const {
 	return "LoopCond";
+}
+
+std::string LoopCond::longName() const {
+	std::string str = "LoopCond {" + std::to_string(prev()->id) + "}";
+	return str;
 }
 
 std::string LoopCond::signature() const {

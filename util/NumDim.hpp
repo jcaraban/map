@@ -48,6 +48,8 @@ constexpr NumDimEnum operator+(const NumDimEnum& lhs, const NumDimEnum& rhs) {
 
 NumDim DataSize2NumDim(const DataSize &ds);
 
+std::ostream& operator<< (std::ostream& os, const NumDim& dim);
+
 } } // namespace map::detail
 
 #endif

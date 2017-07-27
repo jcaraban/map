@@ -92,10 +92,18 @@ struct Fusioner
 	/*
 	 *
 	 */
+	void processLoop(Node *node);
+
+	/*
+	 *
+	 */
+	void processScalar(Group *group);
+
+	/*
+	 *
+	 */
 	void process(Group *group);
 	void processBU(Group *group); // @
-
-	void processLoop(Node *node); // @
 
 	/*
 	 * For every block with only input/free-nodes, their content is forwarded

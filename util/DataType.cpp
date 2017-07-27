@@ -341,4 +341,8 @@ DataType DataType::to64() const {
 	}
 }
 
+std::ostream& operator<< (std::ostream& os, const DataType& type) {
+	return os << type.toString();
+}
+
 } } // namespace map::detail

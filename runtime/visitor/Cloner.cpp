@@ -51,11 +51,13 @@ void Cloner::visit(Switch *swit) {
 
 	swit->next_true.clear();
 	for (auto next : true_list)
-		swit->addTrue(old_hash[next]);
+		if (old_hash.find(next) != old_hash.end())
+			swit->addTrue(old_hash[next]);
 
 	swit->next_false.clear();
 	for (auto next : false_list)
-		swit->addFalse(old_hash[next]);
+		if (old_hash.find(next) != old_hash.end())
+			swit->addFalse(old_hash[next]);
 }
 
 } } // namespace map::detail

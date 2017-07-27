@@ -8,12 +8,12 @@
 #define MAP_RUNTIME_DAG_IO_HPP_
 
 #include "Node.hpp"
-#include "../../file/File.hpp"
+//#include "../../file/File.hpp"
 
 
 namespace map { namespace detail {
 
-typedef std::shared_ptr<IFile> SharedFile;
+//typedef std::shared_ptr<IFile> SharedFile;
 struct InputNodeFlag { };
 struct OutputNodeFlag { };
 
@@ -23,12 +23,13 @@ struct IONode : public Node
 	IONode(SharedFile file, InputNodeFlag not_used);
 	IONode(SharedFile file, OutputNodeFlag not_used);
 	IONode(const IONode *other, const std::unordered_map<Node*,Node*> &other_to_this);
+	~IONode() override;
 
-	SharedFile file();
-	const SharedFile file() const;
+	//SharedFile getFile();
+	const SharedFile getFile() const;
 
   // vars
-	SharedFile io_file; //!< File serving as input or output
+	//SharedFile file; //!< File serving as input or output
 };
 
 struct InputNode : public virtual IONode
@@ -44,6 +45,7 @@ struct OutputNode : public virtual IONode
 {
 	OutputNode();
 	OutputNode(Node *prev, SharedFile file);
+	~OutputNode() override;
 
 	Pattern pattern() const { return OUTPUT; }
 	bool isOutput() const;
@@ -51,7 +53,7 @@ struct OutputNode : public virtual IONode
 };
 
 struct InOutNode {
-	static_assert(true,"In-Out node not allowed, sort of goes against the actual model");
+	static_assert(true,"In-Out node not allowed, sort of goes against the SSA model");
 };
 
 struct OutInNode : public InputNode, public OutputNode

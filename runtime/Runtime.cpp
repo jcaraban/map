@@ -33,6 +33,10 @@ Runtime& Runtime::getInstance() {
     return instance;
 }
 
+cle::OclEnv& Runtime::getOclEnv() {
+	return getInstance().clenv;
+}
+
 Config& Runtime::getConfig() {
 	return getInstance().conf;
 }
@@ -41,13 +45,14 @@ Clock& Runtime::getClock() {
 	return getInstance().clock;
 }
 
+Cache& Runtime::getCache() {
+	return getInstance().cache;
+}
+
 LoopAssembler& Runtime::getLoopAssembler() {
 	return getInstance().assembler;
 }
 
-cle::OclEnv& Runtime::getOclEnv() {
-	return getInstance().clenv;
-}
 
 Runtime::Runtime()
 	: clenv()
@@ -238,14 +243,28 @@ Version* Runtime::addVersion(Version *ver) {
 void Runtime::print_nodes(const OwnerNodeList &list) {
 	std::cout << "----" << std::endl;
 	for (auto &node : list)
-		std::cout << node->id << "\t" << node->getName() << "\t " << node->ref << std::endl;
+		std::cout << node->id << "\t" << node->shortName() << "\t " << node->ref << std::endl;
 	std::cout << "----" << std::endl;
 }
 
 void Runtime::print_nodes(const NodeList &list) {
 	std::cout << "----" << std::endl;
 	for (auto &node : list)
-		std::cout << node->id << "\t" << node->getName() << "\t " << node->ref << std::endl;
+		std::cout << node->id << "\t" << node->shortName() << "\t " << node->ref << std::endl;
+	std::cout << "---- id_count " << id_count << std::endl;
+}
+
+void Runtime::long_print_nodes(const OwnerNodeList &list) {
+	std::cout << "----" << std::endl;
+	for (auto &node : list)
+		std::cout << node->id << "\t" << node->longName() << "\t " << node->ref << std::endl;
+	std::cout << "----" << std::endl;
+}
+
+void Runtime::long_print_nodes(const NodeList &list) {
+	std::cout << "----" << std::endl;
+	for (auto &node : list)
+		std::cout << node->id << "\t" << node->longName() << "\t " << node->ref << std::endl;
 	std::cout << "---- id_count " << id_count << std::endl;
 }
 
@@ -318,6 +337,11 @@ void Runtime::evaluate(NodeList list_to_eval) {
 	for (auto node : graph)
 		if (node->numdim() == D0)
 			map_new_old.find(node)->second->value = node->value;
+
+	// Transfers stats to output nodes values to original nodes
+	for (auto node : graph)
+		if (node->isOutput())
+			map_new_old.find(node)->second->stats = node->stats;
 
 	// Unlinks the private nodes before they are deleted
 	auto un_priv_link = Unlinker().unlink(priv_list);
@@ -413,15 +437,18 @@ void Runtime::reportEval() {
 
 	std::cerr << "  get job: " << clock.get(GET_JOB)/W/E << "%" << std::endl;
 	std::cerr << "  get blk: " << clock.get(GET_BLOCK)/W/E << "%" << std::endl;
-	std::cerr << "  pre:     " << clock.get(PRE_LOAD)/W/E << "%" << std::endl;
+	std::cerr << "  pre-ld : " << clock.get(PRE_LOAD)/W/E << "%" << std::endl;
+	std::cerr << "  get ent: " << clock.get(GET_ENTRY)/W/E << "%" << std::endl;
+	std::cerr << "  evict:   " << clock.get(EVICT)/W/E << "%" << std::endl;
 	std::cerr << "  load:    " << clock.get(LOAD)/W/E << "%" << std::endl;
 	//std::cerr << "  pre:     " << clock.get(PRE_COMP)/W/E << "%" << std::endl;
 	std::cerr << "  compute: " << clock.get(COMPUTE)/W/E << "%" << std::endl;
 	//std::cerr << "  post:    " << clock.get(POST_COMP)/W/E << "%" << std::endl;
 	std::cerr << "  store:   " << clock.get(STORE)/W/E << "%" << std::endl;
-	std::cerr << "  post:    " << clock.get(PRE_LOAD)/W/E << "%" << std::endl;
-	std::cerr << "  ret blk:  " << clock.get(RET_BLOCK)/W/E << "%" << std::endl;
-	std::cerr << "  ret job:  " << clock.get(RET_JOB)/W/E << "%" << std::endl;
+	std::cerr << "  post-st: " << clock.get(PRE_LOAD)/W/E << "%" << std::endl;
+	std::cerr << "  ret ent: " << clock.get(RET_ENTRY)/W/E << "%" << std::endl;
+	std::cerr << "  ret blk: " << clock.get(RET_BLOCK)/W/E << "%" << std::endl;
+	std::cerr << "  ret job: " << clock.get(RET_JOB)/W/E << "%" << std::endl;
 	
 	std::cerr << "    read:  " << clock.get(READ)/W/E << "%" << std::endl;
 	std::cerr << "    send:  " << clock.get(SEND)/W/E << "%" << std::endl;

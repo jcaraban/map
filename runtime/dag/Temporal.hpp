@@ -26,7 +26,8 @@ struct Temporal : public Node
 
 	// Methods
 	void accept(Visitor *visitor);
-	std::string getName() const;
+	std::string shortName() const;
+	std::string longName() const;
 	std::string signature() const;
 	char classSignature() const;
 

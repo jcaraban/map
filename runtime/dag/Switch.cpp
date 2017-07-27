@@ -37,8 +37,9 @@ Node* Switch::Factory(Node *cond, Node *prev) {
 	MemOrder mo = prev->memorder();
 	BlockSize bs = prev->blocksize();
 	GroupSize gs = prev->groupsize();
-	
 	MetaData meta(ds,dt,mo,bs,gs);
+
+	meta.stream_dir = prev->streamdir(); // @
 
 	return new Switch(meta,cond,prev);
 }
@@ -57,6 +58,8 @@ Switch::Switch(const MetaData &meta, Node *cond, Node *prev)
 	prev->addNext(this);
 	this->addPrev(cond); // condition second
 	cond->addNext(this);
+
+	this->file = prev->file;
 
 	this->next_true = NodeList(); // Added during loop/if-assembly
 	this->next_false = NodeList(); // Added during loop/if-assembly
@@ -78,8 +81,13 @@ void Switch::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string Switch::getName() const {
+std::string Switch::shortName() const {
 	return "Switch";
+}
+
+std::string Switch::longName() const {
+	std::string str = "Switch {" + std::to_string(prev()->id) + "}";
+	return str;
 }
 
 std::string Switch::signature() const {

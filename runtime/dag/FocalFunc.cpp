@@ -80,8 +80,13 @@ void FocalFunc::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string FocalFunc::getName() const {
+std::string FocalFunc::shortName() const {
 	return "FocalFunc";
+}
+
+std::string FocalFunc::longName() const {
+	std::string str = "FocalFunc {" + std::to_string(prev()->id) + "}";
+	return str;
 }
 
 std::string FocalFunc::signature() const {

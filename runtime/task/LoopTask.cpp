@@ -214,7 +214,7 @@ void LoopTask::preForward(Job job, const BlockList &in_blk, const BlockList &out
 			forward.erase(oblk->node());
 		} else {
 			assert(forward.find(oblk->node()) != forward.end());
-			oblk->forward(true);
+			oblk->setForward();
 		}
 	}
 }

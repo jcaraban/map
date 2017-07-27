@@ -99,8 +99,13 @@ void Rand::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string Rand::getName() const {
+std::string Rand::shortName() const {
 	return "Rand";
+}
+
+std::string Rand::longName() const {
+	std::string str = "Rand {" + std::to_string(seed()->id) + "}";
+	return str;
 }
 
 std::string Rand::signature() const {

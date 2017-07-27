@@ -34,14 +34,14 @@ struct Block1 : public Block
 	HoldType holdtype() const override;
 
   // Methods
-	Berr preLoad() override;
+	Berr preload() override;
 	Berr load() override;
 	Berr store() override;
 	Berr init() override;
 	Berr reduce() override;
 
 	Berr send();
-	Berr recv() override;
+	Berr recv();
 	Berr read();
 	Berr write();
 

@@ -77,8 +77,15 @@ void Unary::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string Unary::getName() const {
+std::string Unary::shortName() const {
 	return "Unary";
+}
+
+std::string Unary::longName() const {
+	auto tstr = type.toString();
+	auto pid = std::to_string(prev()->id);
+	std::string str = "Unary {" + tstr + "," + pid + "}";
+	return str;
 }
 
 std::string Unary::signature() const {
@@ -184,7 +191,7 @@ void Unary::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &h
 		case ROUND: break;
 	}
 
-	assert(vf.active);
+	//assert(vf.active);
 
 	hash[{node,coord}] = vf;
 }

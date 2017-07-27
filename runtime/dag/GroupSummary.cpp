@@ -71,8 +71,13 @@ void GroupSummary::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string GroupSummary::getName() const {
+std::string GroupSummary::shortName() const {
 	return "GroupSummary";
+}
+
+std::string GroupSummary::longName() const {
+	std::string str = "GroupSummary {" + std::to_string(prev()->id) + "}";
+	return str;
 }
 
 std::string GroupSummary::signature() const {

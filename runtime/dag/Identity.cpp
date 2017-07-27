@@ -36,6 +36,8 @@ Node* Identity::Factory(Node *prev) {
 	GroupSize gs = prev->groupsize();
 	MetaData meta(ds,dt,mo,bs,gs);
 
+	meta.stream_dir = prev->streamdir(); // @
+
 	return new Identity(meta,prev);
 }
 
@@ -52,6 +54,8 @@ Identity::Identity(const MetaData &meta, Node *prev)
 	this->addPrev(prev);
 	prev->addNext(this);
 
+	this->file = prev->file;
+
 	this->in_spatial_reach = Mask(numdim().unitVec(),true);
 	this->out_spatial_reach = Mask(numdim().unitVec(),true);
 }
@@ -66,8 +70,13 @@ void Identity::accept(Visitor *visitor) {
 	visitor->visit(this);
 }
 
-std::string Identity::getName() const {
+std::string Identity::shortName() const {
 	return "Identity";
+}
+
+std::string Identity::longName() const {
+	std::string str = "Identity {" + std::to_string(prev()->id) + "}";
+	return str;
 }
 
 std::string Identity::signature() const {
@@ -86,10 +95,7 @@ Node* Identity::prev() const {
 
 void Identity::computeScalar(std::unordered_map<Node*,VariantType> &hash) {
 	assert(numdim() == D0);
-	auto *node = this;
-
-	auto pval = hash.find(node->prev())->second;
-	hash[node] = pval;
+	hash[this] = hash.find(prev())->second;
 }
 
 void Identity::computeFixed(Coord coord, std::unordered_map<Key,ValFix,key_hash> &hash) {
