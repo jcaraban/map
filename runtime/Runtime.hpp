@@ -31,12 +31,12 @@
 namespace map { namespace detail {
 
 struct Node; //!< Forward declaration
-struct Group; //!< Forward declaration
+struct Cluster; //!< Forward declaration
 struct Task; //!< Forward declaration
 struct Version; //!< Forward declaration
 
 typedef std::vector<std::unique_ptr<Node>> OwnerNodeList;
-typedef std::vector<std::unique_ptr<Group>> OwnerGroupList;
+typedef std::vector<std::unique_ptr<Cluster>> OwnerClusterList;
 typedef std::vector<std::unique_ptr<Task>> OwnerTaskList;
 typedef std::vector<std::unique_ptr<Version>> OwnerVersionList;
 typedef std::vector<Node*> NodeList;
@@ -72,8 +72,8 @@ class Runtime
 	Node* loopAssemble();
 	
 	Node* addNode(Node *node);
+	Cluster* addCluster(Cluster *cluster);
 	Task* addTask(Task *task);
-	Group* addGroup(Group *group);
 	Version* addVersion(Version *ver);
 
 	void print_nodes(const OwnerNodeList &list); // @
@@ -96,7 +96,7 @@ class Runtime
 	int id_count; // Counter that give unique SSA ids to the nodes
 
 	OwnerNodeList node_list; //!< Full list of nodes added to the runtime during the script execution
-	OwnerGroupList group_list; //!< 1 fused list is valid for 1 evaluation
+	OwnerClusterList cluster_list; //!< 1 fused list is valid for 1 evaluation
 	OwnerTaskList task_list; //!< 1 task list is valid for 1 evaluation
 	OwnerVersionList ver_list; //!< List of code versions required by the tasks
 

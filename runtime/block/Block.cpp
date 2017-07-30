@@ -2,18 +2,46 @@
  * @file	Block.cpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * TODO: reduce constructors to just one ?
  */
 
 #include "Block.hpp"
+#include "Block0.hpp"
+#include "Block1.hpp"
+#include "BlockN.hpp"
 #include "../dag/Node.hpp"
 
 
 namespace map { namespace detail {
 
+Block* Block::Factory(Key key, HoldType hold, int dep, cl_mem scalar_page, cl_mem group_page, int max_size) {
+	Block *blk = nullptr;
+
+	if (hold == HOLD_0) // Null block that holds '0' values
+	{
+		blk = new Block0(key,dep);
+	}
+	else if (hold == HOLD_1) // Block holds '1' value
+	{
+		blk = new Block1(key,dep,scalar_page);
+	}
+	//else if (hold == HOLD_2) // Block holds 'groups per block' values
+	//{
+	//	blk = new Block2(key,dep,group_page);
+	//}
+	else if (hold == HOLD_N) // Normal case, block holds 'N' values
+	{
+		blk = new BlockN(key,dep,max_size);
+	}
+	else {
+		assert(0);
+	}
+
+	return blk;
+}
+
 Block::Block()
 	: key()
-	, dependencies(DEPEND_UNKNOWN)
+	, depend(DEPEND_UNKNOWN)
 	, ready(false)
 	, dirty(false)
 	, used(0)
@@ -23,7 +51,7 @@ Block::Block()
 
 Block::Block(Key key, int dep)
 	: key(key)
-	, dependencies(dep)
+	, depend(dep)
 	, ready(false)
 	, dirty(false)
 	, used(0)
@@ -172,12 +200,12 @@ void Block::forwardEntry(Block *out) {
 }
 
 void Block::notify() {
-	assert(dependencies > 0);
-	dependencies--;
+	assert(depend > 0);
+	depend--;
 }
 
 bool Block::discardable() const {
-	return dependencies == DEPEND_ZERO; // == 0
+	return depend == DEPEND_ZERO; // == 0
 }
 
 void Block::setReady() {

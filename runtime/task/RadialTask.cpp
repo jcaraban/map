@@ -14,10 +14,10 @@ namespace map { namespace detail {
    Radial
  *************/
 
-RadialTask::RadialTask(Program &prog, Clock &clock, Config &conf, Group *group)
-	: Task(prog,clock,conf,group)
+RadialTask::RadialTask(Program &prog, Clock &clock, Config &conf, Cluster *cluster)
+	: Task(prog,clock,conf,cluster)
 {
-	for (auto node : group->nodeList()) {
+	for (auto node : nodeList()) {
 		if (node->pattern().is(RADIAL)) {
 			auto *scan = dynamic_cast<RadialScan*>(node);
 			assert(scan != nullptr);

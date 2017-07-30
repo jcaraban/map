@@ -65,7 +65,7 @@ Runtime::Runtime()
 	, threads()
 	, id_count(0)
 	, node_list()
-	, group_list()
+	, cluster_list()
 	, task_list()
 	, simplifier(node_list)
 	, assembler(conf.loop_nested_limit)
@@ -98,7 +98,7 @@ void Runtime::clear() {
 	scheduler.clear();
 	id_count = 0;
 	node_list.clear();
-	group_list.clear();
+	cluster_list.clear();
 	task_list.clear();
 }
 
@@ -225,9 +225,9 @@ Node* Runtime::addNode(Node *node) {
 	return orig;
 }
 
-Group* Runtime::addGroup(Group *group) {
-	group_list.push_back( std::unique_ptr<Group>(group) );
-	return group;
+Cluster* Runtime::addCluster(Cluster *cluster) {
+	cluster_list.push_back( std::unique_ptr<Cluster>(cluster) );
+	return cluster;
 }
 
 Task* Runtime::addTask(Task *task) {
@@ -353,21 +353,21 @@ void Runtime::evaluate(NodeList list_to_eval) {
 
 void Runtime::workflow(NodeList list) {
 	// Variables reused for every pipeline pass
-	group_list.clear();
+	cluster_list.clear();
 	task_list.clear();
 	program.clear();
 	scheduler.clear();
 
-	// Task fusion: fusing nodes into groups
-	Fusioner fusioner(group_list);
+	// Task fusion: fusing nodes into clusters
+	Fusioner fusioner(cluster_list);
 	fusioner.fuse(list);
 
 	// Export DAG
-	Exporter exporter(fusioner.group_list_of);
+	Exporter exporter(fusioner.cluster_list_of);
 	exporter.exportDag(list);
 	
 	// Program tasks composition
-	program.compose(group_list);
+	program.compose(cluster_list);
 
 	// Parallel code generation
 	program.generate();

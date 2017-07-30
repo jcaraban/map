@@ -20,7 +20,7 @@ namespace map { namespace detail {
  */
 struct IdentityTask : public Task
 {
-	IdentityTask(Program &prog, Clock &clock, Config &conf, Group *group);
+	IdentityTask(Program &prog, Clock &clock, Config &conf, Cluster *cluster);
 
 	void createVersions();
 

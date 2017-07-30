@@ -22,14 +22,14 @@ namespace map { namespace detail {
 struct Predictor : public Visitor
 {
   // constructor and main function
-	Predictor(Group *group);
+	Predictor(Cluster *cluster);
 	void predict(Coord coord, const BlockList &in_blk, const BlockList &out_blk);
 
   // methods
 	void clear();
 
   // vars
-	Group *group;
+	Cluster *cluster;
 
 	std::unordered_map<Key,ValFix,key_hash> hash;
 };

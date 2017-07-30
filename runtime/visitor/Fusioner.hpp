@@ -2,10 +2,10 @@
  * @file	Fusioner.hpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * Visitor of the DAG that fuses Nodes into Groups
+ * Visitor of the DAG that fuses Nodes into Clusters
  *
- * TODO: fusioner should not touch 'Runtime::group_list' but return a Structure from fuse()
- *       the struct should contain the 'group_list' and a 'group_list_of'
+ * TODO: fusioner should not touch 'Runtime::cluster_list' but return a Structure from fuse()
+ *       the struct should contain the 'cluster_list' and a 'cluster_list_of'
  *
  */
 
@@ -19,7 +19,7 @@
 
 namespace map { namespace detail {
 
-typedef std::vector<std::unique_ptr<Group>> OwnerGroupList; // forward declaration
+typedef std::vector<std::unique_ptr<Cluster>> OwnerClusterList; // forward declaration
 
 /*
  *
@@ -27,52 +27,52 @@ typedef std::vector<std::unique_ptr<Group>> OwnerGroupList; // forward declarati
 struct Fusioner
 {
   // constructor and main function
-	Fusioner(OwnerGroupList& group_list);
+	Fusioner(OwnerClusterList& cluster_list);
 	void fuse(NodeList list);
 
   // methods
 	void clear();
 
 	/*
-	 * Inserts a new group in 'group_list' and returns it
+	 * Inserts a new cluster in 'cluster_list' and returns it
 	 */
-	Group* newGroup();
+	Cluster* newCluster();
 
 	/*
-	 * Deletes 'group' from the list of groups
+	 * Deletes 'cluster' from the list of clusters
 	 */
-	void removeGroup(Group *group);
+	void removeCluster(Cluster *cluster);
 
 	/*
 	 * returns true when 'top' and 'bot' can be pipe-fused following the top-bot direcction
 	 */
-	bool canPipeFuse(Group *top, Group *bot);
+	bool canPipeFuse(Cluster *top, Cluster *bot);
 
 	/*
 	 * returns true when 'left' and 'right' can be flat-fused
 	 */
-	bool canFlatFuse(Group *left, Group *right);
+	bool canFlatFuse(Cluster *left, Cluster *right);
 
 	/*
 	 * The content of 'bot' is transferred to 'top' and it's erased
 	 * Links of all involved 'prev' and 'next' nodes are updated
-	 * Only valid for groups with producer-consumer data-flow relations
+	 * Only valid for clusters with producer-consumer data-flow relations
 	 */
-	Group* pipeFuseGroup(Group *&top, Group *&bot);	
+	Cluster* pipeFuseCluster(Cluster *&top, Cluster *&bot);	
 
 	/*
 	 * The content of 'right' is transferred to 'left' and it's erased
 	 * Links of all involved 'prev' and 'next' nodes are updated
-	 * Only valid for groups with consumer-consumer data-flow relations
+	 * Only valid for clusters with consumer-consumer data-flow relations
 	 */
-	Group* flatFuseGroup(Group *&left, Group *&right);
+	Cluster* flatFuseCluster(Cluster *&left, Cluster *&right);
 
 	/*
 	 * The content of 'other' is transferred to 'one' and it's erased
 	 * Valid for any type of data-flow relations and algorithmic pattern
-	 * NB: use carefully, fusing incompatible groups will result in errors
+	 * NB: use carefully, fusing incompatible clusters will result in errors
 	 */
-	Group* freeFuseGroup(Group *&one, Group *&other);
+	Cluster* freeFuseCluster(Cluster *&one, Cluster *&other);
 
 	/*
 	 *
@@ -97,13 +97,13 @@ struct Fusioner
 	/*
 	 *
 	 */
-	void processScalar(Group *group);
+	void processScalar(Cluster *cluster);
 
 	/*
 	 *
 	 */
-	void process(Group *group);
-	void processBU(Group *group); // @
+	void process(Cluster *cluster);
+	void processBU(Cluster *cluster); // @
 
 	/*
 	 * For every block with only input/free-nodes, their content is forwarded
@@ -112,12 +112,12 @@ struct Fusioner
 	void forwarding(std::function<bool(Node*)> pred);
 
 	/*
-	 * Marks as Input/Output all those nodes in the group boundary that link to other groups
+	 * Marks as Input/Output all those nodes in the cluster boundary that link to other clusters
 	 */
 	void linking();
 
 	/*
-	 * Sorts group in order of dependency. Sorts nodes within groups in order of id
+	 * Sorts cluster in order of dependency. Sorts nodes within clusters in order of id
 	 */
 	void sorting();
 
@@ -127,11 +127,11 @@ struct Fusioner
 	void print();
 
   // vars
-	OwnerGroupList& group_list; //!< Aggregation, Fusioner does not own the data
-	std::unordered_map<Node*,GroupList> group_list_of; //!< For each node, stores its groups
+	OwnerClusterList& cluster_list; //!< Aggregation, Fusioner does not own the data
+	std::unordered_map<Node*,ClusterList> cluster_list_of; //!< For each node, stores its clusters
 	
-	std::unordered_set<Group*> visited; // Remembers what groups have been previously visited
-	GroupList sorted_group_list; //!< Stores the groups in topological order
+	std::unordered_set<Cluster*> visited; // Remembers what clusters have been previously visited
+	ClusterList sorted_cluster_list; //!< Stores the clusters in topological order
 };
 
 } } // namespace map::detail

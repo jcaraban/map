@@ -10,14 +10,14 @@
 
 namespace map { namespace detail {
 
-LoopTask::LoopTask(Program &prog, Clock &clock, Config &conf, Group *group)
-	: Task(prog,clock,conf,group)
+LoopTask::LoopTask(Program &prog, Clock &clock, Config &conf, Cluster *cluster)
+	: Task(prog,clock,conf,cluster)
 {
 	assert(inputList().size() % 2 == 0);
 	assert(backList().empty());
 	//self_jobs_count[0] = -1;
 
-	for (auto node : group->nodeList()) {
+	for (auto node : nodeList()) {
 		if (node->pattern().is(LOOP))
 		{
 			cond_node = dynamic_cast<LoopCond*>(node);

@@ -36,13 +36,13 @@ void Program::addTask(Task *task) {
 	task_list.push_back(task);
 }
 
-void Program::compose(OwnerGroupList& group_list) {
+void Program::compose(OwnerClusterList& cluster_list) {
 	TimedRegion region(clock,TASKIF);
 
-	// Groups are transformed into Tasks, in topological order
-	for (auto &group : group_list)
+	// Clusters are transformed into Tasks, in topological order
+	for (auto &cluster : cluster_list)
 	{
-		Task *task = Task::Factory(*this,clock,conf,group.get()); // Creates a Task out of the group
+		Task *task = Task::Factory(*this,clock,conf,cluster.get());
 		Runtime::getInstance().addTask(task); // Adds task to Runtime
 		this->addTask(task); // Adds task to Program
 	}

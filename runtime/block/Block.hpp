@@ -28,6 +28,9 @@ class IFile; // forward declaration
  */
 struct Block
 {
+  // Factory
+	static Block* Factory(Key key, HoldType hold, int dep, cl_mem scalar_page, cl_mem group_page, int max_size);
+
   // Constructors
 	Block();
 	Block(Key key, int dep);
@@ -100,12 +103,12 @@ struct Block
 	bool isUsed() const;
 
   // Variables
-	Key key;
-	int dependencies;
-	bool ready; // The data is ready to be used (i.e. loaded in entry)
-	bool dirty;
-	short used;
-	char order;
+	Key key; // !< Key={node,coord,iter}, unique identifier of the block
+	int depend; //!< Number of other blocks whose value depends on this
+	bool ready; //!< The data is ready to be used (i.e. loaded in entry)
+	bool dirty; //!< The data was computed but not yet stored (i.e. dirty)
+	short used; //!< Number of jobs currently using this block
+	char order; //!< Order in the BlockList
 
 	std::mutex mtx;
 };

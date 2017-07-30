@@ -2,7 +2,6 @@
  * @file	Config.hpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * TODO: change 'group' (i.e work-group) to e.g. 'subblk' (i.e. sub-block) ?
  */
 
 #ifndef MAP_RUNTIME_CONFIG_HPP_

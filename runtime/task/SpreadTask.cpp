@@ -14,8 +14,8 @@ namespace map { namespace detail {
    Spread
  *************/
 
-SpreadTask::SpreadTask(Program &prog, Clock &clock, Config &conf, Group *group)
-	: Task(prog,clock,conf,group)
+SpreadTask::SpreadTask(Program &prog, Clock &clock, Config &conf, Cluster *cluster)
+	: Task(prog,clock,conf,cluster)
 {
 	assert(0);
 }

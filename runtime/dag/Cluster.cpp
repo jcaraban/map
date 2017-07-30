@@ -1,108 +1,96 @@
 /**
- * @file	Group.cpp 
+ * @file	Cluster.cpp 
  * @author	Jesús Carabaño Bravo <jcaraban@abo.fi>
  *
- * TODO: initilized gen_xxx_xxx to {0,0,0,0} in the constructor if Array4 is made an aggregate
- * Note: using the Group pointer in 'prev_hash' is only possible if all groups are first created at once
+ * Note: using the Cluster pointer in 'prev_hash' is only possible if all clusters are first created at once
  *       Think, new objects often take the address of recently deleted objects, creating false dependencies
- * Note: careful with 'prev_hash' and how it is propagated, it probably won't work when spliting groups
+ * Note: careful with 'prev_hash' and how it is propagated, it will not work when spliting clusters
  */
 
-#include "Group.hpp"
+#include "Cluster.hpp"
 #include "../visitor/Visitor.hpp"
 
 
 namespace map { namespace detail {
 
-int Group::id_count;
+int Cluster::id_count;
 
-Group::Group()
+Cluster::Cluster()
 	: id(-1)
 	, task(nullptr)
 	, gen_pattern(NONE_PATTERN)
 	, gen_shape()
-	//, gen_num_dim(NONE_NUMDIM)
-	//, gen_data_size()
-	//, gen_block_size()
-	//, gen_num_block()
-	//, gen_group_size()
-	//, gen_num_group()
+
 	, gen_outdated(false)
 { }
 
-Group::Group(Pattern pattern)
+Cluster::Cluster(Pattern pattern)
 	: id(-1)
 	, task(nullptr)
 	, gen_pattern(pattern)
 	, gen_shape()
-	//, gen_num_dim(D0)
-	//, gen_data_size()
-	//, gen_block_size()
-	//, gen_num_block()
-	//, gen_group_size()
-	//, gen_num_group()
 	, gen_outdated(false)
 { }
 
-const NodeList& Group::nodeList() const {
+const NodeList& Cluster::nodeList() const {
 	return node_list;
 }
 
-const NodeList& Group::inputList() const {
+const NodeList& Cluster::inputList() const {
 	return in_list;
 }
 
-const NodeList& Group::outputList() const {
+const NodeList& Cluster::outputList() const {
 	return out_list;
 }
 
-const GroupList& Group::prevList() const {
+const ClusterList& Cluster::prevList() const {
 	return prev_list;
 }
 
-const GroupList& Group::nextList() const {
+const ClusterList& Cluster::nextList() const {
 	return next_list;
 }
 
-const GroupList& Group::backList() const {
+const ClusterList& Cluster::backList() const {
 	return back_list;
 }
 
-const GroupList& Group::forwList() const {
+const ClusterList& Cluster::forwList() const {
 	return forw_list;
 }
 
-NumDim Group::numdim() const {
+NumDim Cluster::numdim() const {
 	updateAttributes();
 	return gen_shape.num_dim;
 }
 
-const DataSize& Group::datasize() const {
+const DataSize& Cluster::datasize() const {
 	updateAttributes();
 	return gen_shape.data_size;
 }
 
-const BlockSize& Group::blocksize() const {
+const BlockSize& Cluster::blocksize() const {
 	updateAttributes();
 	return gen_shape.block_size;
 }
 
-const NumBlock& Group::numblock() const {
+const NumBlock& Cluster::numblock() const {
 	updateAttributes();
 	return gen_shape.num_block;
 }
 
-const GroupSize& Group::groupsize() const {
+const GroupSize& Cluster::groupsize() const {
 	updateAttributes();
 	return gen_shape.group_size;
 }
 
-const NumGroup& Group::numgroup() const {
+const NumGroup& Cluster::numgroup() const {
 	updateAttributes();
 	return gen_shape.num_group;
 }
 
-void Group::addNode(Node *node) {
+void Cluster::addNode(Node *node) {
 	if (!is_included(node,node_list)) {
 		node_list.push_back(node);
 		gen_pattern += node->pattern();
@@ -110,37 +98,37 @@ void Group::addNode(Node *node) {
 	}
 }
 
-void Group::removeNode(Node *node) {
+void Cluster::removeNode(Node *node) {
 	assert(is_included(node,node_list));
 	remove_value(node,this->node_list);
 	gen_outdated = true;
 }
 
-void Group::addInputNode(Node *node) {
+void Cluster::addInputNode(Node *node) {
 	if (!is_included(node,in_list)) {
 		in_list.push_back(node);
 		gen_outdated = true;
 	}
 }
 
-void Group::removeInputNode(Node *node) {
+void Cluster::removeInputNode(Node *node) {
 	assert(is_included(node,in_list));
 	remove_value(node,in_list);
 	gen_outdated = true;
 }
 
-void Group::addOutputNode(Node *node) {
+void Cluster::addOutputNode(Node *node) {
 	if (!is_included(node,out_list)) {
 		out_list.push_back(node);
 	}
 }
 
-void Group::removeOutputNode(Node *node) {
+void Cluster::removeOutputNode(Node *node) {
 	assert(is_included(node,out_list));
 	remove_value(node,out_list);
 }
 
-void Group::addAutoNode(Node *node) {
+void Cluster::addAutoNode(Node *node) {
 	if (node->isInput()) {
 		addInputNode(node);
 		gen_pattern += INPUT;
@@ -152,7 +140,7 @@ void Group::addAutoNode(Node *node) {
 	} 
 }
 
-void Group::removeAutoNode(Node *node) {
+void Cluster::removeAutoNode(Node *node) {
 	if (node->isInput()) {
 		removeInputNode(node);
 	} else if (node->isOutput()) {
@@ -162,54 +150,54 @@ void Group::removeAutoNode(Node *node) {
 	}
 }
 
-void Group::addPrev(Group *group, Pattern pattern) {
-	assert(group!=this && !isNext(group)); // acyclic
+void Cluster::addPrev(Cluster *cluster, Pattern pattern) {
+	assert(cluster!=this && !isNext(cluster)); // acyclic
 
-	auto i = std::find(prev_list.begin(),prev_list.end(),group);
+	auto i = std::find(prev_list.begin(),prev_list.end(),cluster);
 	if (i != prev_list.end()) { // Already exists
 		prevPattern(i) += pattern;
 	} else { // Does not exist
-		prev_list.push_back(group);
+		prev_list.push_back(cluster);
 		prev_pat.push_back(pattern);
 		prev_outdated = true;
 	}
 }
 
-void Group::removePrev(Group *group) {
+void Cluster::removePrev(Cluster *cluster) {
 	auto p = prev_pat.begin();
 	for (auto it=prev_list.begin(); it!=prev_list.end(); it++, p++) {
-		if (*it == group) {
+		if (*it == cluster) {
 			prev_list.erase(it);
 			prev_pat.erase(p);
 			prev_outdated = true;
-			// Note: 'outdate' is not propagated to next groups since it is costly
+			// Note: 'outdate' is not propagated to next clusters since it is costly
 			return;
 		}
 	}
 	assert(0);
 }
 
-bool Group::isPrev(const Group *group) const {
+bool Cluster::isPrev(const Cluster *cluster) const {
 	updatePrevious();
-	return (this->prev_hash.find(group) != this->prev_hash.end());
+	return (this->prev_hash.find(cluster) != this->prev_hash.end());
 }
 
-void Group::addNext(Group *group, Pattern pattern) {
-	assert(group!=this && !isPrev(group)); // acyclic
+void Cluster::addNext(Cluster *cluster, Pattern pattern) {
+	assert(cluster!=this && !isPrev(cluster)); // acyclic
 	
-	auto i = std::find(next_list.begin(),next_list.end(),group);
+	auto i = std::find(next_list.begin(),next_list.end(),cluster);
 	if (i != next_list.end()) { // Already exists
 		nextPattern(i) += pattern;
 	} else { // Does not exist
-		next_list.push_back(group);
+		next_list.push_back(cluster);
 		next_pat.push_back(pattern);
 	}
 }
 
-void Group::removeNext(Group *group) {
+void Cluster::removeNext(Cluster *cluster) {
 	auto p = next_pat.begin();
 	for (auto it=next_list.begin(); it!=next_list.end(); it++, p++) {
-		if (*it == group) {
+		if (*it == cluster) {
 			next_list.erase(it);
 			next_pat.erase(p);
 			return;
@@ -218,39 +206,39 @@ void Group::removeNext(Group *group) {
 	assert(0);	
 }
 
-bool Group::isNext(const Group *group) const {
-	return group->isPrev(this);
+bool Cluster::isNext(const Cluster *cluster) const {
+	return cluster->isPrev(this);
 }
 
-void Group::addBack(Group *group, Pattern pattern) { //
-	assert(group!=this);
-	// assert(isPrev(group)); // @@ check for this cycle as a post-stage verification of fusion?
+void Cluster::addBack(Cluster *cluster, Pattern pattern) { //
+	assert(cluster!=this);
+	// assert(isPrev(cluster)); // @@ check for this cycle as a post-stage verification of fusion?
 	
-	auto i = std::find(back_list.begin(),back_list.end(),group);
+	auto i = std::find(back_list.begin(),back_list.end(),cluster);
 	if (i == back_list.end()) {
-		back_list.push_back(group);
+		back_list.push_back(cluster);
 	}
 }
 
-void Group::removeBack(Group *group) {
-	remove_value(group,back_list);
+void Cluster::removeBack(Cluster *cluster) {
+	remove_value(cluster,back_list);
 }
 
-void Group::addForw(Group *group, Pattern pattern) { //
-	assert(group!=this);
-	// assert(isNext(group)); // @@ check for this cycle as a post-stage verification of fusion?
+void Cluster::addForw(Cluster *cluster, Pattern pattern) { //
+	assert(cluster!=this);
+	// assert(isNext(cluster)); // @@ check for this cycle as a post-stage verification of fusion?
 	
-	auto i = std::find(forw_list.begin(),forw_list.end(),group);
+	auto i = std::find(forw_list.begin(),forw_list.end(),cluster);
 	if (i == forw_list.end()) {
-		forw_list.push_back(group);
+		forw_list.push_back(cluster);
 	}
 }
 
-void Group::removeForw(Group *group) {
-	remove_value(group,forw_list);
+void Cluster::removeForw(Cluster *cluster) {
+	remove_value(cluster,forw_list);
 }
 
-void Group::updateAttributes() const {
+void Cluster::updateAttributes() const {
 	if (!gen_outdated)
 		return;
 
@@ -267,7 +255,7 @@ void Group::updateAttributes() const {
 	gen_outdated = false;
 }
 
-void Group::updatePrevious() const {
+void Cluster::updatePrevious() const {
 	if (!prev_outdated)
 		return;
 	prev_hash.clear();
@@ -279,52 +267,52 @@ void Group::updatePrevious() const {
 	prev_outdated = false;
 }
 
-Pattern& Group::prevPattern(GroupList::const_iterator i) {
+Pattern& Cluster::prevPattern(ClusterList::const_iterator i) {
 	auto dist = std::distance(prev_list.cbegin(),i);
 	auto j = prev_pat.begin();
 	std::advance(j,dist);
 	return *j;
 }
 
-Pattern& Group::prevPattern(Group *prev) {
+Pattern& Cluster::prevPattern(Cluster *prev) {
 	auto cit = std::find(prevList().cbegin(),prevList().cend(),prev);
 	assert(cit != prevList().cend());
 	return prevPattern(cit);
 }
 
-Pattern& Group::nextPattern(GroupList::const_iterator i) {
+Pattern& Cluster::nextPattern(ClusterList::const_iterator i) {
 	auto dist = std::distance(next_list.cbegin(),i);
 	auto j = next_pat.begin();
 	std::advance(j,dist);
 	return *j;
 }
 
-Pattern& Group::nextPattern(Group *next) {
+Pattern& Cluster::nextPattern(Cluster *next) {
 	auto cit = std::find(nextList().cbegin(),nextList().cend(),next);
 	assert(cit != nextList().cend());
 	return nextPattern(cit);
 }
 
-Pattern& Group::pattern() {
+Pattern& Cluster::pattern() {
 	return gen_pattern;
 }
 
-const Pattern& Group::pattern() const {
+const Pattern& Cluster::pattern() const {
 	return gen_pattern;
 }
 
-std::string Group::shortName() const {
-	return "Group";
+std::string Cluster::shortName() const {
+	return "Cluster";
 }
 
-std::string Group::longName() const {
-	std::string str = "Group {";
+std::string Cluster::longName() const {
+	std::string str = "Cluster {";
 	for (auto node : nodeList())
 		str += std::to_string(node->id);
 	return str + "}";
 }
 
-std::string Group::signature() const {
+std::string Cluster::signature() const {
 	std::string sign = "";
 	for (auto &in : in_list)
 		sign += in->numdim().toString() + in->datatype().toString();

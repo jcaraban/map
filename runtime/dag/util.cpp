@@ -20,7 +20,7 @@ bool node_id_greater::operator()(const Node *lhs, const Node *rhs) {
 	return lhs->id > rhs->id;
 }
 /*
-bool group_id_equal::operator()(const Group *lhs, const Group *rhs) {
+bool cluster_id_equal::operator()(const Cluster *lhs, const Cluster *rhs) {
 	return lhs->id == rhs->id;
 }
 
@@ -29,8 +29,8 @@ bool is_included(const Node *node, const NodeList &list) {
 	return std::find_if(list.begin(),list.end(),pred) != list.end();
 }
 
-bool is_included(const Group *group, const GroupList &list) {
-	auto pred = [&](Group *g) { return g == group; }; // @ address comparison
+bool is_included(const Cluster *cluster, const ClusterList &list) {
+	auto pred = [&](Cluster *g) { return g == cluster; }; // @ address comparison
 	return std::find_if(list.begin(),list.end(),pred) != list.end();
 }
 
@@ -74,8 +74,8 @@ void remove_value(const Node *node, NodeList &list) {
 	list.erase(std::remove(list.begin(),list.end(),node),list.end());
 }
 
-void remove_value(const Group *group, GroupList &list) {
-	list.erase(std::remove(list.begin(),list.end(),group),list.end());
+void remove_value(const Cluster *cluster, ClusterList &list) {
+	list.erase(std::remove(list.begin(),list.end(),cluster),list.end());
 }
 
 int value_position(const Node *node, const NodeList &list) {
@@ -84,11 +84,11 @@ int value_position(const Node *node, const NodeList &list) {
 	return std::distance(list.begin(),it);
 }
 */
-Pattern isInputOf(const Node *node, const Group *group) {
+Pattern isInputOf(const Node *node, const Cluster *cluster) {
 	Pattern pat;
 	for (auto next : node->nextList())
-		if (is_included(next,group->nodeList())) {
-			pat += isInputOf(next,group);
+		if (is_included(next,cluster->nodeList())) {
+			pat += isInputOf(next,cluster);
 			pat += next->pattern();
 		}
 	return pat;

@@ -9,13 +9,13 @@
 #define MAP_RUNTIME_DAG_UTIL_HPP_
 
 #include "Node.hpp"
-#include "Group.hpp"
+#include "Cluster.hpp"
 
 
 namespace map { namespace detail {
 
 //struct Node; // forward declaration
-//struct Group; // forward declaration
+//struct Cluster; // forward declaration
 
 struct node_id_less {
 	bool operator()(const Node *lhs, const Node *rhs);
@@ -27,7 +27,7 @@ struct node_id_greater {
 	bool operator()(const Node *lhs, const Node *rhs);
 };
 
-Pattern isInputOf(const Node *node, const Group *group);
+Pattern isInputOf(const Node *node, const Cluster *cluster);
 
 // 
 

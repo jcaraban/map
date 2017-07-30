@@ -17,7 +17,7 @@ namespace map { namespace detail {
  */
 struct TailTask : public Task
 {	
-	TailTask(Program &prog, Clock &clock, Config &conf, Group *group);	
+	TailTask(Program &prog, Clock &clock, Config &conf, Cluster *cluster);	
 
 	void blocksToStore(Job job, KeyList &in_key) const;
 	void askJobs(Job done_job, std::vector<Job> &job_vec);

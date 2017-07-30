@@ -17,12 +17,10 @@ namespace map { namespace detail {
  */
 struct ScalarTask : public Task
 {
-	ScalarTask(Program &prog, Clock &clock, Config &conf, Group *group);
+	ScalarTask(Program &prog, Clock &clock, Config &conf, Cluster *cluster);
 
 	void createVersions();
 
-	//void preCompute(Job job, const BlockList &in_blk, const BlockList &out_blk);
-	//void postCompute(Job job, const BlockList &in_blk, const BlockList &out_blk);
 	void compute(Job job, const BlockList &in_blk, const BlockList &out_blk);
 
   // vars

@@ -8,7 +8,7 @@
 #ifndef MAP_RUNTIME_TASK_HPP_
 #define MAP_RUNTIME_TASK_HPP_
 
-#include "../dag/Group.hpp"
+#include "../dag/Cluster.hpp"
 #include "../Job.hpp"
 #include "../Version.hpp"
 #include "../block/BlockList.hpp"
@@ -37,14 +37,14 @@ typedef std::vector<Task*> TaskList;
 struct Task
 {
   // Constructors
-	static Task* Factory(Program &prog, Clock &clock, Config &conf, Group *group);
+	static Task* Factory(Program &prog, Clock &clock, Config &conf, Cluster *cluster);
 
-	Task(Program &prog, Clock &clock, Config &conf, Group *group);
+	Task(Program &prog, Clock &clock, Config &conf, Cluster *cluster);
 	virtual ~Task() { }; 
 	
   // Methods
 	int id() const;
-	const Group* group() const;
+	const Cluster* cluster() const;
 	const NodeList& nodeList() const;
 	const NodeList& inputList() const;
 	const NodeList& outputList() const;
@@ -68,7 +68,7 @@ struct Task
   // Versions
 	virtual void createVersions();
 	const VersionList& versionList() const;
-	const Version* getVersion(DeviceType dev_type, GroupSize group, std::string detail) const;
+	const Version* getVersion(DeviceType dev_type, GroupSize group_size, std::string detail) const;
   // Blocks
 	virtual void blocksToLoad(Job job, KeyList &in_key) const;
 	virtual void blocksToStore(Job job, KeyList &out_key) const;
@@ -106,7 +106,7 @@ struct Task
   	Clock &clock; // Aggregate
   	Config &conf; // Aggregate
 
-	Group *base_group; //!< Group that founded the task
+	Cluster *base_cluster; //!< Cluster that founded the task
 	
 	TaskList prev_list; //!< Prev tasks on which this one depends
 	TaskList next_list; //!< Next tasks depending on this one

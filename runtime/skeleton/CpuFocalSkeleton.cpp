@@ -70,8 +70,8 @@ string CpuFocalSkeleton::versionCode() {
 	std::vector<bool> added_F(N_DATATYPE,false);
 	for (auto &node : ver->task->inputList()) {
 		DataType dt = node->datatype();
-		bool is_input_focal = isInputOf(node,ver->task->group()).is(FOCAL);
-		bool is_input_local = isInputOf(node,ver->task->group()).is(LOCAL);
+		bool is_input_focal = isInputOf(node,ver->task->cluster()).is(FOCAL);
+		bool is_input_local = isInputOf(node,ver->task->cluster()).is(LOCAL);
 		if (!added_F[dt.get()] && is_input_focal) {
 			add_section( defines_focal_type(dt) );
 			added_F[dt.get()] = true;
@@ -251,7 +251,7 @@ string CpuFocalSkeleton::versionCode() {
 		if (tag_hash[node].pos == LOCAL_POS) {
 			add_line( var_name(node) + " = " + in_var(node) + ";" );
 		}
-		if (tag_hash[node].pos == PRE_FOCAL && isInputOf(node,ver->task->group()).is(LOCAL)) {
+		if (tag_hash[node].pos == PRE_FOCAL && isInputOf(node,ver->task->cluster()).is(LOCAL)) {
 			// @ because the computation of the halos does not preserve the scalars
 			add_line( var_name(node) + " = " + in_var(node) + ";" );
 		}

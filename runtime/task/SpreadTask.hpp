@@ -19,7 +19,7 @@ typedef std::array<std::array<bool,3>,3> stable_vec;
 
 struct SpreadTask : public Task
 {	
-	SpreadTask(Program &prog, Clock &clock, Config &conf, Group *group);	
+	SpreadTask(Program &prog, Clock &clock, Config &conf, Cluster *cluster);	
 
 	void createVersions();
 

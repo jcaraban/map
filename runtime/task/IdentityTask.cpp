@@ -11,8 +11,8 @@
 
 namespace map { namespace detail {
 
-IdentityTask::IdentityTask(Program &prog, Clock &clock, Config &conf, Group *group)
-	: Task(prog,clock,conf,group)
+IdentityTask::IdentityTask(Program &prog, Clock &clock, Config &conf, Cluster *cluster)
+	: Task(prog,clock,conf,cluster)
 { }
 
 void IdentityTask::createVersions() {

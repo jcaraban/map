@@ -20,7 +20,7 @@ struct BlockN : public Block
 {
   // Constructors
 	BlockN();
-	BlockN(Key key, int dep, int total_size);
+	BlockN(Key key, int dep, int max_size);
 	~BlockN() override;
 
   // Getters

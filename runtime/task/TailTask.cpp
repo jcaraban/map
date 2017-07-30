@@ -11,8 +11,8 @@
 
 namespace map { namespace detail {
 
-TailTask::TailTask(Program &prog, Clock &clock, Config &conf, Group *group)
-	: Task(prog,clock,conf,group)
+TailTask::TailTask(Program &prog, Clock &clock, Config &conf, Cluster *cluster)
+	: Task(prog,clock,conf,cluster)
 { }
 
 void TailTask::blocksToStore(Job job, KeyList &out_key) const {

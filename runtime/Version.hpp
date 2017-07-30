@@ -71,8 +71,8 @@ struct Version {
 	cle::Task tsk; //!< cle::Task
 	
 	int shared_size; //!< Shared memory size
-	GroupSize group_size; //!< Work group size
-	NumGroup num_group; //!< Work group number
+	GroupSize group_size; //!< Work-group size
+	NumGroup num_group; //!< Work-group number
 	
 	std::vector<int> extra_arg; //!< @ Extra arguments needed by the skeleton
 };

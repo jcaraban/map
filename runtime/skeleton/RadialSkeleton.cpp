@@ -49,7 +49,7 @@ string RadialSkeleton::generate() {
 string RadialSkeleton::versionCode(RadialCase rcase, Direction fst, Direction snd) {
 	//// Variables ////
 	const int N = 2;
-	Pattern pattern = ver->task->group()->pattern();
+	Pattern pattern = ver->task->cluster()->pattern();
 	string cond, comma;
 
 	//// Defines ////

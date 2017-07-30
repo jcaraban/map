@@ -13,7 +13,7 @@
 #include "LoopTask.hpp"
 #include "TailTask.hpp"
 #include "IdentityTask.hpp"
-#include "../dag/Group.hpp"
+#include "../dag/Cluster.hpp"
 #include "../Runtime.hpp"
 #include <memory>
 #include <cassert>
@@ -21,38 +21,38 @@
 
 namespace map { namespace detail {
 
-Task* Task::Factory(Program &prog, Clock &clock, Config &conf, Group *group) {
-	Pattern pat = group->pattern();
+Task* Task::Factory(Program &prog, Clock &clock, Config &conf, Cluster *cluster) {
+	Pattern pat = cluster->pattern();
 
 	/**/ if ( pat.is(LOOP) )
 	{
-		return new LoopTask(prog,clock,conf,group);
+		return new LoopTask(prog,clock,conf,cluster);
 	}
 	else if ( pat.is(SPREAD) )
 	{
-		assert(0); //return new SpreadTask(prog,clock,conf,group);
+		assert(0); //return new SpreadTask(prog,clock,conf,cluster);
 	}
 	else if ( pat.is(RADIAL) )
 	{
-		return new RadialTask(prog,clock,conf,group);
+		return new RadialTask(prog,clock,conf,cluster);
 	}
-	else if ( group->numdim() == D0)
+	else if ( cluster->numdim() == D0)
 	{
-		return new ScalarTask(prog,clock,conf,group);
+		return new ScalarTask(prog,clock,conf,cluster);
 	}
 	else if ( pat.is(TAIL)) {
-		return new TailTask(prog,clock,conf,group);
+		return new TailTask(prog,clock,conf,cluster);
 	}
 	else {
-		return new Task(prog,clock,conf,group);
+		return new Task(prog,clock,conf,cluster);
 	}
 }
 
-Task::Task(Program &prog, Clock &clock, Config &conf, Group *group)
+Task::Task(Program &prog, Clock &clock, Config &conf, Cluster *cluster)
 	: prog(prog)
 	, clock(clock)
 	, conf(conf)
-	, base_group(nullptr)
+	, base_cluster(nullptr)
 	, prev_list()
 	, next_list()
 	, ver_list()
@@ -64,20 +64,20 @@ Task::Task(Program &prog, Clock &clock, Config &conf, Group *group)
 	, accu_out_reach_of()
 	, mtx()
 {
-	// Links 'group' <-> 'task'
-	group->task = this;
-	this->base_group = group;
+	// Links 'cluster' <-> 'task'
+	cluster->task = this;
+	this->base_cluster = cluster;
 
 	// Links 'task' to its prev-tasks (which are guaranteed to have been generated previously)
-	for (auto prev_group : group->prevList()) {
-		Task *prev_task = prev_group->task;
+	for (auto prev_cluster : cluster->prevList()) {
+		Task *prev_task = prev_cluster->task;
 		this->prev_list.push_back(prev_task);
 		prev_task->next_list.push_back(this);
 	}
 
 	// Links 'task' to its back-tasks, and makes the back-tasks link forward to 'this'
-	for (auto back_group : group->backList()) {
-		Task *back_task = back_group->task;
+	for (auto back_cluster : cluster->backList()) {
+		Task *back_task = back_cluster->task;
 		this->back_list.push_back(back_task);
 		back_task->forw_list.push_back(this);
 	}
@@ -114,7 +114,7 @@ Task::Task(Program &prog, Clock &clock, Config &conf, Group *group)
 	// Filling 'is_input_of' structure, e.g. tells the pre-focal, pre-radial
 	is_input_of.resize(inputList().size());
 	for (int i=0; i<inputList().size(); i++)
-		is_input_of[i] = isInputOf(inputList()[i],base_group);
+		is_input_of[i] = isInputOf(inputList()[i],base_cluster);
 
 	// Puts in + body + out nodes into 'all_list', in order
 	auto body_out = full_unique_join(nodeList(),outputList());
@@ -154,23 +154,23 @@ Task::Task(Program &prog, Clock &clock, Config &conf, Group *group)
 }
 
 int Task::id() const {
-	return group()->id;
+	return cluster()->id;
 }
 
-const Group* Task::group() const {
-	return base_group;
+const Cluster* Task::cluster() const {
+	return base_cluster;
 }
 
 const NodeList& Task::nodeList() const {
-	return group()->nodeList();
+	return cluster()->nodeList();
 }
 
 const NodeList& Task::inputList() const {
-	return group()->inputList();
+	return cluster()->inputList();
 }
 
 const NodeList& Task::outputList() const {
-	return group()->outputList();
+	return cluster()->outputList();
 }
 
 const TaskList& Task::prevList() const {
@@ -190,7 +190,7 @@ const TaskList& Task::forwList() const {
 }
 
 bool Task::isPrev(const Task *task) const {
-	return this->group()->isPrev(task->group());
+	return this->cluster()->isPrev(task->cluster());
 }
 
 bool Task::isNext(const Task *task) const {
@@ -198,31 +198,31 @@ bool Task::isNext(const Task *task) const {
 }
 
 NumDim Task::numdim() const {
-	return group()->numdim();
+	return cluster()->numdim();
 }
 
 const DataSize& Task::datasize() const {
-	return group()->datasize();
+	return cluster()->datasize();
 }
 
 const BlockSize& Task::blocksize() const {
-	return group()->blocksize();
+	return cluster()->blocksize();
 }
 
 const NumBlock& Task::numblock() const {
-	return group()->numblock();
+	return cluster()->numblock();
 }
 
 const GroupSize& Task::groupsize() const {
-	return group()->groupsize();
+	return cluster()->groupsize();
 }
 
 const NumGroup& Task::numgroup() const {
-	return group()->numgroup();
+	return cluster()->numgroup();
 }
 
 Pattern Task::pattern() const {
-	return group()->pattern();
+	return cluster()->pattern();
 }
 
 const Mask& Task::accuInputReach(Node *node, Coord coord) const {
@@ -268,9 +268,9 @@ const VersionList& Task::versionList() const {
 const Version* Task::getVersion(DeviceType dev_type, GroupSize group_size, std::string detail) const {
 	for (auto &ver : ver_list) {
 		bool devtype_cond = dev_type == DEV_ALL || ver->deviceType() == dev_type;
-		bool group_cond = group_size.isNone() || all(ver->group_size == group_size);
+		bool cluster_cond = group_size.isNone() || all(ver->group_size == group_size);
 		bool detail_cond = detail.empty() || ver->detail.compare(detail) == 0;
-		if (devtype_cond && group_cond && detail_cond)
+		if (devtype_cond && cluster_cond && detail_cond)
 			return ver;
 	}
 	return nullptr;
@@ -640,8 +640,8 @@ void Task::computeVersion(Job job, const BlockList &in_blk, const BlockList &out
 			}
 		}
 		//} else if (b->holdtype() == HOLD_2) {
-		//	clSetKernelArg(*krn, arg++, sizeof(cl_mem), &b->group_page);
-		//	int offset = sizeof(double)*conf.max_group_x_block*(conf.max_out_block*Tid.rnk() + b->order);
+		//	clSetKernelArg(*krn, arg++, sizeof(cl_mem), &b->cluster_page);
+		//	int offset = sizeof(double)*conf.max_cluster_x_block*(conf.max_out_block*Tid.rnk() + b->order);
 		//	clSetKernelArg(*krn, arg++, sizeof(int), &offset);
 		else if (b->holdtype() == HOLD_N) // In the normal case a valid cl_mem with memory is given
 		{

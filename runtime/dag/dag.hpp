@@ -9,7 +9,7 @@
 #define MAP_RUNTIME_DAG_HPP_
 
 #include "Node.hpp"
-//#include "Group.hpp"
+//#include "Cluster.hpp"
 #include "Constant.hpp"
 #include "Empty.hpp"
 #include "Index.hpp"

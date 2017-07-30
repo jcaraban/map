@@ -4,10 +4,8 @@
  *
  * TODO: pinned_list now has 1 cl_mem per worker, it would need 'max_in_block+max_out_block' if events are activated
  * TODO: try 'events' again, make sure events are not re-allocated in the main worker loop (clCreateUserEvent clReleaseEvent)
- * TODO: create a pool of Blocks (like 'pinned_list') so that HOLD_0/1 blocks are reused instead than re-allocated non-stop
+ * TODO: create a pool of Blocks (like 'pinned_list') so that blocks are reused instead than re-allocated non-stop?
  *
- * TODO: releaseFile() fails for HOLD_1, becase the Block1 with coord {0,0} is deleted and recreated
- *       since blocks own the file, the file is erased when this happens. Fix the del/new part in blocksToLoad() ?
  */
 
 #include "Cache.hpp"
@@ -189,7 +187,7 @@ void Cache::freeEntries() {
 	}
 
 	// chunk is not cleared!
-	// block is not cleared!
+	// scalar is not cleared!
 	// group is not cleared!
 	entry_list.clear();
 	lru_list.clear();
@@ -211,7 +209,7 @@ void Cache::requestBlocks(const KeyList &key_list, BlockList &blk_list) {
 		HoldType hold = std::get<1>(tuple);
 		int dep = std::get<2>(tuple);
 
-		/**/ if (hold == HOLD_0) // Null block that holds '0' values
+		if (hold == HOLD_0) // Null block that holds '0' values
 		{
 			blk_list.push_back( new Block0(key,dep) );
 		}
@@ -258,7 +256,7 @@ void Cache::returnBlocks(const KeyList &key_list, BlockList &blk_list) {
 		HoldType hold = std::get<1>(tuple);
 		Block *blk = blk_list[i];
 
-		/**/ if (hold == HOLD_0) // Null block, holds '0' values
+		if (hold == HOLD_0) // Null block, holds '0' values
 		{
 			delete blk;
 		}

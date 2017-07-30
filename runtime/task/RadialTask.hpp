@@ -15,7 +15,7 @@ namespace map { namespace detail {
 
 struct RadialTask : public Task
 {
-	RadialTask(Program &prog, Clock &clock, Config &conf, Group *group);
+	RadialTask(Program &prog, Clock &clock, Config &conf, Cluster *cluster);
 
 	void createVersions();
 

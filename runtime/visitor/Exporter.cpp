@@ -11,8 +11,8 @@
 
 namespace map { namespace detail {
 
-Exporter::Exporter(std::unordered_map<Node*,GroupList> &group_list_of)
-	: group_list_of(group_list_of)
+Exporter::Exporter(std::unordered_map<Node*,ClusterList> &cluster_list_of)
+	: cluster_list_of(cluster_list_of)
 { }
 
 void Exporter::clear() {
@@ -61,12 +61,12 @@ void Exporter::static_visit(Node *node) {
 	maxd = std::max(maxd,depth);
 	depthMap[node->id] = depth;
 
-	// Gets group
-	Group *group = (group_list_of[node].empty()) ? nullptr : group_list_of[node].front();
-	int group_id = (group == nullptr) ? -1 : group->id;
+	// Gets cluster
+	Cluster *cluster = (cluster_list_of[node].empty()) ? nullptr : cluster_list_of[node].front();
+	int cluster_id = (cluster == nullptr) ? -1 : cluster->id;
 
 	// Adds node
-	vecNodes.push_back( RowN{node->id, node->shortName(), group_id, 0} );
+	vecNodes.push_back( RowN{node->id, node->shortName(), cluster_id, 0} );
 
 	// Adds edges
 	for (auto &next : node->nextList()) {
@@ -79,11 +79,11 @@ void Exporter::writeDag() {
 	std::ofstream fileNodes("DagN.csv");
 	std::ofstream fileEdges("DagE.csv");
 
-	fileNodes << "Id,Label,Group,Order" << std::endl << std::endl;
+	fileNodes << "Id,Label,Cluster,Order" << std::endl << std::endl;
 	fileEdges << "Source,Target,Weight" << std::endl << std::endl;
 
 	for (auto &row : vecNodes)
-		fileNodes << row.id << ", " << row.name << " ," << row.group << "," << row.pos << std::endl;
+		fileNodes << row.id << ", " << row.name << " ," << row.cluster << "," << row.pos << std::endl;
 
 	for (auto &row : vecEdges)
 		fileEdges << row.source << "," << row.target << "," << row.weight << std::endl;

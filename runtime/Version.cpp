@@ -45,7 +45,7 @@ Version::Version(Verkey key)
 	// Filling 'dev_type'
 	dev_type = cledev2devtype(dev);
 	// Filling 'signature'
-	ver_sign = task->group()->signature() + detail + std::to_string(deviceType());
+	ver_sign = task->cluster()->signature() + detail + std::to_string(deviceType());
 	// Filling rest...
 	shared_size = -1;
 	num_group = idiv(task->blocksize(),groupsize());

@@ -11,8 +11,8 @@
 
 namespace map { namespace detail {
 
-ScalarTask::ScalarTask(Program &prog, Clock &clock, Config &conf, Group *group)
-	: Task(prog,clock,conf,group)
+ScalarTask::ScalarTask(Program &prog, Clock &clock, Config &conf, Cluster *cluster)
+	: Task(prog,clock,conf,cluster)
 {
 	for (auto in : inputList())
 		assert(in->numdim() == D0);

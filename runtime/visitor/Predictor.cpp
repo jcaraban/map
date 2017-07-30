@@ -12,8 +12,8 @@
 
 namespace map { namespace detail {
 
-Predictor::Predictor(Group *group)
-	: group(group)
+Predictor::Predictor(Cluster *cluster)
+	: cluster(cluster)
 { }
 
 void Predictor::clear() {

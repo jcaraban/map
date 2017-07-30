@@ -18,7 +18,7 @@ namespace map { namespace detail {
  */
 struct LoopTask : public Task
 {	
-	LoopTask(Program &prog, Clock &clock, Config &conf, Group *group);	
+	LoopTask(Program &prog, Clock &clock, Config &conf, Cluster *cluster);
 
 	void blocksToLoad(Job job, KeyList &in_key) const;
 	void blocksToStore(Job job, KeyList &out_key) const;

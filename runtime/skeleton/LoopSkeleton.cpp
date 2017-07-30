@@ -55,7 +55,7 @@ string LoopSkeleton::generate() {
 std::string LoopSkeleton::versionCode() {
 	//// Variables ////
 	const int N = ver->task->numdim().toInt();
-	Pattern pattern = ver->task->group()->pattern();
+	Pattern pattern = ver->task->cluster()->pattern();
 	string cond, comma;
 
 	//// Defines ////

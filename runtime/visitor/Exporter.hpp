@@ -21,7 +21,7 @@ namespace map { namespace detail {
 struct RowN {
 	int id; //!< Unique idenfitifer
 	std::string name; //!< Node name
-	int group; //!< Group id
+	int cluster; //!< Cluster id
 	int pos; //!< Row position
 };
 
@@ -39,7 +39,7 @@ struct RowE {
 struct Exporter : public Visitor
 {
   // constructor and main function
-	Exporter(std::unordered_map<Node*,GroupList> &group_list_of);
+	Exporter(std::unordered_map<Node*,ClusterList> &cluster_list_of);
 	void exportDag(NodeList node_list);
 
   // methods
@@ -54,7 +54,7 @@ struct Exporter : public Visitor
 	//DECLARE_VISIT(...)
 
   // vars
-	std::unordered_map<Node*,GroupList> &group_list_of; // aggregation
+	std::unordered_map<Node*,ClusterList> &cluster_list_of; // aggregation
 
 	std::vector<RowN> vecNodes;
 	std::vector<RowE> vecEdges;
@@ -88,11 +88,11 @@ void Exporter::helper(T *node) {
 	maxd = std::max(maxd,depth);
 	depthMap[node->id] = depth;
 
-	// Gets group
-	Group *group = (group_list_of[node].empty()) ? nullptr : group_list_of[node].front();
+	// Gets cluster
+	Cluster *cluster = (cluster_list_of[node].empty()) ? nullptr : cluster_list_of[node].front();
 
 	// Adds node
-	vecNodes.push_back( RowN{node->id, node->shortName(), group->id, 0} );
+	vecNodes.push_back( RowN{node->id, node->shortName(), cluster->id, 0} );
 
 	// Adds edges
 	for (auto &next : node->nextList()) {

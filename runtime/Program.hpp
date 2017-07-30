@@ -29,7 +29,7 @@ class Program
 
 	void clear();
 
-	void compose(OwnerGroupList& group_list);
+	void compose(OwnerClusterList& cluster_list);
 	void generate();
 	void compile();
 

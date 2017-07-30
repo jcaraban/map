@@ -291,7 +291,7 @@ void BlockN::forwardEntry(Block *out) {
 	// in_blk entry must be valid
 	assert(this->entry);
 	// forward only to the last dependency
-	assert(this->dependencies == 1);
+	assert(this->depend == 1);
 	// out_blk entry must be null
 	assert(not out->getEntry());
 
