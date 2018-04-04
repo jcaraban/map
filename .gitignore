@@ -5,6 +5,7 @@
 .settings
 .classpath
 .sass-cache/
+.cache/
 
 # macOS files #
 ###############
@@ -37,30 +38,16 @@ Thumbs.db
 # Binaries #
 ############
 
-library
-main
-wsum
-diver
-stats
-hill
-focal
-life
-seism
-view
-flow
-urban
-urban_mc
-urban_ga
-water
-olive
-file_translate
-gen_data
-libmap.so
+bin/
+*.exe
+lib/
+*.so
+obj/
+*.o
 
 # Build #
 #########
 
-*.o
 /tmp/
 /build/
 /.buildpath
@@ -76,3 +63,4 @@ libmap.so
 
 *.sublime-*
 .idea/
+.vscode

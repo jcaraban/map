@@ -9,9 +9,9 @@
 #ifndef MAP_HPP_
 #define MAP_HPP_
 
-#include "front/Raster.hpp"
-#include "util/util.hpp"
-#include "runtime/Runtime.hpp"
+#include "src/frontend/Raster.hpp"
+#include "src/util/util.hpp"
+#include "src/Runtime.hpp"
  
 
 namespace map {
