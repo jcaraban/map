@@ -44,6 +44,9 @@ lib/
 *.so
 obj/
 *.o
+__pycache__/
+*.py[cod]
+
 
 # Build #
 #########
@@ -65,3 +68,10 @@ obj/
 *.sublime-*
 .idea/
 .vscode
+
+# Raster #
+##########
+
+*.tif
+*.tiff
+*.asc
