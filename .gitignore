@@ -55,8 +55,9 @@ obj/
 # Text #
 ########
 
-*.txt
 *.csv
+*.txt
+!CMakeLists.txt
 
 # Editors #
 ###########
