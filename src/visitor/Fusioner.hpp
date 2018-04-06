@@ -13,6 +13,7 @@
 #include "Visitor.hpp"
 #include <unordered_set>
 #include <unordered_map>
+#include <functional>
 
 
 namespace map { namespace detail {

@@ -417,8 +417,10 @@ Ferr binary::discard(const Block *block) {
 	Ferr ferr = 0;
 	size_t offset = proj(block->coord(),meta.getNumBlock()) * total_block_size;
 
+#ifdef __linux__ 
 	//ferr = fallocate(fd, FALLOC_FL_ZERO_RANGE, offset+initial_offset, total_block_size);
 	ferr = fallocate(fd, FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE, offset+initial_offset, total_block_size);
+#endif
 
 	if (ferr) {
 		std::cout << strerror(errno) << std::endl;

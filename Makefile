@@ -12,7 +12,7 @@ LDFLAGS = $(LDIR) $(LIBS)
 # OS dependent stuff
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
-	CFLAGS += -framework OpenCL -Wa,-q -lstdc++
+	LIBS += -framework OpenCL -Wa,-q -lstdc++
 	RAND123 = "/Users/jesus/jesus/code/map/thirdparty/Random123-1.09/include/"
 else ifeq ($(UNAME_S),Linux)
 	LIBS += -lOpenCL
@@ -59,11 +59,11 @@ $(OBJ)/%.o: $(SRC)/%.cpp
 
 # Object files special cases
 obj/cle/OclEnv.o: src/cle/OclEnv.cpp
-	mkdir -p cle/
+	mkdir -p obj/cle/
 	$(CC) $(CFLAGS) $(IDIR) -c $< -o $@
 
 obj/backend/Version.o: src/backend/Version.cpp
-	mkdir -p backend/
+	mkdir -p obj/backend/
 	$(CC) $(CFLAGS) -D RAND123=$(RAND123) -c $< -o $@
 
 
