@@ -15,7 +15,9 @@ namespace map { namespace detail {
 
 // Enum
 
-enum PercentEnum { NONE_PERCENT, AGE, ILE, N_PERCENT };
+enum PercentEnum : int {
+	NONE_PERCENT, AGE, ILE, N_PERCENT
+};
 
 // Class
 

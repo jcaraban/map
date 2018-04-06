@@ -36,6 +36,7 @@ class DiversityType {
 	std::string toString() const;
 	VariantType apply(std::vector<VariantType> list) const;
 
+  private:
 	template <DiversityEnum D> static VariantType apply1(std::vector<VariantType> list);
 	template <DiversityEnum D, DataTypeEnum T> static VariantType apply2(std::vector<VariantType> list);
 };

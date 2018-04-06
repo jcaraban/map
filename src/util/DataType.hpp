@@ -19,7 +19,13 @@ namespace map { namespace detail {
 /*
  * Enum
  */
-enum DataTypeEnum : int { NONE_DATATYPE, F32, F64, B8, U8, U16, U32, U64, S8, S16, S32, S64, N_DATATYPE };
+enum DataTypeEnum : int {
+	NONE_DATATYPE,
+	F32, F64, B8,
+	U8, U16, U32, U64,
+	S8, S16, S32, S64,
+	N_DATATYPE
+};
 
 DataTypeEnum operator ++ (DataTypeEnum& dte);
 
@@ -59,9 +65,9 @@ class DataType {
 	DataType to64() const;
 };
 
-static_assert( std::is_standard_layout< DataType >::value , "DataType must be C compatible");
-
 std::ostream& operator<< (std::ostream& os, const DataType& type);
+
+static_assert( std::is_standard_layout< DataType >::value , "DataType must be C compatible");
 
 } } // namespace map::detail
 

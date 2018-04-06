@@ -12,9 +12,9 @@
 #define MAP_UTIL_ARRAY4_HPP_
 
 #include "promote.hpp"
-#include <iostream>
 #include <vector>
 #include <array>
+#include <cmath>
 #include <algorithm>
 #include <initializer_list>
 #include <type_traits>

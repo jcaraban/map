@@ -7,6 +7,7 @@
 #define MAP_UTIL_UNARYTYPE_TPL_
 
 #include <cmath>
+#include <cstdlib>
 #include <cassert>
 
 
@@ -81,6 +82,10 @@ struct UnaryOperator {
 		Ctype<T> operator()(Ctype<T> var) { expr; } \
 	};
 	
+	DEFINE_UNARY_EXCEPTION( ABS  , U8  , var )
+	DEFINE_UNARY_EXCEPTION( ABS  , U16 , var )
+	DEFINE_UNARY_EXCEPTION( ABS  , U32 , var )
+	DEFINE_UNARY_EXCEPTION( ABS  , U64 , var )
 	DEFINE_UNARY_EXCEPTION( bNOT , F32 , assert(0) )
 	DEFINE_UNARY_EXCEPTION( bNOT , F64 , assert(0) )
 	DEFINE_UNARY_EXCEPTION( bNOT , S8  , assert(0) )

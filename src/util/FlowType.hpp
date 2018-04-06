@@ -17,7 +17,9 @@ namespace map { namespace detail {
 
 // Enum
 
-enum FlowEnum { NONE_FLOW, DIR, ACU, N_FLOW };
+enum FlowEnum : int {
+	NONE_FLOW, DIR, ACU, N_FLOW
+};
 
 // Class
 

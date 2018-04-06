@@ -16,8 +16,13 @@ namespace map { namespace detail {
 // Enum
 
 enum BinaryEnum : int {
-	NONE_BINARY, ADD, SUB, MUL, DIV, MOD, EQ, NE, LT, GT, LE, GE, AND, OR, bAND, bOR, bXOR, SHL, SHR,
-	MARK_BINARY, MAX2, MIN2, ATAN2, POW, HYPOT, FMOD, N_BINARY
+	NONE_BINARY,
+	ADD, SUB, MUL, DIV, MOD,
+	EQ, NE, LT, GT, LE, GE, AND, OR,
+	bAND, bOR, bXOR, SHL, SHR,
+	MARK_BINARY,
+	MAX2, MIN2, ATAN2, POW, HYPOT, FMOD,
+	N_BINARY
 };
 
 // Class
