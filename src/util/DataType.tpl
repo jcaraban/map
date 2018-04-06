@@ -43,11 +43,11 @@ template <> struct Ctype2DataType< int64_t  > { static const DataTypeEnum value 
 /*
  * Dtype
  */
-template <typename CT> constexpr DataTypeEnum Dtype() {
-	return Ctype2DataType<CT>::value;
-}
-// How to achieve a shortcut for DTYPE? Maybe using a constexpr function?
+template <typename CT> constexpr DataTypeEnum Dtype = Ctype2DataType<CT>::value;
 
+/*
+ *
+ */
 template <typename T, typename U>
 constexpr bool typeFitsValue(const U value) {
 	return ((value>U(0))==(T(value)>T(0))) && U(T(value))==value;

@@ -3,7 +3,7 @@
 # Compiler
 CC = g++
 # -O3 -march=native -mtune=native
-CFLAGS = -std=c++11 -m64 -fpic -Og -g
+CFLAGS = -std=c++14 -m64 -fpic -Og -g
 IDIR = -I/opt/intel/opencl/include/ -I/opt/AMDAPP/include/ -I/usr/local/cuda/include/
 LDIR = -L/opt/amdgpu-pro/lib/x86_64-linux-gnu/
 LIBS = -ltiff -pthread

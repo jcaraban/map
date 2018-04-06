@@ -19,7 +19,7 @@ template <typename T> Mask::Mask(DataSize data_size, Array<T> array) {
 	for (int i=0; i<array.size(); i++)
 		this->array[i] = VariantType(array[i]);
 
-	this->data_type = Ctype2DataType<T>::value; //Dtype<T>();
+	this->data_type = Dtype<T>;
 	this->num_dim = DataSize2NumDim(data_size);
 	this->data_size = data_size;
 }
