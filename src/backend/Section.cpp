@@ -98,7 +98,7 @@ bool Section::operator>(const Section &sect) const {
 		return 1;
 	else if (sect_pds > this_pds)
 		return 0;
-	else if (this->pat.pat > sect.pat.pat)
+	else if (this->pat > sect.pat)
 		return 1;
 	else // sect.pat.pat > this->pat.pat
 		return 0;
@@ -111,14 +111,14 @@ bool Section::operator<(const Section &sect) const {
 		return 1;
 	else if (sect_pds < this_pds)
 		return 0;
-	else if (this->pat.pat < sect.pat.pat)
+	else if (this->pat < sect.pat)
 		return 1;
 	else // sect.pat < this->pat
 		return 0;
 };
 
 std::size_t Section::Hash::operator()(const Section *k) const {
-	return std::hash<int>()(k->pat.pat) ^ coord_hash()(k->ext);
+	return k->pat.hash() ^ coord_hash()(k->ext);
 }
 
 bool Section::Greater::operator()(const Section *lhs, const Section *rhs) const {

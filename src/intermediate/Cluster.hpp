@@ -31,7 +31,7 @@ typedef std::vector<Pattern> PatternList;
 struct Cluster {
   // Constructors
 	Cluster();
-	Cluster(Pattern pattern);
+	//Cluster(Pattern pattern);
 
   // Methods
 	const NodeList& nodeList() const;

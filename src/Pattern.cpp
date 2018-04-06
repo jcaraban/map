@@ -6,93 +6,105 @@
  */
 
 #include "Pattern.hpp"
+#include <cassert>
 
 
 namespace map { namespace detail {
 
-PatternEnum operator + (const PatternEnum& lhs, const PatternEnum& rhs) {
-	return static_cast<PatternEnum>(static_cast<int>(lhs) | static_cast<int>(rhs));
+bool Pattern::operator==(const Pattern& pat) const {
+	return this->bits == pat.bits;
 }
 
-PatternEnum operator - (const PatternEnum& lhs, const PatternEnum& rhs) {
-	return static_cast<PatternEnum>(static_cast<int>(lhs) & ~static_cast<int>(rhs));
+bool Pattern::operator!=(const Pattern& pat) const {
+	return this->bits != pat.bits;
 }
 
-bool Pattern::operator==(const Pattern& pattern) const {
-	return this->pat == pattern.pat;
-}
-
-bool Pattern::operator!=(const Pattern& pattern) const {
-	return this->pat != pattern.pat;
-}
-
-Pattern Pattern::operator+(const Pattern& rhs) {
-	return Pattern(this->pat + rhs.pat);
-}
-
-Pattern& Pattern::operator+=(const Pattern& rhs) {
-	this->pat = this->pat + rhs.pat;
-	return *this;
-}
-
-Pattern Pattern::operator-(const Pattern& rhs) {
-	return Pattern(this->pat - rhs.pat);
-}
-
-Pattern& Pattern::operator-=(const Pattern& rhs) {
-	this->pat = this->pat - rhs.pat;
-	return *this;
-}
-
+//bool Pattern::is(PatternEnum pat) const {
+//	return this->bits.test( pat2bit(pat) );
+//}
 bool Pattern::is(Pattern pat) const {
-	return (this->pat & pat.pat) == pat.pat;
+	return (this->bits & pat.bits) == pat.bits;
 }
 
 bool Pattern::isNot(Pattern pat) const {
 	return !is(pat);
 }
 
+Pattern Pattern::operator+(const Pattern& rhs) {
+	return this->bits | rhs.bits;
+}
+
+Pattern& Pattern::operator+=(const Pattern& rhs) {
+	this->bits |= rhs.bits;
+	return *this;
+}
+
+Pattern Pattern::operator-(const Pattern& rhs) {
+	return this->bits & ~rhs.bits;
+}
+
+Pattern& Pattern::operator-=(const Pattern& rhs) {
+	this->bits &= ~rhs.bits;
+	return *this;
+}
+
+bool Pattern::operator<(const Pattern& rhs) const {
+	this->bits.to_ullong() < rhs.bits.to_ullong();
+}
+
+bool Pattern::operator>(const Pattern& rhs) const {
+	this->bits.to_ullong() > rhs.bits.to_ullong();
+}
+
+size_t Pattern::hash() const {
+	return this->bits.to_ullong();
+}
+
 std::string Pattern::toString() const {
-	std::string str;
-	if (pat == NONE_PATTERN)
-		str += "None";
-	if (pat == INPUT)
-		str += "Input";
-	if (pat == OUTPUT)
-		str += "Output";
-	if (is(FREE))
-		str += "Free";
-	if (is(LOCAL))
-		str += "Local";
-	if (is(FOCAL))
-		str += "Focal";
-	if (is(ZONAL))
-		str += "Zonal";
-	if (is(RADIAL))
-		str += "Radial";
-	if (is(SPREAD))
-		str += "Spread";
-	if (is(STATS))
-		str += "Stats";
-	if (is(GLOBAL))
-		str += "Barrier";
-	if (is(HEAD))
-		str += "Head";
-	if (is(MERGE))
-		str += "Merge";
-	if (is(SWITCH))
-		str += "Switch";
-	if (is(TAIL))
-		str += "Tail";
-	if (is(LOOP))
-		str += "Loop";
+	std::string str = "";
+	for (int i=0; i<this->bits.size(); i++)
+		if (this->bits.test(i))
+			str += map::detail::toString(
+				static_cast<PatternEnum>(i));
 	return str;
 }
 
+/*********************************************************************************************************************/
+
+std::string toString(const PatternEnum& pat) {
+	switch (pat) {
+		case NONE_PATTERN:	return "None";
+		case INPUT:		return "Input";
+		case OUTPUT:	return "Output";
+		case FREE:		return "Free";
+		case LOCAL:		return "Local";
+		case FOCAL:		return "Focal";
+		case ZONAL:		return "Zonal";
+		case RADIAL:	return "Radial";
+		case SPREAD:	return "Spread";
+		case STATS:		return "Stats";
+		case GLOBAL:	return "Barrier";
+		case HEAD:		return "Head";
+		case MERGE:		return "Merge";
+		case SWITCH:	return "Switch";
+		case TAIL:		return "Tail";
+		case LOOP:		return "Loop";
+		default: assert(0);
+	}
+}
+
+std::ostream& operator<< (std::ostream& os, const PatternEnum& pat) {
+	return os << toString(pat);
+}
+
+std::ostream& operator<< (std::ostream& os, const Pattern& pat) {
+	return os << pat.toString();
+}
+
 bool canPipeFuse(const Pattern& top, const Pattern& bot) {
-	#define PIPE(t,b,val) if ((top.pat & t) == t && (bot.pat & b) == b) fuses &= val;
-	#define PIPE_T(t,val) if ((top.pat & t) == t) fuses &= val;
-	#define PIPE_B(b,val) if ((bot.pat & b) == b) fuses &= val;
+	#define PIPE(t,b,val) if (top.is(t) && bot.is(b)) fuses &= val;
+	#define PIPE_T(t,val) if (top.is(t)) fuses &= val;
+	#define PIPE_B(b,val) if (bot.is(b)) fuses &= val;
 	// NB: commented means true
 	bool fuses = true;
 
@@ -186,9 +198,9 @@ bool canPipeFuse(const Pattern& top, const Pattern& bot) {
 }
 
 bool canFlatFuse(const Pattern& left, const Pattern& right) {
-	#define FLAT(l,r,val) if ((left.pat & l) == l && (right.pat & r) == r) fuses &= val;
-	#define FLAT_L(l,val) if ((left.pat & l) == l) fuses &= val;
-	#define FLAT_R(r,val) if ((right.pat & r) == r) fuses &= val;
+	#define FLAT(l,r,val) if (left.is(l) && right.is(r)) fuses &= val;
+	#define FLAT_L(l,val) if (left.is(l)) fuses &= val;
+	#define FLAT_R(r,val) if (right.is(r)) fuses &= val;
 	bool fuses = true;
 
 	FLAT_L(FREE,true) // everything can be fused when left=Free
@@ -251,10 +263,6 @@ bool canFlatFuse(const Pattern& left, const Pattern& right) {
 	#undef FLAT
 	#undef FLAT_L
 	#undef FLAT_R
-}
-
-std::ostream& operator<< (std::ostream& os, const Pattern& pat) {
-	return os << pat.toString();
 }
 
 } } // namespace map::detail

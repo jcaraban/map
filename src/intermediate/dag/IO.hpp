@@ -63,7 +63,7 @@ struct OutInNode : public InputNode, public OutputNode
 
 	const NodeList& prevList() const;
 	const NodeList& nextList() const;
-	Pattern pattern() const { return INPUT+OUTPUT; }
+	Pattern pattern() const { return NONE_PATTERN; } // @@
 	bool isInput() const;
 	bool isOutput() const;
 	void setFilled();

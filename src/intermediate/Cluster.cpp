@@ -22,13 +22,13 @@ Cluster::Cluster()
 	, gen_outdated(false)
 { }
 
-Cluster::Cluster(Pattern pattern)
-	: id(-1)
-	, task(nullptr)
-	, gen_pattern(pattern)
-	, gen_shape()
-	, gen_outdated(false)
-{ }
+//Cluster::Cluster(Pattern pattern)
+//	: id(-1)
+//	, task(nullptr)
+//	, gen_pattern(pattern)
+//	, gen_shape()
+//	, gen_outdated(false)
+//{ }
 
 const NodeList& Cluster::nodeList() const {
 	return node_list;
